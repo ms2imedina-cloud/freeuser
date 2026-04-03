@@ -495,29 +495,50 @@ function renderSteps() {
   `).join("");
 }
 
-// ── API FETCH ──
-async function fetchLive(key) {
+// ── API FETCH — ANTI-CORS (3 stratégies) ──
+async function fetchWithCors(url, headers) {
+  // Stratégie 1 : appel direct (fonctionne si CORS autorisé ou extension)
   try {
-    const res = await fetch(SPORT_CFG.endpoint(TODAY), {
-      headers: { "x-apisports-key": key }
-    });
-    if (!res.ok) throw new Error("HTTP " + res.status);
-    const data = await res.json();
-    if (data.errors && Object.keys(data.errors).length) throw new Error("API key error");
-    if (data.response === undefined) throw new Error("No response field");
+    const r = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
+    if (r.ok) return r.json();
+  } catch(_) {}
+
+  // Stratégie 2 : proxy corsproxy.io
+  try {
+    const proxied = "https://corsproxy.io/?" + encodeURIComponent(url);
+    const r2 = await fetch(proxied, { headers, signal: AbortSignal.timeout(8000) });
+    if (r2.ok) return r2.json();
+  } catch(_) {}
+
+  // Stratégie 3 : proxy allorigins
+  try {
+    const proxied2 = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const r3 = await fetch(proxied2, { signal: AbortSignal.timeout(8000) });
+    if (r3.ok) {
+      const wrap = await r3.json();
+      return JSON.parse(wrap.contents);
+    }
+  } catch(_) {}
+
+  throw new Error("CORS_BLOCKED");
+}
+
+async function fetchLive(key) {
+  const url = SPORT_CFG.endpoint(TODAY);
+  const headers = { "x-apisports-key": key };
+  try {
+    const data = await fetchWithCors(url, headers);
+    if (data.errors && Object.keys(data.errors).length) {
+      const errMsg = Object.values(data.errors)[0];
+      throw new Error("Clé invalide : " + errMsg);
+    }
+    if (!Array.isArray(data.response)) throw new Error("Réponse inattendue");
+    if (data.response.length === 0) throw new Error("NO_MATCHES");
     return SPORT_CFG.parseMatches(data);
-  } catch(e1) {
-    const rapidUrl = `https://api-football-v1.p.rapidapi.com/v3/fixtures?date=${TODAY}&status=NS`;
-    const res2 = await fetch(rapidUrl, {
-      headers: {
-        "x-rapidapi-key": key,
-        "x-rapidapi-host": "api-football-v1.p.rapidapi.com"
-      }
-    });
-    if (!res2.ok) throw new Error("HTTP " + res2.status);
-    const data2 = await res2.json();
-    if (data2.errors && Object.keys(data2.errors).length) throw new Error("API key error");
-    return SPORT_CFG.parseMatches(data2);
+  } catch(e) {
+    if (e.message === "CORS_BLOCKED") throw new Error("CORS_BLOCKED");
+    if (e.message === "NO_MATCHES") throw new Error("NO_MATCHES");
+    throw e;
   }
 }
 
@@ -889,20 +910,28 @@ async function generate() {
   try {
     // Étape 1 : Récupération matchs live
     if (keyOk && apiKey) {
-      addStep("📡 Récupération matchs Football en direct...", "active");
+      addStep("📡 Tentative récupération matchs live (3 méthodes)...", "active");
       try {
         matches = await fetchLive(apiKey);
-        addStep("📡 Récupération matchs Football en direct...", "done");
+        addStep(`📡 ${matches.length} matchs live récupérés via API-Football ✓`, "done");
         src = "live";
-      } catch {
-        addStep("📡 Récupération matchs Football en direct...", "done");
-        addStep("⚠️ Erreur réseau/CORS → mode IA pur (clé OK)", "done");
+      } catch(fetchErr) {
+        addStep("📡 Tentative récupération matchs live (3 méthodes)...", "done");
+        if (fetchErr.message === "CORS_BLOCKED") {
+          addStep("🔄 CORS navigateur bloqué → Claude Expert en mode autonome", "done");
+        } else if (fetchErr.message === "NO_MATCHES") {
+          addStep("📭 Aucun match programmé aujourd'hui via API → mode IA autonome", "done");
+        } else if (fetchErr.message.includes("invalide") || fetchErr.message.includes("key")) {
+          addStep("❌ Clé API-Football invalide → vérifier sur dashboard.api-sports.io", "done");
+        } else {
+          addStep("🔄 API indisponible → Claude Expert analyse en mode autonome", "done");
+        }
         src = "demo";
       }
     } else {
-      addStep("🎯 Mode IA pur — Claude génère les matchs du jour", "active");
+      addStep("🧠 Mode IA autonome — Claude identifie les matchs du jour", "active");
       await new Promise(r => setTimeout(r, 400));
-      addStep("🎯 Mode IA pur — Claude génère les matchs du jour", "done");
+      addStep("🧠 Mode IA autonome — Claude identifie les matchs du jour", "done");
     }
 
     if (src === "live") {
