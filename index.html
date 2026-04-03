@@ -381,8 +381,8 @@ Règles: vrais matchs du ${todayISO} uniquement, cotes 1.40-4.50, confiance ≥5
     // Récupérer et sauvegarder la clé API
     const apiKey = document.getElementById('apikey-input').value.trim();
     if (apiKey) saveApiKey(apiKey);
-    if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-      throw new Error('Veuillez saisir une clé API Anthropic valide (commence par sk-ant-).');
+    if (!apiKey || apiKey.length < 20) {
+      throw new Error('Veuillez saisir votre clé API Anthropic.');
     }
 
     const response = await fetch('https://api.anthropic.com/v1/messages', {
