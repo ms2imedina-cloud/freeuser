@@ -159,6 +159,12 @@
     <span style="font-size:11px;color:var(--muted);white-space:nowrap;">→ Mise Kelly calculée</span>
   </div>
 
+  <div class="apikey-panel" id="apikey-panel" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,214,0,0.03);border:1px solid rgba(255,214,0,0.18);border-radius:12px;margin-bottom:18px;">
+    <span style="font-size:12px;color:#3d4260;white-space:nowrap;">🔑 Clé API Anthropic</span>
+    <input id="apikey-input" type="password" placeholder="sk-ant-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,214,0,0.2);border-radius:8px;padding:8px 12px;color:#ffd600;font-family:monospace;font-size:13px;outline:none;width:100%;">
+    <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-size:10px;color:#3d4260;white-space:nowrap;text-decoration:none;">Obtenir une clé ↗</a>
+  </div>
+
   <div class="league-filter" id="league-filter">
     <button class="lf-btn active" data-league="all">🌍 Tous</button>
     <button class="lf-btn" data-league="ligue1">🇫🇷 Ligue 1</button>
@@ -390,10 +396,21 @@ Règles d'or :
     setStep(stepsData, 0, 'done');
     setStep(stepsData, 1, 'active');
 
-    // ✅ FIX: Use the Anthropic API proxy (no API key needed, CORS handled)
+    // Récupérer la clé API saisie par l'utilisateur
+    const apiKey = document.getElementById('apikey-input').value.trim();
+    if (!apiKey || !apiKey.startsWith('sk-ant-')) {
+      throw new Error('Veuillez saisir une clé API Anthropic valide (commence par sk-ant-). Obtenez-en une sur console.anthropic.com');
+    }
+
+    // Appel direct à l'API Anthropic avec la clé fournie
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 4000,
