@@ -260,9 +260,22 @@ body{background:var(--bg);}
     <div id="demo-link" class="demo-link" onclick="demoMode()">→ Continuer sans clé (mode IA pur, toujours fonctionnel)</div>
   </div>
 
+  <!-- CLAUDE API KEY PANEL -->
+  <div class="panel" style="background:rgba(163,116,255,0.04);border-color:rgba(163,116,255,0.25);margin-bottom:18px;">
+    <div class="panel-title" style="color:var(--purple);">🤖 Clé API Claude (Anthropic)</div>
+    <div class="panel-desc">
+      Nécessaire pour l'analyse IA. Obtiens ta clé sur <a href="https://console.anthropic.com/keys" target="_blank">console.anthropic.com/keys</a>.
+    </div>
+    <div class="input-row">
+      <input id="claude-key-input" class="key-input" type="password" placeholder="sk-ant-api03-..." style="border-color:rgba(163,116,255,0.2);"/>
+      <button class="btn-save" onclick="activateClaudeKey()" style="background:var(--purple);color:#fff;">ACTIVER</button>
+    </div>
+    <div id="claude-status-ok" class="key-status ok" style="display:none;">✅ Clé Claude activée — analyse IA prête</div>
+  </div>
+
   <!-- GEN BUTTON -->
   <button id="gen-btn" class="gen" onclick="generate()" disabled>
-    <span id="gen-label">CONFIGURE UNE CLÉ OU ACTIVE LE MODE IA</span>
+    <span id="gen-label">ENTRE TA CLÉ CLAUDE POUR CONTINUER</span>
     <div id="gen-bar" class="gen-bar"></div>
   </button>
 
@@ -315,7 +328,7 @@ const SPORT_CFG = {
 };
 
 // ── STATE ──
-let apiKey = "", keyOk = false, keySet = false, loading = false;
+let apiKey = "", keyOk = false, keySet = false, loading = false, claudeKey = "";
 
 // ── HELPERS ──
 const cc = p => p >= 73 ? "high" : p >= 61 ? "mid" : "low";
@@ -334,7 +347,19 @@ function activateKey() {
   $("status-ok").style.display = "block";
   $("status-demo").style.display = "none";
   $("demo-link").style.display = "none";
-  setKeySet(true);
+  checkReady();
+}
+
+function activateClaudeKey() {
+  const k = $("claude-key-input").value.trim();
+  if (!k) return;
+  claudeKey = k;
+  $("claude-status-ok").style.display = "block";
+  checkReady();
+}
+
+function checkReady() {
+  if (claudeKey) setKeySet(true);
 }
 
 function demoMode() {
@@ -342,10 +367,11 @@ function demoMode() {
   $("status-demo").style.display = "block";
   $("status-ok").style.display = "none";
   $("demo-link").style.display = "none";
-  setKeySet(true);
+  if (claudeKey) setKeySet(true);
 }
 
 $("key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateKey(); });
+$("claude-key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateClaudeKey(); });
 
 // ── STEPS ──
 const stepsEl = $("steps");
@@ -424,7 +450,12 @@ function repairJSON(raw) {
 async function callClaude(prompt) {
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
-    headers: {"Content-Type":"application/json"},
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": claudeKey,
+      "anthropic-version": "2023-06-01",
+      "anthropic-dangerous-direct-browser-access": "true"
+    },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
       max_tokens: 4000,
