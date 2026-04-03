@@ -931,6 +931,12 @@ async function generate() {
       addStep("🤖 Claude Sonnet analyse cotes & probabilités...", "active");
     }
 
+    if (modelsCount > 1) {
+      addStep(`🤖 Analyse multi-modèle en parallèle (${modelsCount} IA)...`, "active");
+    } else {
+      addStep("🤖 Claude Sonnet analyse cotes & probabilités...", "active");
+    }
+
     const calls = [callClaude(prompt)];
     if (hasGpt) calls.push(callGPT(prompt));
     if (hasGemini) calls.push(callGemini(prompt));
@@ -940,13 +946,20 @@ async function generate() {
       .filter(r => r.status === "fulfilled" && r.value)
       .map(r => r.value);
 
+    const respondedCount = validResults.length;
+
     if (modelsCount > 1) {
       addStep(`🤖 Analyse multi-modèle en parallèle (${modelsCount} IA)...`, "done");
-      addStep(`🔀 Consensus entre ${validResults.length} modèles...`, "active");
-      await new Promise(r => setTimeout(r, 200));
-      addStep(`🔀 Consensus entre ${validResults.length} modèles...`, "done");
     } else {
       addStep("🤖 Claude Sonnet analyse cotes & probabilités...", "done");
+    }
+
+    if (modelsCount > 1 && respondedCount > 1) {
+      addStep(`🔀 Consensus validé — ${respondedCount} modèles ont répondu`, "active");
+      await new Promise(r => setTimeout(r, 200));
+      addStep(`🔀 Consensus validé — ${respondedCount} modèles ont répondu`, "done");
+    } else if (modelsCount > 1 && respondedCount === 1) {
+      addStep(`⚠️ Autres modèles inaccessibles (CORS) — Claude seul retenu`, "done");
     }
 
     // Fusion par consensus (amélioration 1)
@@ -1169,73 +1182,6 @@ async function callClaude(prompt) {
   return repairJSON(txt);
 }
 
-// ── BUILD PROMPT ──
-function buildPrompt(matches) {
-  const list = matches.length
-    ? matches.slice(0,20).map((m,i) => `${i+1}. ${m.home} vs ${m.away} | ${m.league||""} | ${m.time||"?"}h`).join("\n")
-    : `Aucun match en direct — génère 10 matchs de football réalistes pour le ${TODAY}.`;
-  const betList = SPORT_CFG.betTypes.join(", ");
-  return `Tu es un expert analyste paris sportifs football. Date : ${TODAY}.
-Matchs du jour :
-${list}
-
-Réponds UNIQUEMENT avec du JSON minifié (pas de markdown, pas de texte avant ou après).
-Exactement 10 événements. Format :
-{"events":[{"num":1,"sport":"football","match":"Équipe A vs Équipe B","league":"Ligue","time":"20:45","bet_type":"TYPE","pick":"SÉLECTION","odds":1.72,"confidence":73,"form_home":"WWDLW","form_away":"DWWLL","h2h_stat":"3/5 Plus de 2.5","analysis":"Courte analyse factuelle en 1 phrase."}]}
-
-Types de paris disponibles : ${betList}
-RÈGLES STRICTES : cotes entre 1.30-2.00 uniquement, confiance entre 55-88, analyse max 100 caractères, varier les types de paris sur les 10 événements, prioriser les vrais matchs listés ci-dessus.`;
-}
-
-// ── RENDER CARDS ──
-function renderCards(events) {
-  const grid = $("grid");
-  grid.innerHTML = "";
-  $("empty").style.display = "none";
-  $("summary").style.display = "grid";
-  $("disc").style.display = "block";
-
-  const avgOdds = (events.reduce((a,e) => a + parseFloat(e.odds||1.7), 0) / events.length).toFixed(2);
-  const avgConf = Math.round(events.reduce((a,e) => a + (e.confidence||65), 0) / events.length);
-  $("sum-sel").textContent = events.length;
-  $("sum-odds").textContent = "@" + avgOdds;
-  $("sum-conf").textContent = avgConf + "%";
-
-  events.forEach((ev, i) => {
-    const conf = ev.confidence || 65;
-    const cls = cc(conf);
-    const card = document.createElement("div");
-    card.className = "card";
-    card.style.animationDelay = (i * 50) + "ms";
-    card.innerHTML = `
-      <div class="card-top ${cls}"></div>
-      <div class="ch">
-        <div class="ch-n">#${ev.num || i+1}</div>
-        <div class="ch-m">
-          <div class="ch-sport">⚽ FOOTBALL · ${ev.league||""}</div>
-          <div class="ch-match">${ev.match||""}</div>
-        </div>
-        <div class="ch-time">${ev.time||""}</div>
-      </div>
-      <div class="bet">
-        <div>
-          <div class="bet-lbl">${ev.bet_type||""}</div>
-          <div class="bet-pick">${ev.pick||""}</div>
-        </div>
-        <div class="bet-cote">@${parseFloat(ev.odds||1.70).toFixed(2)}</div>
-      </div>
-      <div class="stats">
-        <div class="sb"><div class="sb-l">Forme Dom.</div><div class="sb-v c" style="font-size:11px;letter-spacing:1.5px">${ev.form_home||"WWDLW"}</div></div>
-        <div class="sb"><div class="sb-l">Forme Ext.</div><div class="sb-v c" style="font-size:11px;letter-spacing:1.5px">${ev.form_away||"DWWLL"}</div></div>
-        <div class="sb"><div class="sb-l">H2H</div><div class="sb-v g" style="font-size:11px">${ev.h2h_stat||"3/5 ✓"}</div></div>
-      </div>
-      <div class="conf-bg"><div class="conf-fill ${cls}" style="width:${conf}%"></div></div>
-      <div class="conf-row"><span>Indice de confiance</span><span class="cp ${cls}">${conf}%</span></div>
-      ${ev.analysis ? `<div class="ana"><div class="ana-lbl">🤖 Analyse Claude IA</div>${ev.analysis}</div>` : ""}
-    `;
-    grid.appendChild(card);
-  });
-}
 
 </script>
 </body>
