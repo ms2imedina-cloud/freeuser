@@ -255,7 +255,7 @@ body{background:var(--bg);}
       <input id="key-input" class="key-input" type="password" placeholder="Colle ta clé API-Football ici..."/>
       <button class="btn-save" onclick="activateKey()">ACTIVER</button>
     </div>
-    <div id="status-ok" class="key-status ok">✅ Clé activée — données live Football</div>
+    <div id="status-ok" class="key-status ok">✅ Clé activée — données live Football <span id="api-saved-badge" style="display:none;background:rgba(0,230,118,0.12);border:1px solid rgba(0,230,118,0.25);border-radius:8px;padding:2px 8px;font-size:10px;margin-left:6px;">💾 sauvegardée</span></div>
     <div id="status-demo" class="key-status demo">🟣 Mode IA pur actif — analyse Claude sans données externes</div>
     <div id="demo-link" class="demo-link" onclick="demoMode()">→ Continuer sans clé (mode IA pur, toujours fonctionnel)</div>
   </div>
@@ -270,7 +270,7 @@ body{background:var(--bg);}
       <input id="claude-key-input" class="key-input" type="password" placeholder="sk-ant-api03-..." style="border-color:rgba(163,116,255,0.2);"/>
       <button class="btn-save" onclick="activateClaudeKey()" style="background:var(--purple);color:#fff;">ACTIVER</button>
     </div>
-    <div id="claude-status-ok" class="key-status ok" style="display:none;">✅ Clé Claude activée — analyse IA prête</div>
+    <div id="claude-status-ok" class="key-status ok" style="display:none;">✅ Clé Claude activée — analyse IA prête <span id="claude-saved-badge" style="display:none;background:rgba(163,116,255,0.12);border:1px solid rgba(163,116,255,0.25);border-radius:8px;padding:2px 8px;font-size:10px;margin-left:6px;">💾 sauvegardée</span></div>
   </div>
 
   <!-- GEN BUTTON -->
@@ -334,6 +334,42 @@ let apiKey = "", keyOk = false, keySet = false, loading = false, claudeKey = "";
 const cc = p => p >= 73 ? "high" : p >= 61 ? "mid" : "low";
 const $ = id => document.getElementById(id);
 
+// ── SAUVEGARDE CLÉS (localStorage) ──
+function saveKeys() {
+  try {
+    if (apiKey) localStorage.setItem("scoutpro_apikey", apiKey);
+    if (claudeKey) localStorage.setItem("scoutpro_claudekey", claudeKey);
+  } catch(e) {}
+}
+
+function loadSavedKeys() {
+  try {
+    const savedApi = localStorage.getItem("scoutpro_apikey");
+    const savedClaude = localStorage.getItem("scoutpro_claudekey");
+    if (savedApi) {
+      $("key-input").value = savedApi;
+      apiKey = savedApi; keyOk = true;
+      $("status-ok").style.display = "block";
+      $("status-demo").style.display = "none";
+      $("demo-link").style.display = "none";
+      showSavedBadge("api");
+    }
+    if (savedClaude) {
+      $("claude-key-input").value = savedClaude;
+      claudeKey = savedClaude;
+      $("claude-status-ok").style.display = "block";
+      showSavedBadge("claude");
+    }
+    checkReady();
+  } catch(e) {}
+}
+
+function showSavedBadge(type) {
+  const id = type === "api" ? "api-saved-badge" : "claude-saved-badge";
+  const el = $(id);
+  if (el) el.style.display = "inline";
+}
+
 function setKeySet(val) {
   keySet = val;
   $("gen-btn").disabled = !val || loading;
@@ -344,9 +380,11 @@ function activateKey() {
   const k = $("key-input").value.trim();
   if (!k) return;
   apiKey = k; keyOk = true;
+  saveKeys();
   $("status-ok").style.display = "block";
   $("status-demo").style.display = "none";
   $("demo-link").style.display = "none";
+  showSavedBadge("api");
   checkReady();
 }
 
@@ -354,7 +392,9 @@ function activateClaudeKey() {
   const k = $("claude-key-input").value.trim();
   if (!k) return;
   claudeKey = k;
+  saveKeys();
   $("claude-status-ok").style.display = "block";
+  showSavedBadge("claude");
   checkReady();
 }
 
@@ -372,6 +412,9 @@ function demoMode() {
 
 $("key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateKey(); });
 $("claude-key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateClaudeKey(); });
+
+// Charger les clés sauvegardées au démarrage
+window.addEventListener("DOMContentLoaded", loadSavedKeys);
 
 // ── STEPS ──
 const stepsEl = $("steps");
@@ -472,18 +515,18 @@ async function callClaude(prompt) {
 function buildPrompt(matches) {
   const list = matches.length
     ? matches.slice(0,20).map((m,i) => `${i+1}. ${m.home} vs ${m.away} | ${m.league||""} | ${m.time||"?"}h`).join("\n")
-    : `No live matches - generate 10 realistic football matches for ${TODAY}.`;
+    : `Aucun match en direct — génère 10 matchs de football réalistes pour le ${TODAY}.`;
   const betList = SPORT_CFG.betTypes.join(", ");
-  return `You are an expert football betting analyst. Date: ${TODAY}.
-Today's matches:
+  return `Tu es un expert analyste paris sportifs football. Date : ${TODAY}.
+Matchs du jour :
 ${list}
 
-Return ONLY minified JSON (no markdown, no extra text before or after).
-Exactly 10 events. Format:
-{"events":[{"num":1,"sport":"football","match":"Team A vs Team B","league":"League","time":"20:45","bet_type":"TYPE","pick":"PICK","odds":1.72,"confidence":73,"form_home":"WWDLW","form_away":"DWWLL","h2h_stat":"3/5 Over 2.5","analysis":"Short 1-sentence factual analysis."}]}
+Réponds UNIQUEMENT avec du JSON minifié (pas de markdown, pas de texte avant ou après).
+Exactement 10 événements. Format :
+{"events":[{"num":1,"sport":"football","match":"Équipe A vs Équipe B","league":"Ligue","time":"20:45","bet_type":"TYPE","pick":"SÉLECTION","odds":1.72,"confidence":73,"form_home":"WWDLW","form_away":"DWWLL","h2h_stat":"3/5 Plus de 2.5","analysis":"Courte analyse factuelle en 1 phrase."}]}
 
-Available bet types: ${betList}
-STRICT RULES: odds 1.30-2.00 only, confidence 55-88, analysis max 100 chars, vary bet types across 10 events, prioritize real matches listed above.`;
+Types de paris disponibles : ${betList}
+RÈGLES STRICTES : cotes entre 1.30-2.00 uniquement, confiance entre 55-88, analyse max 100 caractères, varier les types de paris sur les 10 événements, prioriser les vrais matchs listés ci-dessus.`;
 }
 
 // ── RENDER CARDS ──
