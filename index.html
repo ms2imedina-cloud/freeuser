@@ -1,286 +1,152 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Scout Pro v5 — Expert Football IA</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&family=Syne:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,400;0,600;0,700;0,800;1,700&family=Syne:wght@400;500;600;700&display=swap');
+  :root {
+    --bg: #080b14;
+    --card: #0d1120;
+    --border: rgba(255,255,255,0.07);
+    --cyan: #00f0ff;
+    --green: #00e676;
+    --gold: #ffd600;
+    --red: #ff3d57;
+    --purple: #a374ff;
+    --muted: #3d4260;
+    --text: #dde0f0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+  
+  .app { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
 
-*{box-sizing:border-box;margin:0;padding:0;}
-:root{
-  --bg:#06070e;--card:#0b0d1a;--border:rgba(255,255,255,0.07);
-  --cyan:#00f0ff;--gold:#ffd600;--green:#00e676;--red:#ff3d57;--purple:#a374ff;
-  --text:#cdd0e0;--muted:#3d4260;
-}
-body{background:var(--bg);}
-.app{
-  min-height:100vh;background:var(--bg);color:var(--text);
-  font-family:'Syne',sans-serif;padding:16px;max-width:700px;margin:0 auto;
-}
+  /* HEADER */
+  .hdr { text-align: center; padding: 36px 0 28px; position: relative; }
+  .hdr-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 120px; background: radial-gradient(ellipse, rgba(0,240,255,0.08) 0%, transparent 70%); pointer-events: none; }
+  .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 800; letter-spacing: 6px; background: linear-gradient(135deg, var(--cyan), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+  .logo-tag { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .date-pill { display: inline-block; margin-top: 12px; padding: 4px 14px; background: rgba(0,240,255,0.06); border: 1px solid rgba(0,240,255,0.15); border-radius: 20px; font-size: 12px; color: var(--cyan); }
 
-/* HEADER */
-.hdr{text-align:center;padding:30px 0 22px;position:relative;margin-bottom:24px;}
-.hdr-glow{
-  position:absolute;top:-60px;left:50%;transform:translateX(-50%);
-  width:300px;height:300px;border-radius:50%;
-  background:radial-gradient(circle,rgba(0,240,255,0.06) 0%,transparent 70%);
-  pointer-events:none;
-}
-.logo{
-  font-family:'Barlow Condensed',sans-serif;font-size:clamp(48px,12vw,80px);
-  font-weight:800;letter-spacing:8px;line-height:1;
-  background:linear-gradient(135deg,var(--cyan) 0%,var(--purple) 50%,var(--gold) 100%);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-}
-.logo-tag{
-  font-family:'Barlow Condensed',sans-serif;font-style:italic;font-weight:700;
-  font-size:13px;letter-spacing:5px;text-transform:uppercase;
-  color:var(--muted);margin-top:2px;margin-bottom:18px;
-}
-.date-pill{
-  display:inline-flex;align-items:center;gap:7px;
-  border:1px solid rgba(0,240,255,0.18);border-radius:20px;
-  padding:6px 16px;font-size:12px;color:var(--cyan);letter-spacing:1px;
-  background:rgba(0,240,255,0.04);
-}
+  /* AI MODE BANNER */
+  .ai-banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(135deg, rgba(163,116,255,0.08), rgba(0,240,255,0.04)); border: 1px solid rgba(163,116,255,0.25); border-radius: 14px; margin-bottom: 18px; }
+  .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); flex-shrink: 0; animation: pulse 2s ease-in-out infinite; }
+  @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(163,116,255,0.4);} 50%{opacity:0.7;box-shadow:0 0 0 6px rgba(163,116,255,0);} }
+  .ai-text { font-size: 12px; color: var(--text); line-height: 1.6; }
+  .ai-text strong { color: var(--purple); }
 
-/* API PANEL */
-.panel{
-  border-radius:14px;padding:18px;margin-bottom:18px;
-  background:rgba(255,214,0,0.04);
-  border:1px solid rgba(255,214,0,0.18);
-}
-.panel-title{
-  font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;
-  letter-spacing:2px;text-transform:uppercase;color:var(--gold);
-  margin-bottom:8px;display:flex;align-items:center;gap:7px;
-}
-.panel-desc{font-size:12px;color:var(--muted);line-height:1.65;margin-bottom:14px;}
-.panel-desc a{color:var(--cyan);text-decoration:none;border-bottom:1px solid rgba(0,240,255,0.3);}
-.panel-desc strong{color:#8090b0;}
-.input-row{display:flex;gap:8px;}
-.key-input{
-  flex:1;background:rgba(0,0,0,0.5);border:1px solid var(--border);
-  border-radius:9px;padding:11px 14px;color:var(--text);
-  font-family:'Syne',sans-serif;font-size:13px;outline:none;
-  transition:border-color 0.2s;
-}
-.key-input:focus{border-color:var(--gold);}
-.key-input::placeholder{color:var(--muted);}
-.btn-save{
-  background:var(--gold);border:none;border-radius:9px;
-  padding:11px 20px;color:#000;
-  font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;
-  letter-spacing:1px;cursor:pointer;white-space:nowrap;
-  transition:opacity 0.2s;
-}
-.btn-save:hover{opacity:0.88;}
-.key-status{margin-top:8px;font-size:11px;letter-spacing:0.5px;display:none;}
-.key-status.ok{color:var(--green);}
-.key-status.demo{color:var(--purple);}
-.demo-link{
-  margin-top:8px;font-size:12px;color:var(--purple);
-  cursor:pointer;text-decoration:underline;
-}
+  /* BANKROLL */
+  .bankroll-panel { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(0,240,255,0.03); border: 1px solid rgba(0,240,255,0.12); border-radius: 12px; margin-bottom: 18px; }
+  .bankroll-lbl { font-size: 12px; color: var(--muted); white-space: nowrap; }
+  .bankroll-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.15); border-radius: 8px; padding: 8px 12px; color: var(--cyan); font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; outline: none; width: 100%; }
+  .bankroll-input:focus { border-color: var(--cyan); }
 
-/* GEN BUTTON */
-.gen{
-  width:100%;padding:16px;
-  background:linear-gradient(135deg,rgba(0,240,255,0.1),rgba(163,116,255,0.1));
-  border:1px solid rgba(0,240,255,0.3);border-radius:13px;
-  color:var(--cyan);
-  font-family:'Barlow Condensed',sans-serif;font-size:21px;font-weight:700;letter-spacing:3px;
-  cursor:pointer;transition:all 0.3s;
-  margin-bottom:20px;position:relative;overflow:hidden;
-}
-.gen:hover:not(:disabled){
-  border-color:var(--cyan);
-  box-shadow:0 8px 32px rgba(0,240,255,0.15);
-  transform:translateY(-2px);
-}
-.gen:disabled{opacity:0.5;cursor:not-allowed;transform:none;}
-.gen-bar{
-  position:absolute;bottom:0;left:0;height:2px;width:0;
-  background:linear-gradient(90deg,var(--cyan),var(--purple),var(--gold));
-  animation:gbar 1.8s ease-in-out infinite;
-  display:none;
-}
-@keyframes gbar{0%{width:0;left:0}50%{width:60%;left:20%}100%{width:0;left:100%}}
+  /* LEAGUE FILTER */
+  .league-filter { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
+  .lf-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'Syne', sans-serif; }
+  .lf-btn:hover { border-color: rgba(0,240,255,0.3); color: var(--cyan); }
+  .lf-btn.active { background: rgba(0,240,255,0.08); border-color: rgba(0,240,255,0.4); color: var(--cyan); }
 
-/* STEPS */
-.steps{
-  background:rgba(0,0,0,0.35);border:1px solid var(--border);
-  border-radius:11px;padding:14px 16px;
-  display:none;flex-direction:column;gap:6px;margin-bottom:20px;
-}
-.step{font-size:12px;display:flex;align-items:center;gap:8px;transition:color 0.3s;}
-.step.done{color:var(--green);}
-.step.active{color:var(--cyan);animation:sb 1.2s ease-in-out infinite;}
-.step.wait{color:var(--muted);}
-.step-dot{width:6px;height:6px;border-radius:50%;background:currentColor;flex-shrink:0;}
-@keyframes sb{0%,100%{opacity:1}50%{opacity:0.4}}
+  /* GEN BUTTON */
+  .gen { width: 100%; padding: 18px; border: none; border-radius: 14px; background: linear-gradient(135deg, rgba(163,116,255,0.9), rgba(0,240,255,0.8)); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 4px; cursor: pointer; position: relative; overflow: hidden; transition: opacity 0.2s, transform 0.15s; margin-bottom: 20px; }
+  .gen:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
+  .gen:active:not(:disabled) { transform: translateY(0); }
+  .gen:disabled { opacity: 0.4; cursor: not-allowed; }
+  .gen-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(255,255,255,0.4); width: 0%; transition: width 0.3s; border-radius: 0 0 14px 14px; }
 
-/* SOURCE BADGE */
-.src-badge{
-  display:none;align-items:center;gap:6px;
-  font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
-  padding:4px 12px;border-radius:12px;margin-bottom:14px;font-weight:600;
-}
-.src-live{background:rgba(0,230,118,0.08);color:var(--green);border:1px solid rgba(0,230,118,0.2);}
-.src-demo{background:rgba(163,116,255,0.08);color:var(--purple);border:1px solid rgba(163,116,255,0.2);}
-.live-dot{
-  width:6px;height:6px;border-radius:50%;background:var(--green);
-  animation:lp 1.2s ease-in-out infinite;
-}
-@keyframes lp{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.4;transform:scale(0.6)}}
+  /* STEPS */
+  .steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; min-height: 0; transition: all 0.3s; }
+  .step { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; font-size: 12px; color: var(--muted); transition: all 0.3s; }
+  .step.active { border-color: rgba(163,116,255,0.3); color: var(--text); background: rgba(163,116,255,0.05); }
+  .step.done { border-color: rgba(0,230,118,0.2); color: var(--green); background: rgba(0,230,118,0.04); }
+  .step-ico { font-size: 16px; flex-shrink: 0; }
+  .step-spin { width: 14px; height: 14px; border: 2px solid rgba(163,116,255,0.2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 
-/* GRID */
-.grid{display:grid;gap:14px;}
+  /* SOURCE BADGE */
+  .src-badge { display: none; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
+  .src-badge.show { display: inline-flex; }
+  .src-ai { background: rgba(163,116,255,0.08); border: 1px solid rgba(163,116,255,0.25); color: var(--purple); }
 
-/* CARD */
-.card{
-  background:var(--card);border:1px solid var(--border);border-radius:16px;
-  padding:18px;position:relative;overflow:hidden;
-  animation:rise 0.4s ease both;transition:border-color 0.25s,transform 0.25s;
-}
-.card:hover{border-color:rgba(0,240,255,0.16);transform:translateY(-2px);}
-@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
-.card-top{position:absolute;top:0;left:0;right:0;height:2px;}
-.card-top.high{background:linear-gradient(90deg,var(--green),transparent);}
-.card-top.mid{background:linear-gradient(90deg,var(--gold),transparent);}
-.card-top.low{background:linear-gradient(90deg,var(--red),transparent);}
+  /* SUMMARY */
+  .summary { display: none; gap: 10px; margin-bottom: 20px; }
+  .summary.show { display: grid; grid-template-columns: repeat(4, 1fr); }
+  .sum-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
+  .sum-val { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; color: var(--cyan); line-height: 1; }
+  .sum-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
-.ch{display:flex;align-items:flex-start;gap:10px;margin-bottom:14px;}
-.ch-n{
-  font-family:'Barlow Condensed',sans-serif;font-size:42px;font-weight:800;
-  color:rgba(255,255,255,0.04);line-height:1;flex-shrink:0;min-width:44px;
-}
-.ch-m{flex:1;}
-.ch-sport{font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted);margin-bottom:3px;}
-.ch-match{font-size:15px;font-weight:700;color:#dde0f0;margin-bottom:2px;line-height:1.3;}
-.ch-time{
-  font-family:'Barlow Condensed',sans-serif;font-size:24px;font-weight:700;
-  color:var(--purple);flex-shrink:0;letter-spacing:1px;
-}
+  /* EMPTY */
+  .empty { text-align: center; padding: 56px 20px; color: var(--muted); }
+  .empty-ico { font-size: 60px; opacity: 0.15; margin-bottom: 14px; }
+  .empty-t { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: 3px; color: #252840; margin-bottom: 6px; }
+  .empty-s { font-size: 13px; color: #2a2e50; }
 
-.bet{
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(0,0,0,0.38);border-radius:10px;
-  padding:12px 14px;margin-bottom:12px;gap:12px;
-}
-.bet-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:4px;}
-.bet-pick{font-size:15px;font-weight:700;color:#dde0f0;}
-.bet-cote{
-  font-family:'Barlow Condensed',sans-serif;font-size:36px;font-weight:800;
-  color:var(--cyan);flex-shrink:0;line-height:1;letter-spacing:1px;
-}
+  /* GRID */
+  .grid { display: grid; gap: 14px; }
 
-.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:11px;}
-.sb{background:rgba(0,0,0,0.25);border-radius:8px;padding:8px 6px;text-align:center;}
-.sb-l{font-size:8px;letter-spacing:1.5px;text-transform:uppercase;color:rgba(61,66,96,0.9);margin-bottom:3px;}
-.sb-v{font-size:12px;font-weight:700;line-height:1.2;}
-.c{color:var(--cyan);}.g{color:var(--green);}
+  /* CARD */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; position: relative; overflow: hidden; animation: rise 0.4s ease both; transition: border-color 0.25s, transform 0.25s; }
+  .card:hover { border-color: rgba(0,240,255,0.16); transform: translateY(-2px); }
+  @keyframes rise { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:none;} }
+  .card-top { position: absolute; top: 0; left: 0; right: 0; height: 2px; }
+  .card-top.high { background: linear-gradient(90deg,var(--green),transparent); }
+  .card-top.mid { background: linear-gradient(90deg,var(--gold),transparent); }
+  .card-top.low { background: linear-gradient(90deg,var(--red),transparent); }
 
-.conf-bg{height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;margin-bottom:6px;}
-.conf-fill{height:100%;border-radius:2px;transition:width 1.2s ease;}
-.conf-fill.high{background:linear-gradient(90deg,var(--green),#69f0ae);}
-.conf-fill.mid{background:linear-gradient(90deg,var(--gold),#fff176);}
-.conf-fill.low{background:linear-gradient(90deg,var(--red),#ff8a80);}
-.conf-row{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-bottom:10px;}
-.cp.high{color:var(--green);font-weight:700;}
-.cp.mid{color:var(--gold);font-weight:700;}
-.cp.low{color:var(--red);font-weight:700;}
+  .ch { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+  .ch-n { font-family: 'Barlow Condensed', sans-serif; font-size: 42px; font-weight: 800; color: rgba(255,255,255,0.04); line-height: 1; flex-shrink: 0; min-width: 44px; }
+  .ch-m { flex: 1; }
+  .ch-league { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--purple); margin-bottom: 2px; }
+  .ch-sport { font-size: 9px; letter-spacing: 2.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .ch-match { font-size: 15px; font-weight: 700; color: #dde0f0; margin-bottom: 2px; line-height: 1.3; }
+  .ch-time { font-family: 'Barlow Condensed', sans-serif; font-size: 24px; font-weight: 700; color: var(--purple); flex-shrink: 0; letter-spacing: 1px; }
 
-.ana{
-  border-top:1px solid rgba(255,255,255,0.05);padding-top:10px;
-  font-size:12px;color:#7080a0;line-height:1.7;
-}
-.ana-lbl{
-  font-size:9px;letter-spacing:2px;text-transform:uppercase;
-  color:var(--purple);margin-bottom:5px;
-}
+  .bet { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.38); border-radius: 10px; padding: 12px 14px; margin-bottom: 12px; gap: 12px; }
+  .bet-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .bet-pick { font-size: 15px; font-weight: 700; color: #dde0f0; }
+  .bet-cote { font-family: 'Barlow Condensed', sans-serif; font-size: 36px; font-weight: 800; color: var(--cyan); flex-shrink: 0; line-height: 1; letter-spacing: 1px; }
 
-.empty{text-align:center;padding:56px 20px;color:var(--muted);}
-.empty-ico{font-size:60px;opacity:0.2;margin-bottom:14px;}
-.empty-t{
-  font-family:'Barlow Condensed',sans-serif;font-size:28px;font-weight:700;
-  letter-spacing:3px;color:#252840;margin-bottom:6px;
-}
-.empty-s{font-size:13px;color:#2a2e50;}
+  .stats { display: grid; grid-template-columns: repeat(3,1fr); gap: 7px; margin-bottom: 11px; }
+  .sb { background: rgba(0,0,0,0.25); border-radius: 8px; padding: 8px 6px; text-align: center; }
+  .sb-l { font-size: 8px; letter-spacing: 1.5px; text-transform: uppercase; color: rgba(61,66,96,0.9); margin-bottom: 3px; }
+  .sb-v { font-size: 12px; font-weight: 700; line-height: 1.2; }
+  .c { color: var(--cyan); } .g { color: var(--green); }
 
-.disc{
-  margin-top:28px;padding:14px 16px;
-  background:rgba(255,61,87,0.04);border:1px solid rgba(255,61,87,0.1);
-  border-radius:11px;font-size:11px;color:#483838;
-  text-align:center;line-height:1.7;display:none;
-}
+  .conf-bg { height: 3px; background: rgba(255,255,255,0.05); border-radius: 2px; overflow: hidden; margin-bottom: 6px; }
+  .conf-fill { height: 100%; border-radius: 2px; transition: width 1.2s; }
+  .conf-fill.high { background: linear-gradient(90deg,var(--green),#69f0ae); }
+  .conf-fill.mid { background: linear-gradient(90deg,var(--gold),#fff176); }
+  .conf-fill.low { background: linear-gradient(90deg,var(--red),#ff8a80); }
+  .conf-row { display: flex; justify-content: space-between; font-size: 10px; color: var(--muted); margin-bottom: 10px; }
+  .cp.high { color: var(--green); font-weight: 700; }
+  .cp.mid { color: var(--gold); font-weight: 700; }
+  .cp.low { color: var(--red); font-weight: 700; }
 
-.summary{
-  display:none;grid-template-columns:repeat(3,1fr);gap:10px;
-  margin-bottom:20px;
-}
-.sum-box{
-  background:rgba(255,255,255,0.03);border:1px solid var(--border);
-  border-radius:10px;padding:10px;text-align:center;
-}
-.sum-val{
-  font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;
-  color:var(--cyan);line-height:1;
-}
-.sum-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-top:3px;}
+  .vb-badge { display: inline-flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; padding: 3px 10px; border-radius: 8px; margin-bottom: 8px; }
+  .vb-good { background: rgba(0,230,118,0.12); color: var(--green); border: 1px solid rgba(0,230,118,0.3); }
+  .vb-ok { background: rgba(255,214,0,0.1); color: var(--gold); border: 1px solid rgba(255,214,0,0.25); }
+  .vb-bad { background: rgba(255,61,87,0.08); color: var(--red); border: 1px solid rgba(255,61,87,0.2); }
 
-/* VALUE BET BADGE */
-.vb-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;
-  padding:3px 10px;border-radius:8px;margin-bottom:8px;
-}
-.vb-good{background:rgba(0,230,118,0.12);color:var(--green);border:1px solid rgba(0,230,118,0.3);}
-.vb-ok{background:rgba(255,214,0,0.1);color:var(--gold);border:1px solid rgba(255,214,0,0.25);}
-.vb-bad{background:rgba(255,61,87,0.08);color:var(--red);border:1px solid rgba(255,61,87,0.2);}
+  .kelly-row { display: flex; align-items: center; justify-content: space-between; background: rgba(0,240,255,0.04); border: 1px solid rgba(0,240,255,0.1); border-radius: 8px; padding: 8px 12px; margin-bottom: 10px; }
+  .kelly-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); }
+  .kelly-val { font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; color: var(--cyan); }
 
-/* KELLY STAKE */
-.kelly-row{
-  display:flex;align-items:center;justify-content:space-between;
-  background:rgba(0,240,255,0.04);border:1px solid rgba(0,240,255,0.1);
-  border-radius:8px;padding:8px 12px;margin-bottom:10px;
-}
-.kelly-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);}
-.kelly-val{font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;color:var(--cyan);}
+  .ana { border-top: 1px solid rgba(255,255,255,0.05); padding-top: 10px; font-size: 12px; color: #7080a0; line-height: 1.7; }
+  .ana-lbl { font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--purple); margin-bottom: 5px; }
 
-/* CONSENSUS BADGE */
-.consensus-badge{
-  display:inline-flex;align-items:center;gap:5px;
-  font-size:10px;letter-spacing:1px;padding:2px 8px;
-  border-radius:6px;margin-left:8px;vertical-align:middle;
-}
-.consensus-high{background:rgba(0,230,118,0.1);color:var(--green);border:1px solid rgba(0,230,118,0.2);}
-.consensus-med{background:rgba(255,214,0,0.1);color:var(--gold);border:1px solid rgba(255,214,0,0.2);}
+  .data-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+  .dtag { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(163,116,255,0.08); color: var(--purple); border: 1px solid rgba(163,116,255,0.15); }
 
-/* BANKROLL INPUT */
-.bankroll-panel{
-  border-radius:12px;padding:14px 16px;margin-bottom:18px;
-  background:rgba(0,240,255,0.03);border:1px solid rgba(0,240,255,0.12);
-  display:flex;align-items:center;gap:12px;
-}
-.bankroll-lbl{font-size:12px;color:var(--muted);white-space:nowrap;}
-.bankroll-input{
-  flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(0,240,255,0.15);
-  border-radius:8px;padding:8px 12px;color:var(--cyan);
-  font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:700;
-  outline:none;width:100%;
-}
-.bankroll-input:focus{border-color:var(--cyan);}
+  /* DISCLAIMER */
+  .disc { margin-top: 28px; padding: 14px 16px; background: rgba(255,61,87,0.04); border: 1px solid rgba(255,61,87,0.1); border-radius: 11px; font-size: 11px; color: #483838; text-align: center; line-height: 1.7; display: none; }
+  .disc.show { display: block; }
 
-/* ENRICHED DATA TAG */
-.data-tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px;}
-.dtag{
-  font-size:9px;letter-spacing:1px;text-transform:uppercase;
-  padding:2px 7px;border-radius:5px;
-  background:rgba(163,116,255,0.08);color:var(--purple);border:1px solid rgba(163,116,255,0.15);
-}
+  /* ERROR */
+  .err-box { padding: 14px 16px; background: rgba(255,61,87,0.06); border: 1px solid rgba(255,61,87,0.2); border-radius: 12px; font-size: 13px; color: var(--red); display: none; margin-bottom: 14px; line-height: 1.6; }
+  .err-box.show { display: block; }
 </style>
 </head>
 <body>
@@ -294,56 +160,50 @@ body{background:var(--bg);}
     <div class="date-pill">📅 <span id="today-fr"></span></div>
   </div>
 
-  <!-- API PANEL -->
-  <div class="panel">
-    <div class="panel-title">🔑 Clé API-Football</div>
-    <div class="panel-desc">
-      <strong>API-Football</strong> fournit les matchs en direct avec <strong>100 requêtes/jour gratuites</strong> (sans CB).<br/>
-      👉 Inscris-toi sur <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a>
-      → copie ta clé → colle-la ici.
+  <!-- AI MODE BANNER -->
+  <div class="ai-banner">
+    <div class="ai-dot"></div>
+    <div class="ai-text">
+      <strong>Mode IA Full Autonome</strong> — Claude recherche les vrais matchs du jour sur le web en temps réel, puis analyse chaque rencontre avec une méthodologie experte (forme, H2H, stats, blessures, cotes marché).
     </div>
-    <div class="input-row">
-      <input id="key-input" class="key-input" type="password" placeholder="Colle ta clé API-Football ici..."/>
-      <button class="btn-save" onclick="activateKey()">ACTIVER</button>
-    </div>
-    <div id="status-ok" class="key-status ok">✅ Clé activée — données live Football <span id="api-saved-badge" style="display:none;background:rgba(0,230,118,0.12);border:1px solid rgba(0,230,118,0.25);border-radius:8px;padding:2px 8px;font-size:10px;margin-left:6px;">💾 sauvegardée</span></div>
-    <div id="status-demo" class="key-status demo">🟣 Mode IA pur actif — analyse Claude sans données externes</div>
-    <div id="demo-link" class="demo-link" onclick="demoMode()" style="display:block;margin-top:10px;padding:8px 14px;background:rgba(163,116,255,0.08);border:1px solid rgba(163,116,255,0.2);border-radius:8px;color:var(--purple);font-size:12px;cursor:pointer;text-align:center;">→ Pas de clé API-Football ? Continuer en mode IA (Claude recherche les matchs seul)</div>
   </div>
 
-  <!-- CLAUDE API KEY PANEL -->
-  <div class="panel" style="background:rgba(163,116,255,0.04);border-color:rgba(163,116,255,0.25);margin-bottom:18px;">
-    <div class="panel-title" style="color:var(--purple);">🤖 Clé API Claude (Anthropic)</div>
-    <div class="panel-desc">
-      Nécessaire pour l'analyse IA. Obtiens ta clé sur <a href="https://console.anthropic.com/keys" target="_blank">console.anthropic.com/keys</a>.
-    </div>
-    <div class="input-row">
-      <input id="claude-key-input" class="key-input" type="password" placeholder="sk-ant-api03-..." style="border-color:rgba(163,116,255,0.2);"/>
-      <button class="btn-save" onclick="activateClaudeKey()" style="background:var(--purple);color:#fff;">ACTIVER</button>
-    </div>
-    <div id="claude-status-ok" class="key-status ok" style="display:none;">✅ Clé Claude activée — analyse IA prête <span id="claude-saved-badge" style="display:none;background:rgba(163,116,255,0.12);border:1px solid rgba(163,116,255,0.25);border-radius:8px;padding:2px 8px;font-size:10px;margin-left:6px;">💾 sauvegardée</span></div>
-  </div>
-
-  <!-- BANKROLL KELLY -->
+  <!-- BANKROLL -->
   <div class="bankroll-panel">
     <span class="bankroll-lbl">💰 Bankroll (€)</span>
-    <input id="bankroll-input" class="bankroll-input" type="number" value="1000" min="10" placeholder="Ex: 1000"/>
-    <span style="font-size:11px;color:var(--muted);white-space:nowrap;">→ Mise Kelly calculée sur chaque pick</span>
+    <input id="bankroll-input" class="bankroll-input" type="number" value="1000" min="10" placeholder="Ex: 1000">
+    <span style="font-size:11px;color:var(--muted);white-space:nowrap;">→ Mise Kelly calculée</span>
+  </div>
+
+  <!-- LEAGUE FILTER -->
+  <div class="league-filter" id="league-filter">
+    <button class="lf-btn active" data-league="all">🌍 Tous</button>
+    <button class="lf-btn" data-league="ligue1">🇫🇷 Ligue 1</button>
+    <button class="lf-btn" data-league="pl">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</button>
+    <button class="lf-btn" data-league="laliga">🇪🇸 La Liga</button>
+    <button class="lf-btn" data-league="bundesliga">🇩🇪 Bundesliga</button>
+    <button class="lf-btn" data-league="seriea">🇮🇹 Serie A</button>
+    <button class="lf-btn" data-league="champions">⭐ Champions</button>
+    <button class="lf-btn" data-league="europa">🟠 Europa</button>
   </div>
 
   <!-- GEN BUTTON -->
-  <button id="gen-btn" class="gen" onclick="generate()" disabled>
-    <span id="gen-label">ENTRE TA CLÉ CLAUDE POUR CONTINUER</span>
+  <button id="gen-btn" class="gen">
+    <span id="gen-label">🔍 ANALYSER LES MATCHS DU JOUR</span>
     <div id="gen-bar" class="gen-bar"></div>
   </button>
+
+  <!-- ERROR -->
+  <div id="err-box" class="err-box"></div>
 
   <!-- STEPS -->
   <div id="steps" class="steps"></div>
 
-  <!-- SOURCE BADGE + SUMMARY -->
-  <span id="badge-live" class="src-badge src-live"><span class="live-dot"></span>Matchs live API-Sports</span>
-  <span id="badge-demo" class="src-badge src-demo">🔍 Matchs recherchés en temps réel · Analyse Claude Expert</span>
-  <div id="summary" class="summary" style="grid-template-columns:repeat(4,1fr);">
+  <!-- SOURCE BADGE -->
+  <span id="badge-ai" class="src-badge src-ai">🤖 Matchs recherchés en temps réel · Analyse Claude Expert</span>
+
+  <!-- SUMMARY -->
+  <div id="summary" class="summary">
     <div class="sum-box"><div id="sum-sel" class="sum-val">—</div><div class="sum-lbl">Sélections</div></div>
     <div class="sum-box"><div id="sum-odds" class="sum-val" style="color:var(--gold)">—</div><div class="sum-lbl">Cote moy.</div></div>
     <div class="sum-box"><div id="sum-conf" class="sum-val" style="color:var(--green)">—</div><div class="sum-lbl">Confiance</div></div>
@@ -369,734 +229,284 @@ body{background:var(--bg);}
 </div>
 
 <script>
-// ── CONFIG ──
-const TODAY = new Date().toISOString().split("T")[0];
-const TODAY_FR = new Date().toLocaleDateString("fr-FR", {weekday:"long",day:"numeric",month:"long",year:"numeric"});
-document.getElementById("today-fr").textContent = TODAY_FR;
+// ── DATE ────────────────────────────────────────────────────────────────────
+const today = new Date();
+document.getElementById('today-fr').textContent = today.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
+const todayStr = today.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-const SPORT_CFG = {
-  host: "v3.football.api-sports.io",
-  endpoint: (date) => `https://v3.football.api-sports.io/fixtures?date=${date}&status=NS`,
-  parseMatches: (data) => (data.response || []).map(m => ({
-    home: m.teams?.home?.name,
-    away: m.teams?.away?.name,
-    league: m.league?.name,
-    time: m.fixture?.date?.substring(11,16),
-  })),
-  betTypes: ["1X2","Double Chance","Over/Under 2.5","BTTS Oui/Non","Corners +9.5","1ère mi-temps","Handicap Asian"],
-};
+// ── LEAGUE FILTER ────────────────────────────────────────────────────────────
+let selectedLeague = 'all';
+document.getElementById('league-filter').addEventListener('click', e => {
+  const btn = e.target.closest('.lf-btn');
+  if (!btn) return;
+  document.querySelectorAll('.lf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedLeague = btn.dataset.league;
+});
 
-// ── STATE ──
-let apiKey = "", keyOk = false, keySet = false, loading = false, claudeKey = "";
-// ── HELPERS ──
-const cc = p => p >= 73 ? "high" : p >= 61 ? "mid" : "low";
-const $ = id => document.getElementById(id);
-const getBankroll = () => parseFloat($("bankroll-input").value) || 1000;
-
-// ── SAUVEGARDE CLÉS (localStorage) ──
-function saveKeys() {
-  try {
-    if (apiKey) localStorage.setItem("scoutpro_apikey", apiKey);
-    if (claudeKey) localStorage.setItem("scoutpro_claudekey", claudeKey);
-  } catch(e) {}
+// ── STEPS UI ─────────────────────────────────────────────────────────────────
+function setStep(steps, idx, state) {
+  const el = document.getElementById('step-' + idx);
+  if (!el) return;
+  el.className = 'step ' + state;
+  const ico = el.querySelector('.step-ico');
+  const spin = el.querySelector('.step-spin');
+  if (state === 'active') { ico.style.display='none'; spin.style.display='block'; }
+  else { ico.style.display='block'; spin.style.display='none'; ico.textContent = state==='done' ? '✅' : steps[idx].ico; }
 }
 
-function loadSavedKeys() {
-  try {
-    const savedApi = localStorage.getItem("scoutpro_apikey");
-    const savedClaude = localStorage.getItem("scoutpro_claudekey");
-    if (savedApi) {
-      $("key-input").value = savedApi;
-      apiKey = savedApi; keyOk = true;
-      $("status-ok").style.display = "block";
-      $("status-demo").style.display = "none";
-      if ($("demo-link")) $("demo-link").style.display = "none";
-      showSavedBadge("api");
-    }
-    if (savedClaude) {
-      $("claude-key-input").value = savedClaude;
-      claudeKey = savedClaude;
-      $("claude-status-ok").style.display = "block";
-      showSavedBadge("claude");
-    }
-    checkReady();
-  } catch(e) {}
+function renderSteps(steps) {
+  const el = document.getElementById('steps');
+  el.innerHTML = steps.map((s,i) =>
+    `<div class="step" id="step-${i}">
+      <span class="step-ico">${s.ico}</span>
+      <div class="step-spin" style="display:none"></div>
+      <span>${s.label}</span>
+    </div>`
+  ).join('');
 }
 
-function showSavedBadge(type) {
-  const id = type === "api" ? "api-saved-badge" : "claude-saved-badge";
-  const el = $(id);
-  if (el) el.style.display = "inline";
+// ── KELLY ────────────────────────────────────────────────────────────────────
+function kelly(prob, odds, bankroll) {
+  const b = odds - 1;
+  const q = 1 - prob;
+  const k = Math.max(0, (b * prob - q) / b);
+  return Math.min(k * 0.5, 0.05) * bankroll; // demi-Kelly, cap 5%
 }
 
-function setKeySet(val) {
-  keySet = val;
-  $("gen-btn").disabled = !val || loading;
-  if (val) $("gen-label").textContent = "🔎 ANALYSER LES MATCHS FOOTBALL DU JOUR";
-}
+// ── RENDER CARD ───────────────────────────────────────────────────────────────
+function confClass(c) { return c >= 70 ? 'high' : c >= 50 ? 'mid' : 'low'; }
+function vbClass(ev) { return ev > 5 ? 'vb-good' : ev > 0 ? 'vb-ok' : 'vb-bad'; }
+function vbLabel(ev) { return ev > 5 ? '🔥 Value Bet' : ev > 0 ? '⚡ Légère Value' : '⚠️ Peu de Value'; }
 
-function activateKey() {
-  const k = $("key-input").value.trim();
-  if (!k) return;
-  apiKey = k; keyOk = true;
-  saveKeys();
-  $("status-ok").style.display = "block";
-  $("status-demo").style.display = "none";
-  $("demo-link").style.display = "none";
-  showSavedBadge("api");
-  checkReady();
-}
-
-function activateClaudeKey() {
-  const k = $("claude-key-input").value.trim();
-  if (!k) return;
-  claudeKey = k;
-  saveKeys();
-  $("claude-status-ok").style.display = "block";
-  showSavedBadge("claude");
-  checkReady();
-}
-
-function checkReady() {
-  if (claudeKey) setKeySet(true);
-}
-
-function demoMode() {
-  keyOk = false;
-  $("status-demo").style.display = "block";
-  $("status-ok").style.display = "none";
-  $("demo-link").style.display = "none";
-  if (claudeKey) setKeySet(true);
-}
-
-// ── STEPS ──
-let stepsEl, stepsData = [];
-
-function initUI() {
-  stepsEl = $("steps");
-
-  // Listeners clavier
-  $("key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateKey(); });
-  $("claude-key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateClaudeKey(); });
-
-  // Auto-activation dès que la clé Claude est remplie (utile si la clé est collée)
-  $("claude-key-input").addEventListener("input", () => {
-    const k = $("claude-key-input").value.trim();
-    if (k.length > 20) {
-      claudeKey = k;
-      $("claude-status-ok").style.display = "block";
-      checkReady();
-    }
-  });
-
-  // Charger les clés sauvegardées
-  loadSavedKeys();
-}
-
-window.addEventListener("DOMContentLoaded", initUI);
-
-function addStep(label, state) {
-  const existing = stepsData.find(s => s.label === label);
-  if (existing) existing.state = state;
-  else stepsData.push({label, state});
-  renderSteps();
-}
-
-function renderSteps() {
-  if (!stepsEl) stepsEl = $("steps");
-  stepsEl.style.display = stepsData.length ? "flex" : "none";
-  stepsEl.innerHTML = stepsData.map(s => `
-    <div class="step ${s.state}">
-      <div class="step-dot"></div>
-      ${s.label}
+function renderCard(m, idx, bankroll) {
+  const cc = confClass(m.confidence);
+  const ev = ((m.prob_win / 100) * m.odds - 1) * 100;
+  const evStr = (ev > 0 ? '+' : '') + ev.toFixed(1) + '%';
+  const kellyMise = kelly(m.prob_win / 100, m.odds, bankroll).toFixed(0);
+  const tags = (m.data_sources || []).map(t => `<span class="dtag">${t}</span>`).join('');
+  
+  return `
+  <div class="card" style="animation-delay:${idx*0.08}s">
+    <div class="card-top ${cc}"></div>
+    <div class="ch">
+      <div class="ch-n">${String(idx+1).padStart(2,'0')}</div>
+      <div class="ch-m">
+        <div class="ch-league">${m.league || ''}</div>
+        <div class="ch-sport">${m.competition || 'Football'}</div>
+        <div class="ch-match">${m.match}</div>
+        <div class="ch-time">${m.time}</div>
+      </div>
     </div>
-  `).join("");
+    <div class="vb-badge ${vbClass(ev)}">${vbLabel(ev)}</div>
+    <div class="bet">
+      <div>
+        <div class="bet-lbl">Sélection</div>
+        <div class="bet-pick">${m.pick}</div>
+      </div>
+      <div class="bet-cote">${m.odds.toFixed(2)}</div>
+    </div>
+    <div class="kelly-row">
+      <span class="kelly-lbl">💰 Mise Kelly recommandée</span>
+      <span class="kelly-val">${kellyMise}€</span>
+    </div>
+    <div class="stats">
+      <div class="sb"><div class="sb-l">Prob. réelle</div><div class="sb-v c">${m.prob_win}%</div></div>
+      <div class="sb"><div class="sb-l">Forme dom.</div><div class="sb-v g">${m.home_form || '—'}</div></div>
+      <div class="sb"><div class="sb-l">Forme ext.</div><div class="sb-v" style="color:var(--gold)">${m.away_form || '—'}</div></div>
+    </div>
+    <div class="conf-bg"><div class="conf-fill ${cc}" style="width:${m.confidence}%"></div></div>
+    <div class="conf-row">
+      <span>Confiance</span>
+      <span class="cp ${cc}">${m.confidence}%</span>
+    </div>
+    <div class="ana">
+      <div class="ana-lbl">Analyse Expert</div>
+      ${m.analysis}
+      ${tags ? `<div class="data-tags">${tags}</div>` : ''}
+    </div>
+  </div>`;
 }
 
-// ── API FETCH — ANTI-CORS (3 stratégies) ──
-async function fetchWithCors(url, headers) {
-  // Stratégie 1 : appel direct (fonctionne si CORS autorisé ou extension)
-  try {
-    const r = await fetch(url, { headers, signal: AbortSignal.timeout(6000) });
-    if (r.ok) return r.json();
-  } catch(_) {}
+// ── MAIN CALL TO CLAUDE API ───────────────────────────────────────────────────
+async function analyzeMatches() {
+  const bankroll = parseFloat(document.getElementById('bankroll-input').value) || 1000;
+  const btn = document.getElementById('gen-btn');
+  const label = document.getElementById('gen-label');
+  const bar = document.getElementById('gen-bar');
+  const errBox = document.getElementById('err-box');
+  
+  btn.disabled = true;
+  errBox.className = 'err-box';
+  document.getElementById('empty').style.display = 'none';
+  document.getElementById('grid').innerHTML = '';
+  document.getElementById('summary').className = 'summary';
+  document.getElementById('badge-ai').className = 'src-badge src-ai';
+  document.getElementById('disc').className = 'disc';
 
-  // Stratégie 2 : proxy corsproxy.io
-  try {
-    const proxied = "https://corsproxy.io/?" + encodeURIComponent(url);
-    const r2 = await fetch(proxied, { headers, signal: AbortSignal.timeout(8000) });
-    if (r2.ok) return r2.json();
-  } catch(_) {}
+  const leagueMap = {
+    all: 'toutes les grandes ligues européennes (Ligue 1, Premier League, La Liga, Bundesliga, Serie A, Champions League, Europa League)',
+    ligue1: 'Ligue 1 (France)',
+    pl: 'Premier League (Angleterre)',
+    laliga: 'La Liga (Espagne)',
+    bundesliga: 'Bundesliga (Allemagne)',
+    seriea: 'Serie A (Italie)',
+    champions: 'UEFA Champions League',
+    europa: 'UEFA Europa League'
+  };
+  const leagueLabel = leagueMap[selectedLeague] || 'toutes les ligues';
 
-  // Stratégie 3 : proxy allorigins
-  try {
-    const proxied2 = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const r3 = await fetch(proxied2, { signal: AbortSignal.timeout(8000) });
-    if (r3.ok) {
-      const wrap = await r3.json();
-      return JSON.parse(wrap.contents);
+  const steps = [
+    { ico: '🔍', label: 'Recherche des matchs du jour sur le web...' },
+    { ico: '📊', label: 'Collecte des stats, forme, H2H, blessures...' },
+    { ico: '🧠', label: 'Analyse probabiliste et calcul des value bets...' },
+    { ico: '⚡', label: 'Génération des picks finaux et mises Kelly...' },
+  ];
+  renderSteps(steps);
+
+  // Animate bar
+  let barWidth = 0;
+  const barInterval = setInterval(() => {
+    barWidth = Math.min(barWidth + 0.4, 90);
+    bar.style.width = barWidth + '%';
+  }, 200);
+
+  setStep(steps, 0, 'active');
+  label.textContent = 'ANALYSE EN COURS...';
+
+  const todayDate = today.toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
+  const todayISO = today.toISOString().split('T')[0];
+
+  const prompt = `Tu es Scout Pro, un expert en analyse football et paris sportifs. 
+
+DATE AUJOURD'HUI : ${todayDate} (${todayISO})
+LIGUES DEMANDÉES : ${leagueLabel}
+
+MISSION EN 2 ÉTAPES :
+
+**ÉTAPE 1 - RECHERCHE WEB** : Utilise l'outil web_search pour chercher les vrais matchs de football du jour ${todayDate} dans ces ligues. Cherche activement :
+- "matchs football ${todayISO} programme"
+- "fixtures ${selectedLeague === 'all' ? 'top 5 leagues' : leagueLabel} today ${todayISO}"
+- Pour chaque match trouvé : cherche la forme récente des équipes, les confrontations directes H2H, les blessures/absences importantes, les statistiques clés
+- Cherche aussi les cotes actuelles sur les bookmakers (Bet365, Betclic, etc.)
+
+**ÉTAPE 2 - ANALYSE EXPERTE** : Pour chaque match pertinent trouvé (minimum 5-8 matchs), génère une analyse complète et calcule les value bets.
+
+RÉPONDS UNIQUEMENT avec un JSON valide, aucun texte avant ou après, sans backticks, format exact :
+
+{
+  "matches": [
+    {
+      "match": "Équipe A vs Équipe B",
+      "league": "🇫🇷 Ligue 1",
+      "competition": "Ligue 1 - J28",
+      "time": "21:00",
+      "pick": "Description claire du pari (ex: Victoire Équipe A, BTTS Oui, +2.5 buts)",
+      "odds": 1.85,
+      "prob_win": 62,
+      "confidence": 74,
+      "home_form": "WDWWL",
+      "away_form": "LWDWW",
+      "analysis": "Analyse détaillée en 3-4 phrases : forme des équipes, H2H, absences, contexte, pourquoi ce pari a de la valeur. Sois précis avec des données réelles trouvées sur le web.",
+      "data_sources": ["Forme vérifiée", "H2H analysé", "Blessures vérifiées", "Cotes marché"]
     }
-  } catch(_) {}
-
-  throw new Error("CORS_BLOCKED");
+  ]
 }
 
-async function fetchLive(key) {
-  const url = SPORT_CFG.endpoint(TODAY);
-  const headers = { "x-apisports-key": key };
+Règles d'or :
+- UNIQUEMENT des vrais matchs du ${todayDate} (pas inventés)
+- Si un match est trouvé mais avec peu d'infos : l'inclure quand même avec les données disponibles
+- Les cotes doivent être réalistes (1.40 à 4.50 pour les sélections)
+- Probabilité réelle = estimation honnête, pas la cote bookmaker inversée
+- Edge = (prob_win/100 * odds - 1) * 100 > 0 pour un value bet
+- Inclure uniquement les matchs avec au moins 50% de confiance
+- Analyse en français, détaillée et basée sur des faits réels`;
+
   try {
-    const data = await fetchWithCors(url, headers);
-    if (data.errors && Object.keys(data.errors).length) {
-      const errMsg = Object.values(data.errors)[0];
-      throw new Error("Clé invalide : " + errMsg);
+    setStep(steps, 0, 'done');
+    setStep(steps, 1, 'active');
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 4000,
+        tools: [{ type: 'web_search_20250305', name: 'web_search' }],
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.error?.message || `Erreur API ${response.status}`);
     }
-    if (!Array.isArray(data.response)) throw new Error("Réponse inattendue");
-    if (data.response.length === 0) throw new Error("NO_MATCHES");
-    return SPORT_CFG.parseMatches(data);
+
+    setStep(steps, 1, 'done');
+    setStep(steps, 2, 'active');
+
+    const data = await response.json();
+
+    setStep(steps, 2, 'done');
+    setStep(steps, 3, 'active');
+
+    // Extract text from response (handles tool_use intermediate steps)
+    const textBlocks = data.content.filter(b => b.type === 'text').map(b => b.text);
+    const fullText = textBlocks.join('\n');
+
+    // Parse JSON
+    let parsed;
+    try {
+      // Find JSON in the response
+      const jsonMatch = fullText.match(/\{[\s\S]*"matches"[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('Format JSON non trouvé dans la réponse');
+      const clean = jsonMatch[0].replace(/```json|```/g,'').trim();
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      throw new Error('Erreur de parsing JSON : ' + e.message + '\nRéponse reçue : ' + fullText.slice(0,200));
+    }
+
+    setStep(steps, 3, 'done');
+
+    const matches = parsed.matches || [];
+    if (!matches.length) throw new Error('Aucun match trouvé pour aujourd\'hui dans ces ligues.');
+
+    clearInterval(barInterval);
+    bar.style.width = '100%';
+
+    // Render
+    document.getElementById('badge-ai').className = 'src-badge src-ai show';
+    document.getElementById('grid').innerHTML = matches.map((m, i) => renderCard(m, i, bankroll)).join('');
+    document.getElementById('disc').className = 'disc show';
+
+    // Summary
+    const avgOdds = (matches.reduce((s,m) => s + m.odds, 0) / matches.length).toFixed(2);
+    const avgConf = Math.round(matches.reduce((s,m) => s + m.confidence, 0) / matches.length);
+    const avgEv = ((matches.reduce((s,m) => s + ((m.prob_win/100)*m.odds-1)*100, 0) / matches.length)).toFixed(1);
+    document.getElementById('sum-sel').textContent = matches.length;
+    document.getElementById('sum-odds').textContent = avgOdds;
+    document.getElementById('sum-conf').textContent = avgConf + '%';
+    document.getElementById('sum-ev').textContent = (avgEv > 0 ? '+' : '') + avgEv + '%';
+    document.getElementById('summary').className = 'summary show';
+
+    label.textContent = '🔄 RELANCER L\'ANALYSE';
+
   } catch(e) {
-    if (e.message === "CORS_BLOCKED") throw new Error("CORS_BLOCKED");
-    if (e.message === "NO_MATCHES") throw new Error("NO_MATCHES");
-    throw e;
-  }
-}
-
-// ── DONNÉES ENRICHIES EXPERT ──
-function buildEnrichedContext(matches) {
-  const weatherPool = [
-    "Pelouse sèche · Conditions idéales · Pas de vent",
-    "Pluie légère prévue · Terrain légèrement lourd · Peut favoriser la possession",
-    "Vent >35km/h · Impact sur les centres et coups de pied arrêtés",
-    "Terrain lourd post-pluie · Jeu lent · Favorise équipes physiques",
-    "Stade couvert · Conditions neutres · Aucun impact météo"
-  ];
-  const weather = weatherPool[Math.floor(Math.random() * weatherPool.length)];
-
-  const formsHome = ["WWWDW","WWWLW","WDWWW","WWWWD","DWWWW","WWLWW","WDWDW","LWWWW","WWDWW","WDWWL"];
-  const formsAway = ["WDWLL","DWWDL","LDWDW","WLLWW","DDWLL","LWWLL","DWLDW","WDLWL","LLDWW","DWLLD"];
-  const h2hPool = [
-    "Domicile s'impose dans 4/5 dernières confrontations directes",
-    "Nul très fréquent entre ces équipes (3/5 derniers matchs)",
-    "Extérieur crée la surprise régulièrement : 3 victoires sur 5",
-    "Domicile invaincu à domicile contre cet adversaire sur 5 matchs",
-    "Matchs très fermés : moins de 2.5 buts dans 4/5 H2H récents",
-    "Historique équilibré : 2V-1N-2D sur les 5 dernières confrontations",
-    "Domicile gagne mais souvent de justesse",
-    "Moins de 1.5 buts dans 3/5 derniers H2H — matchs tactiques fermés"
-  ];
-  const contextPool = [
-    "Match décisif pour le titre / Top 4 — forte pression des deux équipes",
-    "Équipe domicile en crise (3 défaites consécutives) — doit réagir",
-    "Leader au classement (+6 pts) — match de gestion sans prise de risque",
-    "Relégable reçoit un Top 6 — esprit de battant mais qualité insuffisante",
-    "Derby régional à fort enjeu émotionnel — schémas tactiques perturbés",
-    "Semaine chargée (Coupe + Championnat) — possible rotation d'effectif",
-    "Équipe extérieure en pleine confiance : 4 victoires consécutives",
-    "Domicile privé de 2 titulaires clés (suspension + blessure)",
-    "Extérieur avec rien à jouer — pression minimale, jeu libéré possible",
-    "Match de préparation Coupe Europe — priorité différente pour un club"
-  ];
-  const standingsPool = [
-    "1er vs 8e — écart de 9 pts au classement",
-    "3e vs 5e — séparés de 3 pts dans le Top 5",
-    "12e vs 15e — mid-table, peu d'enjeu immédiat",
-    "2e vs 4e — course au podium directe",
-    "17e vs 11e — zone rouge reçoit équipe établie",
-    "6e vs 9e — lutte pour l'Europe",
-    "16e vs 18e — finale de survie pour les deux",
-    "7e vs 2e — outsider contre prétendant au titre"
-  ];
-
-  const enriched = matches.slice(0,25).map((m, i) => {
-    const fh = formsHome[i % formsHome.length];
-    const fa = formsAway[i % formsAway.length];
-    const h2h = h2hPool[i % h2hPool.length];
-    const ctx = contextPool[i % contextPool.length];
-    const stand = standingsPool[i % standingsPool.length];
-    const goalsH = [8,11,7,9,6,10,5,12,8,7][i%10];
-    const concH = [3,5,4,2,6,3,7,4,5,3][i%10];
-    const goalsA = [5,4,7,3,8,4,6,5,3,9][i%10];
-    const concA = [6,7,5,8,4,7,5,6,9,4][i%10];
-    return `MATCH ${i+1}: ${m.home} vs ${m.away}
-  Ligue: ${m.league||"Championnat Européen"} | Heure: ${m.time||"20:00"}
-  Classement: ${stand}
-  Forme dom (5 der.): ${fh} | Buts: ${goalsH} marqués / ${concH} encaissés
-  Forme ext (5 der.): ${fa} | Buts: ${goalsA} marqués / ${concA} encaissés
-  H2H récent: ${h2h}
-  Contexte: ${ctx}`;
-  }).join("\n\n");
-
-  return { enriched, weather };
-}
-
-// ── JSON REPAIR ──
-function repairJSON(raw) {
-  let txt = raw.replace(/```json|```/g, "").trim();
-  try { return JSON.parse(txt); } catch(_) {}
-  try {
-    const eventsStart = txt.indexOf('"events"');
-    if (eventsStart === -1) throw new Error("No events key");
-    let arrStart = txt.indexOf("[", eventsStart);
-    if (arrStart === -1) throw new Error("No array");
-    let depth = 0, inStr = false, escape = false, lastCompleteEnd = arrStart;
-    for (let i = arrStart; i < txt.length; i++) {
-      const c = txt[i];
-      if (escape) { escape = false; continue; }
-      if (c === "\\" && inStr) { escape = true; continue; }
-      if (c === '"') { inStr = !inStr; continue; }
-      if (inStr) continue;
-      if (c === "{") depth++;
-      if (c === "}") { depth--; if (depth === 0) lastCompleteEnd = i + 1; }
-    }
-    const cleanArr = txt.substring(arrStart, lastCompleteEnd).replace(/,\s*$/, "");
-    return JSON.parse(`{"events":${cleanArr}]}`);
-  } catch(_) { throw new Error("JSON illisible — réessaie"); }
-}
-
-// ── CALL CLAUDE — EXPERT MODE AVEC WEB SEARCH ──
-const SYSTEM_EXPERT = "Tu es un analyste expert en paris sportifs football de niveau professionnel. Tu appliques une méthodologie rigoureuse basée sur les probabilités réelles, la détection de value bets et la gestion de bankroll Kelly. Tes analyses sont factuelles, précises et basées sur des données réelles. Tu ne gonfles jamais artificiellement la confiance — la précision est ta priorité absolue.";
-
-async function rawApiCall(messages, tools, systemExtra = "") {
-  const body = {
-    model: "claude-sonnet-4-20250514",
-    max_tokens: 8000,
-    system: SYSTEM_EXPERT + systemExtra,
-    messages,
-    temperature: 0.3,
-  };
-  if (tools && tools.length) body.tools = tools;
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": claudeKey,
-      "anthropic-version": "2023-06-01",
-      "anthropic-dangerous-direct-browser-access": "true"
-    },
-    body: JSON.stringify(body)
-  });
-  const d = await r.json();
-  if (d.error) throw new Error(d.error.message || "Erreur Claude : " + JSON.stringify(d.error));
-  return d;
-}
-
-// ── PASSE 1 : recherche web avec gestion du cycle tool_use complet ──
-async function searchMatchesToday() {
-  const WEB_TOOLS = [{ type: "web_search_20250305", name: "web_search" }];
-  const searchQuery = `football matches today ${TODAY} schedule Premier League Serie A LaLiga Bundesliga Ligue1 Champions League`;
-
-  let messages = [{
-    role: "user",
-    content: `Recherche les matchs de football programmés aujourd'hui ${TODAY}. 
-Fais une recherche web avec : "${searchQuery}"
-Puis liste TOUS les matchs trouvés sous ce format exact (un par ligne) :
-MATCH: [Équipe domicile] vs [Équipe extérieure] | [Compétition] | [Heure locale]
-Ne manque aucun match important. Inclus Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League.`
-  }];
-
-  // Cycle tool_use : max 4 tours pour laisser Claude finir sa recherche
-  for (let turn = 0; turn < 4; turn++) {
-    const resp = await rawApiCall(messages, WEB_TOOLS);
-
-    // Ajouter la réponse assistant à l'historique
-    messages.push({ role: "assistant", content: resp.content });
-
-    // Si Claude a fini (end_turn ou pas de tool_use) → extraire le texte
-    const hasToolUse = (resp.content || []).some(b => b.type === "tool_use");
-    if (!hasToolUse || resp.stop_reason === "end_turn") {
-      const txt = (resp.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
-      return txt;
-    }
-
-    // Construire les tool_result pour chaque outil appelé
-    const toolResults = (resp.content || [])
-      .filter(b => b.type === "tool_use")
-      .map(b => ({
-        type: "tool_result",
-        tool_use_id: b.id,
-        content: b.input ? JSON.stringify(b.input) : "Recherche effectuée"
-      }));
-
-    messages.push({ role: "user", content: toolResults });
-  }
-
-  // Fallback : extraire le dernier texte disponible
-  const last = messages.filter(m => m.role === "assistant").pop();
-  if (last) {
-    const blocks = Array.isArray(last.content) ? last.content : [];
-    return blocks.filter(b => b.type === "text").map(b => b.text).join("\n");
-  }
-  return "";
-}
-
-// callClaude inline dans generate()
-
-// ── VALIDATION & SCORING DES RÉSULTATS ──
-function mergeByConsensus(results) {
-  const valid = results.filter(r => r && r.events && r.events.length > 0);
-  if (valid.length === 0) throw new Error("Aucune sélection générée — réessaie");
-  // Scoring de qualité sur chaque événement
-  valid[0].events = valid[0].events.map(e => {
-    const prob = parseFloat(e.prob_model) || 0.65;
-    const odds = parseFloat(e.odds) || 1.70;
-    const conf = parseInt(e.confidence) || 65;
-    // Score composite : edge + confiance + cohérence cote/prob
-    const probImpliedOdds = 1 / odds;
-    const edge = prob - probImpliedOdds;
-    const coherence = Math.abs(prob - conf/100) < 0.15 ? 1 : 0.85; // Pénalise l'incohérence prob/conf
-    const qualityScore = Math.round((edge * 100 * 0.4 + conf * 0.4 + coherence * 20));
-    return {...e, qualityScore, edge_pct: Math.round(edge * 100)};
-  });
-  // Trier par score qualité décroissant
-  valid[0].events.sort((a, b) => (b.qualityScore||0) - (a.qualityScore||0));
-  return valid[0];
-}
-
-// ── DÉTECTEUR VALUE BET EXPERT ──
-function calcValueBet(prob_model, odds_market) {
-  const o = parseFloat(odds_market);
-  const prob_market = 1 / o; // prob implicite bookmaker (inclut marge ~5%)
-  const prob_true = parseFloat(prob_model);
-  const edge = prob_true - prob_market;
-  // EV = Expected Value par unité misée
-  const ev = (prob_true * (o - 1)) - (1 - prob_true);
-  // ROI théorique sur 100 paris identiques
-  const roi = Math.round(ev * 100);
-  // Niveau de value
-  let label, cls;
-  if (edge > 0.15)      { label = "🔥 EDGE EXCEPTIONNEL"; cls = "vb-good"; }
-  else if (edge > 0.10) { label = "💎 FORTE VALUE";       cls = "vb-good"; }
-  else if (edge > 0.06) { label = "✅ VALUE POSITIVE";    cls = "vb-ok";   }
-  else if (edge > 0.02) { label = "〰️ Légèrement +EV";   cls = "vb-ok";   }
-  else if (edge > -0.02){ label = "⚖️ Neutre";            cls = "vb-bad";  }
-  else                  { label = "❌ Surcôté — éviter";  cls = "vb-bad";  }
-  return {
-    edge: Math.round(edge * 100),
-    ev: ev.toFixed(3),
-    roi,
-    isValue: edge > 0.06 && ev > 0,
-    label, cls
-  };
-}
-
-// ── KELLY CRITERION — FRACTION 1/4 (gestion de risque conservative) ──
-function kellyStake(prob, odds, bankroll, fraction = 0.25) {
-  const o = parseFloat(odds);
-  const b = o - 1;         // gain net par unité
-  const q = 1 - prob;      // prob de perdre
-  const kelly = (b * prob - q) / b; // Kelly full
-  if (kelly <= 0) return 0; // Kelly négatif = ne pas parier
-  const fractKelly = kelly * fraction; // Kelly fractionné ÷4 = beaucoup plus conservateur
-  const maxBet = bankroll * 0.04;     // Plafond absolu : 4% de la bankroll
-  const mise = Math.min(bankroll * fractKelly, maxBet);
-  return Math.round(Math.max(0, mise) * 100) / 100;
-}
-
-// ── PROMPT EXPERT DOUBLE-PASSE ──
-function buildPrompt(matches, weather) {
-  const betList = SPORT_CFG.betTypes.join(", ");
-  const now = new Date();
-  const dayName = now.toLocaleDateString("fr-FR", {weekday:"long"});
-  const dateStr = now.toLocaleDateString("fr-FR", {day:"numeric", month:"long", year:"numeric"});
-
-  let matchSection;
-  if (matches.length > 0) {
-    const { enriched } = buildEnrichedContext(matches);
-    matchSection = `=== DONNÉES LIVE API-FOOTBALL (${matches.length} matchs) ===
-${enriched}`;
-  } else {
-    matchSection = `=== MODE EXPERT IA AUTONOME ===
-Date exacte : ${dayName} ${dateStr} (${TODAY})
-Tu dois identifier les VRAIS matchs programmés ce jour dans les championnats majeurs :
-Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League, Conference League.
-Utilise UNIQUEMENT des équipes réelles et des rencontres réalistes pour cette journée de la saison.
-Présente 12 à 15 matchs candidats avant de sélectionner les 10 meilleurs paris.`;
-  }
-
-  return `Tu es un ANALYSTE EXPERT en paris sportifs football de niveau professionnel.
-Ton objectif : produire 10 sélections à très haute probabilité de réussite (minimum 72% de confiance réelle).
-Date : ${dayName} ${dateStr} | Météo/terrain : ${weather || "Conditions standards"}
-
-${matchSection}
-
-═══════════════════════════════════════════════
-MÉTHODOLOGIE EXPERTE — APPLIQUE CHAQUE ÉTAPE :
-═══════════════════════════════════════════════
-
-ÉTAPE 1 — ANALYSE PROBABILISTE PAR MATCH :
-Pour chaque match, calcule mentalement :
-• P(domicile gagne) / P(nul) / P(extérieur gagne) selon forme, H2H, classement, enjeu
-• Efficacité offensive et défensive (buts marqués/encaissés sur les 5 derniers matchs)
-• Impact psychologique : pression, motivation, fatigue, rotation probable
-• Calcul prob_model = probabilité réelle estimée (non biaisée par les cotes)
-
-ÉTAPE 2 — DÉTECTION VALUE BET :
-• Prob implicite bookmaker = 1 / cote (inclut marge ~5-8%)
-• Edge = prob_model - prob_implicite_cote
-• Ne retenir QUE les paris avec edge > +5% (valeur réelle positive)
-• Rejeter tout pari où prob_model < prob_implicite (pari sans valeur)
-
-ÉTAPE 3 — DIVERSIFICATION DES MARCHÉS :
-Varier obligatoirement entre : 1X2, Double Chance, Over/Under 2.5, BTTS, Corners, 1ère mi-temps, Handicap Asian
-• Préférer Over 2.5 si les deux équipes ont attaque forte + défense faible
-• Préférer Under 2.5 / BTTS Non si les équipes sont défensivement solides
-• Préférer Double Chance si match déséquilibré avec outsider imprévisible
-• Préférer 1X2 Domicile si forme récente ≥ 3W sur 5 + avantage H2H + enjeu clair
-
-ÉTAPE 4 — FILTRAGE STRICT QUALITÉ :
-• Exclure les matchs avec trop d'incertitude (derby électrique, équipe en rotation, enjeu = 0 des deux côtés)
-• Exclure les marchés avec variance trop haute (Corners seuls si match imprévisible)
-• Score de confiance RÉEL : 55-70% = acceptable / 71-80% = bonne sélection / 81-88% = sélection premium
-• Ne jamais artificiellement gonfler la confiance — sois honnête sur les probabilités
-
-═══════════════════════════════════════════════
-FORMAT DE RÉPONSE — JSON STRICT UNIQUEMENT :
-═══════════════════════════════════════════════
-Réponds UNIQUEMENT avec le JSON ci-dessous. Zéro texte avant, zéro texte après, zéro markdown.
-{"events":[{"num":1,"sport":"football","match":"Équipe A vs Équipe B","league":"Premier League","time":"20:45","bet_type":"Double Chance","pick":"1X — Domicile ou Nul","odds":1.55,"confidence":78,"prob_model":0.76,"form_home":"WWDWW","form_away":"LWLWL","h2h_stat":"Dom. 4/5 H2H récents","injuries":"Défenseur central ext. absent","analysis":"Domicile solide à domicile, extérieur en crise défensive, edge +12%"}]}
-
-RÈGLES ABSOLUES :
-• Exactement 10 événements dans le tableau events
-• odds entre 1.25 et 2.20 (seulement des paris à haute probabilité)
-• confidence entre 55 et 88 (jamais au-delà — crédibilité avant tout)
-• prob_model entre 0.52 et 0.91 (cohérent avec confidence ± 5%)
-• analysis : 1 phrase max 120 chars incluant le facteur clé + edge estimé
-• Varier les bet_type sur les 10 sélections (pas plus de 3 du même type)
-• Types disponibles : ${betList}`;
-}
-
-// ── RENDER CARDS (avec améliorations 3 & 4) ──
-function renderCards(events) {
-  const grid = $("grid");
-  grid.innerHTML = "";
-  $("empty").style.display = "none";
-  $("summary").style.display = "grid";
-  $("disc").style.display = "block";
-
-  const bankroll = getBankroll();
-  const avgOdds = (events.reduce((a,e) => a + parseFloat(e.odds||1.7), 0) / events.length).toFixed(2);
-  const avgConf = Math.round(events.reduce((a,e) => a + (e.confidence||65), 0) / events.length);
-
-  // Calcul edge moyen pour le résumé
-  const avgEdge = events.reduce((a,e) => {
-    const prob = e.prob_model || (e.confidence / 100) * 0.85;
-    const vb = calcValueBet(prob, e.odds || 1.70);
-    return a + vb.edge;
-  }, 0) / events.length;
-
-  $("sum-sel").textContent = events.length;
-  $("sum-odds").textContent = "@" + avgOdds;
-  $("sum-conf").textContent = avgConf + "%";
-  $("sum-ev").textContent = (avgEdge > 0 ? "+" : "") + Math.round(avgEdge) + "%";
-
-  events.forEach((ev, i) => {
-    const conf = ev.confidence || 65;
-    const cls = cc(conf);
-    const prob = ev.prob_model || (conf / 100) * 0.85;
-    const odds = parseFloat(ev.odds || 1.70);
-
-    // AMÉLIORATION 3 : Value bet
-    const vb = calcValueBet(prob, odds);
-
-    // AMÉLIORATION 4 : Kelly
-    const mise = kellyStake(prob, odds, bankroll);
-
-    // AMÉLIORATION 1 : Badge consensus
-    const consensusN = ev.consensus || 1;
-    const totalModels = ev.models_used || 1;
-    const consensusCls = consensusN >= totalModels ? "consensus-high" : "consensus-med";
-    const consensusLabel = totalModels > 1
-      ? `<span class="consensus-badge ${consensusCls}">🤖 ${consensusN}/${totalModels} modèles</span>`
-      : "";
-
-    const card = document.createElement("div");
-    card.className = "card";
-    card.style.animationDelay = (i * 50) + "ms";
-    card.innerHTML = `
-      <div class="card-top ${cls}"></div>
-      <div class="ch">
-        <div class="ch-n">#${ev.num || i+1}</div>
-        <div class="ch-m">
-          <div class="ch-sport">⚽ FOOTBALL · ${ev.league||""}</div>
-          <div class="ch-match">${ev.match||""} ${consensusLabel}</div>
-        </div>
-        <div class="ch-time">${ev.time||""}</div>
-      </div>
-
-      <!-- VALUE BET BADGE -->
-      <div class="vb-badge ${vb.cls}">${vb.label} · Edge : ${vb.edge > 0 ? "+" : ""}${vb.edge}% · ROI th. : ${vb.roi > 0 ? "+" : ""}${vb.roi}%</div>
-
-      <div class="bet">
-        <div>
-          <div class="bet-lbl">${ev.bet_type||""}</div>
-          <div class="bet-pick">${ev.pick||""}</div>
-        </div>
-        <div class="bet-cote">@${odds.toFixed(2)}</div>
-      </div>
-
-      <!-- KELLY MISE -->
-      ${mise > 0 ? `
-      <div class="kelly-row">
-        <div><div class="kelly-lbl">💰 Mise Kelly recommandée</div><div style="font-size:10px;color:var(--muted)">Bankroll ${bankroll.toLocaleString("fr-FR")}€ · Kelly ×0.25</div></div>
-        <div class="kelly-val">${mise.toFixed(2)} €</div>
-      </div>` : ""}
-
-      <div class="stats">
-        <div class="sb"><div class="sb-l">Forme Dom.</div><div class="sb-v c" style="font-size:11px;letter-spacing:1.5px">${ev.form_home||"WWDLW"}</div></div>
-        <div class="sb"><div class="sb-l">Forme Ext.</div><div class="sb-v c" style="font-size:11px;letter-spacing:1.5px">${ev.form_away||"DWWLL"}</div></div>
-        <div class="sb"><div class="sb-l">H2H</div><div class="sb-v g" style="font-size:11px">${ev.h2h_stat||"3/5 ✓"}</div></div>
-      </div>
-
-      <!-- DATA ENRICHIES -->
-      <div class="data-tags">
-        <span class="dtag">📊 Prob. modèle : ${Math.round(prob*100)}%</span>
-        <span class="dtag">📉 Prob. cote : ${Math.round((1/odds)*100)}%</span>
-        ${ev.injuries ? `<span class="dtag">⚕️ ${ev.injuries}</span>` : ""}
-      </div>
-
-      <div class="conf-bg" style="margin-top:10px"><div class="conf-fill ${cls}" style="width:${conf}%"></div></div>
-      <div class="conf-row"><span>Indice de confiance</span><span class="cp ${cls}">${conf}%</span></div>
-      ${ev.analysis ? `<div class="ana"><div class="ana-lbl">🧠 Analyse Expert Claude</div>${ev.analysis}</div>` : ""}
-    `;
-    grid.appendChild(card);
-  });
-}
-
-// ── GENERATE (avec multi-modèle + données enrichies) ──
-async function generate() {
-  if (loading || !keySet) return;
-  loading = true;
-  $("gen-btn").disabled = true;
-  $("gen-label").textContent = "ANALYSE EN COURS...";
-  $("gen-bar").style.display = "block";
-  $("grid").innerHTML = "";
-  $("empty").style.display = "none";
-  $("summary").style.display = "none";
-  $("disc").style.display = "none";
-  $("badge-live").style.display = "none";
-  $("badge-demo").style.display = "none";
-  stepsData = [];
-  renderSteps();
-
-  let matches = [], src = "demo", weather = "Conditions standards";
-
-  try {
-    // Étape 1 : Récupération matchs live
-    if (keyOk && apiKey) {
-      addStep("📡 Tentative récupération matchs live (3 méthodes)...", "active");
-      try {
-        matches = await fetchLive(apiKey);
-        addStep(`📡 ${matches.length} matchs live récupérés via API-Football ✓`, "done");
-        src = "live";
-      } catch(fetchErr) {
-        addStep("📡 Tentative récupération matchs live (3 méthodes)...", "done");
-        if (fetchErr.message === "CORS_BLOCKED") {
-          addStep("🔄 CORS navigateur bloqué → Claude Expert en mode autonome", "done");
-        } else if (fetchErr.message === "NO_MATCHES") {
-          addStep("📭 Aucun match programmé aujourd'hui via API → mode IA autonome", "done");
-        } else if (fetchErr.message.includes("invalide") || fetchErr.message.includes("key")) {
-          addStep("❌ Clé API-Football invalide → vérifier sur dashboard.api-sports.io", "done");
-        } else {
-          addStep("🔄 API indisponible → Claude Expert analyse en mode autonome", "done");
-        }
-        src = "demo";
-      }
-    } else {
-      addStep("🧠 Mode IA autonome — Claude identifie les matchs du jour", "active");
-      await new Promise(r => setTimeout(r, 400));
-      addStep("🧠 Mode IA autonome — Claude identifie les matchs du jour", "done");
-    }
-
-    if (src === "live") {
-      $("badge-live").style.display = "inline-flex";
-    } else {
-      $("badge-demo").style.display = "inline-flex";
-    }
-
-    // Étape 2 : Construction du contexte expert
-    addStep("📊 Construction contexte expert : forme, H2H, enjeu, météo...", "active");
-    const { enriched: _e, weather: w } = buildEnrichedContext(matches.length ? matches : [{home:"PSG",away:"Lyon",league:"Ligue 1",time:"20:45"}]);
-    weather = w;
-    const prompt = buildPrompt(matches, weather);
-    await new Promise(r => setTimeout(r, 300));
-    addStep("📊 Construction contexte expert : forme, H2H, enjeu, météo...", "done");
-
-    // Étape 3 : Recherche web des vrais matchs du jour
-    const liveMatchesAvailable = matches.length > 0;
-    let result;
-
-    if (!liveMatchesAvailable) {
-      addStep("🔍 Recherche web des matchs football du jour...", "active");
-      let matchContext = "";
-      try {
-        const searchResult = await searchMatchesToday();
-        if (searchResult && searchResult.length > 80) {
-          matchContext = "=== MATCHS DU JOUR TROUVÉS VIA RECHERCHE WEB TEMPS RÉEL ===\n" + searchResult;
-          addStep("🔍 Recherche web des matchs football du jour...", "done");
-          addStep(`📋 Matchs récupérés — analyse experte en cours...`, "active");
-        } else {
-          addStep("🔍 Recherche web : résultats limités → mode expert autonome", "done");
-          addStep("🧠 Claude analyse les matchs du jour en autonomie...", "active");
-        }
-        // Injecter les matchs dans le prompt
-        if (matchContext) {
-          prompt = prompt.replace(
-            /=== MODE EXPERT IA AUTONOME ===[\s\S]*?(?=
-═)/,
-            matchContext + "\n"
-          );
-        }
-      } catch(searchErr) {
-        addStep("🔍 Recherche web indisponible → mode expert autonome", "done");
-        addStep("🧠 Claude analyse les matchs du jour en autonomie...", "active");
-      }
-
-      // Passe finale : analyse JSON
-      result = await rawApiCall(
-        [{ role: "user", content: prompt }],
-        null,
-        " Réponds UNIQUEMENT avec du JSON valide. Aucun texte avant ou après. Aucun markdown."
-      );
-      const stepLabel = matchContext ? "📋 Matchs récupérés — analyse experte en cours..." : "🧠 Claude analyse les matchs du jour en autonomie...";
-      addStep(stepLabel, "done");
-
-    } else {
-      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "active");
-      result = await rawApiCall(
-        [{ role: "user", content: prompt }],
-        null,
-        " Réponds UNIQUEMENT avec du JSON valide. Aucun texte avant ou après. Aucun markdown."
-      );
-      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
-    }
-
-    // Parser la réponse JSON
-    const rawTxt = (result.content || []).filter(b => b.type === "text").map(b => b.text).join("");
-    if (!rawTxt || rawTxt.trim().length < 10) throw new Error("Réponse vide — vérifie ta clé Claude API");
-    const parsed = repairJSON(rawTxt);
-
-    addStep("🔬 Détection value bets (edge > +5%) & scoring qualité...", "active");
-    const merged = mergeByConsensus([parsed]);
-    await new Promise(r => setTimeout(r, 150));
-    addStep("🔬 Détection value bets (edge > +5%) & scoring qualité...", "done");
-
-    addStep("💰 Calcul mises Kelly fractionnées (÷4 — gestion risque)...", "active");
-    await new Promise(r => setTimeout(r, 100));
-    addStep("💰 Calcul mises Kelly fractionnées (÷4 — gestion risque)...", "done");
-
-    const n = merged.events?.length || 0;
-    addStep(`✅ ${n} sélections expert validées — taux de réussite visé : 72%+`, "done");
-    renderCards(merged.events || []);
-
-  } catch(err) {
-    addStep("❌ Erreur : " + (err.message || "réessaie"), "done");
-    $("empty").style.display = "block";
+    clearInterval(barInterval);
+    bar.style.width = '0%';
+    document.getElementById('empty').style.display = 'block';
+    errBox.className = 'err-box show';
+    errBox.innerHTML = `<strong>❌ Erreur :</strong> ${e.message}`;
+    label.textContent = '🔍 ANALYSER LES MATCHS DU JOUR';
+    // Reset steps
+    document.getElementById('steps').innerHTML = '';
   } finally {
-    loading = false;
-    $("gen-btn").disabled = false;
-    $("gen-label").textContent = "🔎 ANALYSER LES MATCHS FOOTBALL DU JOUR";
-    $("gen-bar").style.display = "none";
+    btn.disabled = false;
+    setTimeout(() => { bar.style.width = '0%'; }, 800);
   }
 }
+
+document.getElementById('gen-btn').addEventListener('click', analyzeMatches);
 </script>
 </body>
 </html>
