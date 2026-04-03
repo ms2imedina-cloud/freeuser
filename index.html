@@ -24,41 +24,35 @@
   
   .app { max-width: 680px; margin: 0 auto; padding: 20px 16px 60px; }
 
-  /* HEADER */
   .hdr { text-align: center; padding: 36px 0 28px; position: relative; }
   .hdr-glow { position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 300px; height: 120px; background: radial-gradient(ellipse, rgba(0,240,255,0.08) 0%, transparent 70%); pointer-events: none; }
   .logo { font-family: 'Barlow Condensed', sans-serif; font-size: 52px; font-weight: 800; letter-spacing: 6px; background: linear-gradient(135deg, var(--cyan), var(--purple)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
   .logo-tag { font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
   .date-pill { display: inline-block; margin-top: 12px; padding: 4px 14px; background: rgba(0,240,255,0.06); border: 1px solid rgba(0,240,255,0.15); border-radius: 20px; font-size: 12px; color: var(--cyan); }
 
-  /* AI MODE BANNER */
   .ai-banner { display: flex; align-items: center; gap: 12px; padding: 14px 18px; background: linear-gradient(135deg, rgba(163,116,255,0.08), rgba(0,240,255,0.04)); border: 1px solid rgba(163,116,255,0.25); border-radius: 14px; margin-bottom: 18px; }
   .ai-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--purple); flex-shrink: 0; animation: pulse 2s ease-in-out infinite; }
   @keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(163,116,255,0.4);} 50%{opacity:0.7;box-shadow:0 0 0 6px rgba(163,116,255,0);} }
   .ai-text { font-size: 12px; color: var(--text); line-height: 1.6; }
   .ai-text strong { color: var(--purple); }
 
-  /* BANKROLL */
   .bankroll-panel { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: rgba(0,240,255,0.03); border: 1px solid rgba(0,240,255,0.12); border-radius: 12px; margin-bottom: 18px; }
   .bankroll-lbl { font-size: 12px; color: var(--muted); white-space: nowrap; }
   .bankroll-input { flex: 1; background: rgba(0,0,0,0.4); border: 1px solid rgba(0,240,255,0.15); border-radius: 8px; padding: 8px 12px; color: var(--cyan); font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 700; outline: none; width: 100%; }
   .bankroll-input:focus { border-color: var(--cyan); }
 
-  /* LEAGUE FILTER */
   .league-filter { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 18px; }
   .lf-btn { padding: 5px 13px; border-radius: 20px; border: 1px solid var(--border); background: rgba(255,255,255,0.03); color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; cursor: pointer; transition: all 0.2s; font-family: 'Syne', sans-serif; }
   .lf-btn:hover { border-color: rgba(0,240,255,0.3); color: var(--cyan); }
   .lf-btn.active { background: rgba(0,240,255,0.08); border-color: rgba(0,240,255,0.4); color: var(--cyan); }
 
-  /* GEN BUTTON */
   .gen { width: 100%; padding: 18px; border: none; border-radius: 14px; background: linear-gradient(135deg, rgba(163,116,255,0.9), rgba(0,240,255,0.8)); color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 18px; font-weight: 800; letter-spacing: 4px; cursor: pointer; position: relative; overflow: hidden; transition: opacity 0.2s, transform 0.15s; margin-bottom: 20px; }
   .gen:hover:not(:disabled) { opacity: 0.92; transform: translateY(-1px); }
   .gen:active:not(:disabled) { transform: translateY(0); }
   .gen:disabled { opacity: 0.4; cursor: not-allowed; }
   .gen-bar { position: absolute; bottom: 0; left: 0; height: 3px; background: rgba(255,255,255,0.4); width: 0%; transition: width 0.3s; border-radius: 0 0 14px 14px; }
 
-  /* STEPS */
-  .steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; min-height: 0; transition: all 0.3s; }
+  .steps { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   .step { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; font-size: 12px; color: var(--muted); transition: all 0.3s; }
   .step.active { border-color: rgba(163,116,255,0.3); color: var(--text); background: rgba(163,116,255,0.05); }
   .step.done { border-color: rgba(0,230,118,0.2); color: var(--green); background: rgba(0,230,118,0.04); }
@@ -66,28 +60,23 @@
   .step-spin { width: 14px; height: 14px; border: 2px solid rgba(163,116,255,0.2); border-top-color: var(--purple); border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
   @keyframes spin { to { transform: rotate(360deg); } }
 
-  /* SOURCE BADGE */
   .src-badge { display: none; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 10px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 14px; }
   .src-badge.show { display: inline-flex; }
   .src-ai { background: rgba(163,116,255,0.08); border: 1px solid rgba(163,116,255,0.25); color: var(--purple); }
 
-  /* SUMMARY */
   .summary { display: none; gap: 10px; margin-bottom: 20px; }
   .summary.show { display: grid; grid-template-columns: repeat(4, 1fr); }
   .sum-box { background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
   .sum-val { font-family: 'Barlow Condensed', sans-serif; font-size: 26px; font-weight: 800; color: var(--cyan); line-height: 1; }
   .sum-lbl { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
 
-  /* EMPTY */
   .empty { text-align: center; padding: 56px 20px; color: var(--muted); }
   .empty-ico { font-size: 60px; opacity: 0.15; margin-bottom: 14px; }
   .empty-t { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: 3px; color: #252840; margin-bottom: 6px; }
   .empty-s { font-size: 13px; color: #2a2e50; }
 
-  /* GRID */
   .grid { display: grid; gap: 14px; }
 
-  /* CARD */
   .card { background: var(--card); border: 1px solid var(--border); border-radius: 16px; padding: 18px; position: relative; overflow: hidden; animation: rise 0.4s ease both; transition: border-color 0.25s, transform 0.25s; }
   .card:hover { border-color: rgba(0,240,255,0.16); transform: translateY(-2px); }
   @keyframes rise { from{opacity:0;transform:translateY(16px);} to{opacity:1;transform:none;} }
@@ -140,11 +129,9 @@
   .data-tags { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
   .dtag { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; padding: 2px 7px; border-radius: 5px; background: rgba(163,116,255,0.08); color: var(--purple); border: 1px solid rgba(163,116,255,0.15); }
 
-  /* DISCLAIMER */
   .disc { margin-top: 28px; padding: 14px 16px; background: rgba(255,61,87,0.04); border: 1px solid rgba(255,61,87,0.1); border-radius: 11px; font-size: 11px; color: #483838; text-align: center; line-height: 1.7; display: none; }
   .disc.show { display: block; }
 
-  /* ERROR */
   .err-box { padding: 14px 16px; background: rgba(255,61,87,0.06); border: 1px solid rgba(255,61,87,0.2); border-radius: 12px; font-size: 13px; color: var(--red); display: none; margin-bottom: 14px; line-height: 1.6; }
   .err-box.show { display: block; }
 </style>
@@ -152,7 +139,6 @@
 <body>
 <div class="app">
 
-  <!-- HEADER -->
   <div class="hdr">
     <div class="hdr-glow"></div>
     <div class="logo">SCOUT PRO</div>
@@ -160,7 +146,6 @@
     <div class="date-pill">📅 <span id="today-fr"></span></div>
   </div>
 
-  <!-- AI MODE BANNER -->
   <div class="ai-banner">
     <div class="ai-dot"></div>
     <div class="ai-text">
@@ -168,14 +153,12 @@
     </div>
   </div>
 
-  <!-- BANKROLL -->
   <div class="bankroll-panel">
     <span class="bankroll-lbl">💰 Bankroll (€)</span>
     <input id="bankroll-input" class="bankroll-input" type="number" value="1000" min="10" placeholder="Ex: 1000">
     <span style="font-size:11px;color:var(--muted);white-space:nowrap;">→ Mise Kelly calculée</span>
   </div>
 
-  <!-- LEAGUE FILTER -->
   <div class="league-filter" id="league-filter">
     <button class="lf-btn active" data-league="all">🌍 Tous</button>
     <button class="lf-btn" data-league="ligue1">🇫🇷 Ligue 1</button>
@@ -187,22 +170,16 @@
     <button class="lf-btn" data-league="europa">🟠 Europa</button>
   </div>
 
-  <!-- GEN BUTTON -->
   <button id="gen-btn" class="gen">
     <span id="gen-label">🔍 ANALYSER LES MATCHS DU JOUR</span>
     <div id="gen-bar" class="gen-bar"></div>
   </button>
 
-  <!-- ERROR -->
   <div id="err-box" class="err-box"></div>
-
-  <!-- STEPS -->
   <div id="steps" class="steps"></div>
 
-  <!-- SOURCE BADGE -->
   <span id="badge-ai" class="src-badge src-ai">🤖 Matchs recherchés en temps réel · Analyse Claude Expert</span>
 
-  <!-- SUMMARY -->
   <div id="summary" class="summary">
     <div class="sum-box"><div id="sum-sel" class="sum-val">—</div><div class="sum-lbl">Sélections</div></div>
     <div class="sum-box"><div id="sum-odds" class="sum-val" style="color:var(--gold)">—</div><div class="sum-lbl">Cote moy.</div></div>
@@ -210,17 +187,14 @@
     <div class="sum-box"><div id="sum-ev" class="sum-val" style="color:var(--purple)">—</div><div class="sum-lbl">Edge moy.</div></div>
   </div>
 
-  <!-- EMPTY STATE -->
   <div id="empty" class="empty">
     <div class="empty-ico">⚽</div>
     <div class="empty-t">Prêt à analyser</div>
     <div class="empty-s">Claude recherche les vrais matchs du jour sur le web, puis analyse chaque rencontre avec une méthodologie experte</div>
   </div>
 
-  <!-- EVENTS GRID -->
   <div id="grid" class="grid"></div>
 
-  <!-- DISCLAIMER -->
   <div id="disc" class="disc">
     ⚠️ Ces sélections sont générées par intelligence artificielle à titre informatif uniquement.
     Les paris sportifs comportent des risques financiers. Jouez de manière responsable. 18+
@@ -229,12 +203,9 @@
 </div>
 
 <script>
-// ── DATE ────────────────────────────────────────────────────────────────────
 const today = new Date();
 document.getElementById('today-fr').textContent = today.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
-const todayStr = today.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'});
 
-// ── LEAGUE FILTER ────────────────────────────────────────────────────────────
 let selectedLeague = 'all';
 document.getElementById('league-filter').addEventListener('click', e => {
   const btn = e.target.closest('.lf-btn');
@@ -244,20 +215,18 @@ document.getElementById('league-filter').addEventListener('click', e => {
   selectedLeague = btn.dataset.league;
 });
 
-// ── STEPS UI ─────────────────────────────────────────────────────────────────
-function setStep(steps, idx, state) {
+function setStep(stepsData, idx, state) {
   const el = document.getElementById('step-' + idx);
   if (!el) return;
   el.className = 'step ' + state;
   const ico = el.querySelector('.step-ico');
   const spin = el.querySelector('.step-spin');
   if (state === 'active') { ico.style.display='none'; spin.style.display='block'; }
-  else { ico.style.display='block'; spin.style.display='none'; ico.textContent = state==='done' ? '✅' : steps[idx].ico; }
+  else { ico.style.display='block'; spin.style.display='none'; ico.textContent = state==='done' ? '✅' : stepsData[idx].ico; }
 }
 
-function renderSteps(steps) {
-  const el = document.getElementById('steps');
-  el.innerHTML = steps.map((s,i) =>
+function renderSteps(stepsData) {
+  document.getElementById('steps').innerHTML = stepsData.map((s,i) =>
     `<div class="step" id="step-${i}">
       <span class="step-ico">${s.ico}</span>
       <div class="step-spin" style="display:none"></div>
@@ -266,15 +235,13 @@ function renderSteps(steps) {
   ).join('');
 }
 
-// ── KELLY ────────────────────────────────────────────────────────────────────
 function kelly(prob, odds, bankroll) {
   const b = odds - 1;
   const q = 1 - prob;
   const k = Math.max(0, (b * prob - q) / b);
-  return Math.min(k * 0.5, 0.05) * bankroll; // demi-Kelly, cap 5%
+  return Math.min(k * 0.5, 0.05) * bankroll;
 }
 
-// ── RENDER CARD ───────────────────────────────────────────────────────────────
 function confClass(c) { return c >= 70 ? 'high' : c >= 50 ? 'mid' : 'low'; }
 function vbClass(ev) { return ev > 5 ? 'vb-good' : ev > 0 ? 'vb-ok' : 'vb-bad'; }
 function vbLabel(ev) { return ev > 5 ? '🔥 Value Bet' : ev > 0 ? '⚡ Légère Value' : '⚠️ Peu de Value'; }
@@ -285,7 +252,6 @@ function renderCard(m, idx, bankroll) {
   const evStr = (ev > 0 ? '+' : '') + ev.toFixed(1) + '%';
   const kellyMise = kelly(m.prob_win / 100, m.odds, bankroll).toFixed(0);
   const tags = (m.data_sources || []).map(t => `<span class="dtag">${t}</span>`).join('');
-  
   return `
   <div class="card" style="animation-delay:${idx*0.08}s">
     <div class="card-top ${cc}"></div>
@@ -328,14 +294,13 @@ function renderCard(m, idx, bankroll) {
   </div>`;
 }
 
-// ── MAIN CALL TO CLAUDE API ───────────────────────────────────────────────────
 async function analyzeMatches() {
   const bankroll = parseFloat(document.getElementById('bankroll-input').value) || 1000;
   const btn = document.getElementById('gen-btn');
   const label = document.getElementById('gen-label');
   const bar = document.getElementById('gen-bar');
   const errBox = document.getElementById('err-box');
-  
+
   btn.disabled = true;
   errBox.className = 'err-box';
   document.getElementById('empty').style.display = 'none';
@@ -356,22 +321,21 @@ async function analyzeMatches() {
   };
   const leagueLabel = leagueMap[selectedLeague] || 'toutes les ligues';
 
-  const steps = [
+  const stepsData = [
     { ico: '🔍', label: 'Recherche des matchs du jour sur le web...' },
     { ico: '📊', label: 'Collecte des stats, forme, H2H, blessures...' },
     { ico: '🧠', label: 'Analyse probabiliste et calcul des value bets...' },
     { ico: '⚡', label: 'Génération des picks finaux et mises Kelly...' },
   ];
-  renderSteps(steps);
+  renderSteps(stepsData);
 
-  // Animate bar
   let barWidth = 0;
   const barInterval = setInterval(() => {
     barWidth = Math.min(barWidth + 0.4, 90);
     bar.style.width = barWidth + '%';
   }, 200);
 
-  setStep(steps, 0, 'active');
+  setStep(stepsData, 0, 'active');
   label.textContent = 'ANALYSE EN COURS...';
 
   const todayDate = today.toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
@@ -423,9 +387,10 @@ Règles d'or :
 - Analyse en français, détaillée et basée sur des faits réels`;
 
   try {
-    setStep(steps, 0, 'done');
-    setStep(steps, 1, 'active');
-    
+    setStep(stepsData, 0, 'done');
+    setStep(stepsData, 1, 'active');
+
+    // ✅ FIX: Use the Anthropic API proxy (no API key needed, CORS handled)
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -442,22 +407,20 @@ Règles d'or :
       throw new Error(err.error?.message || `Erreur API ${response.status}`);
     }
 
-    setStep(steps, 1, 'done');
-    setStep(steps, 2, 'active');
+    setStep(stepsData, 1, 'done');
+    setStep(stepsData, 2, 'active');
 
     const data = await response.json();
 
-    setStep(steps, 2, 'done');
-    setStep(steps, 3, 'active');
+    setStep(stepsData, 2, 'done');
+    setStep(stepsData, 3, 'active');
 
-    // Extract text from response (handles tool_use intermediate steps)
+    // Extract text from all content blocks (handles tool_use intermediate steps)
     const textBlocks = data.content.filter(b => b.type === 'text').map(b => b.text);
     const fullText = textBlocks.join('\n');
 
-    // Parse JSON
     let parsed;
     try {
-      // Find JSON in the response
       const jsonMatch = fullText.match(/\{[\s\S]*"matches"[\s\S]*\}/);
       if (!jsonMatch) throw new Error('Format JSON non trouvé dans la réponse');
       const clean = jsonMatch[0].replace(/```json|```/g,'').trim();
@@ -466,7 +429,7 @@ Règles d'or :
       throw new Error('Erreur de parsing JSON : ' + e.message + '\nRéponse reçue : ' + fullText.slice(0,200));
     }
 
-    setStep(steps, 3, 'done');
+    setStep(stepsData, 3, 'done');
 
     const matches = parsed.matches || [];
     if (!matches.length) throw new Error('Aucun match trouvé pour aujourd\'hui dans ces ligues.');
@@ -474,12 +437,10 @@ Règles d'or :
     clearInterval(barInterval);
     bar.style.width = '100%';
 
-    // Render
     document.getElementById('badge-ai').className = 'src-badge src-ai show';
     document.getElementById('grid').innerHTML = matches.map((m, i) => renderCard(m, i, bankroll)).join('');
     document.getElementById('disc').className = 'disc show';
 
-    // Summary
     const avgOdds = (matches.reduce((s,m) => s + m.odds, 0) / matches.length).toFixed(2);
     const avgConf = Math.round(matches.reduce((s,m) => s + m.confidence, 0) / matches.length);
     const avgEv = ((matches.reduce((s,m) => s + ((m.prob_win/100)*m.odds-1)*100, 0) / matches.length)).toFixed(1);
@@ -498,7 +459,6 @@ Règles d'or :
     errBox.className = 'err-box show';
     errBox.innerHTML = `<strong>❌ Erreur :</strong> ${e.message}`;
     label.textContent = '🔍 ANALYSER LES MATCHS DU JOUR';
-    // Reset steps
     document.getElementById('steps').innerHTML = '';
   } finally {
     btn.disabled = false;
