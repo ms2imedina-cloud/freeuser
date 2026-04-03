@@ -342,7 +342,7 @@ body{background:var(--bg);}
 
   <!-- SOURCE BADGE + SUMMARY -->
   <span id="badge-live" class="src-badge src-live"><span class="live-dot"></span>Matchs live API-Sports</span>
-  <span id="badge-demo" class="src-badge src-demo">🤖 Analyse IA Claude (mode pur)</span>
+  <span id="badge-demo" class="src-badge src-demo">🔍 Matchs recherchés en temps réel · Analyse Claude Expert</span>
   <div id="summary" class="summary" style="grid-template-columns:repeat(4,1fr);">
     <div class="sum-box"><div id="sum-sel" class="sum-val">—</div><div class="sum-lbl">Sélections</div></div>
     <div class="sum-box"><div id="sum-odds" class="sum-val" style="color:var(--gold)">—</div><div class="sum-lbl">Cote moy.</div></div>
@@ -354,7 +354,7 @@ body{background:var(--bg);}
   <div id="empty" class="empty">
     <div class="empty-ico">⚽</div>
     <div class="empty-t">Prêt à analyser</div>
-    <div class="empty-s">Lance l'analyse expert pour obtenir 10 sélections premium avec edge positif et mises Kelly</div>
+    <div class="empty-s">Claude recherche les vrais matchs du jour sur le web, puis analyse chaque rencontre avec une méthodologie experte</div>
   </div>
 
   <!-- EVENTS GRID -->
@@ -634,8 +634,20 @@ function repairJSON(raw) {
   } catch(_) { throw new Error("JSON illisible — réessaie"); }
 }
 
-// ── CALL CLAUDE — EXPERT MODE ──
-async function callClaude(prompt) {
+// ── CALL CLAUDE — EXPERT MODE AVEC WEB SEARCH ──
+const SYSTEM_EXPERT = "Tu es un analyste expert en paris sportifs football de niveau professionnel. Tu appliques une méthodologie rigoureuse basée sur les probabilités réelles, la détection de value bets et la gestion de bankroll Kelly. Tes analyses sont factuelles, précises et basées sur des données réelles. Tu ne gonfles jamais artificiellement la confiance — la précision est ta priorité absolue.";
+
+async function apiCall(messages, useSearch = false, jsonOnly = false) {
+  const body = {
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 8000,
+    system: SYSTEM_EXPERT + (jsonOnly ? " Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, sans markdown." : ""),
+    messages,
+    temperature: useSearch ? 0.5 : 0.3,
+  };
+  if (useSearch) {
+    body.tools = [{ type: "web_search_20250305", name: "web_search" }];
+  }
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -644,17 +656,55 @@ async function callClaude(prompt) {
       "anthropic-version": "2023-06-01",
       "anthropic-dangerous-direct-browser-access": "true"
     },
-    body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8000,
-      system: "Tu es un analyste expert en paris sportifs football de niveau professionnel. Tu appliques une méthodologie rigoureuse basée sur les probabilités réelles, la détection de value bets et la gestion de bankroll Kelly. Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après. Tes analyses sont factuelles, précises et basées sur les données fournies. Tu ne gonfles jamais artificiellement la confiance — la précision est ta priorité absolue.",
-      messages: [{role:"user", content:prompt}],
-      temperature: 0.3,
-    })
+    body: JSON.stringify(body)
   });
   const d = await r.json();
   if (d.error) throw new Error(d.error.message || "Erreur API Claude");
-  const txt = (d.content || []).map(b => b.text || "").join("");
+  return d;
+}
+
+// Extrait tout le texte d'une réponse (contenu + tool results)
+function extractText(d) {
+  return (d.content || []).map(b => b.type === "text" ? b.text : "").join("");
+}
+
+async function callClaude(prompt, liveMatchesAvailable) {
+  // ── PASSE 1 : Recherche web des vrais matchs du jour (si pas de données live) ──
+  let matchContext = "";
+  if (!liveMatchesAvailable) {
+    const searchPrompt = `Recherche sur le web les vrais matchs de football programmés AUJOURD'HUI (${TODAY}).
+Cherche spécifiquement : "football matches today ${TODAY}" et "matchs football aujourd'hui ${TODAY}".
+Inclus Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League, Conference League.
+Donne-moi une liste structurée avec : Équipe domicile vs Équipe extérieure | Compétition | Heure (UTC+1).
+Si tu trouves des résultats web récents, utilise-les. Sinon indique clairement "Aucun match trouvé".`;
+
+    try {
+      const searchResp = await apiCall(
+        [{role: "user", content: searchPrompt}],
+        true,  // useSearch
+        false  // pas besoin de JSON ici
+      );
+      matchContext = extractText(searchResp);
+      // Si la réponse contient des résultats de recherche utiles
+      if (matchContext.length > 100) {
+        matchContext = "=== MATCHS DU JOUR TROUVÉS VIA RECHERCHE WEB ===\n" + matchContext;
+      }
+    } catch(e) {
+      matchContext = ""; // fallback silencieux
+    }
+  }
+
+  // ── PASSE 2 : Analyse experte + génération JSON ──
+  const finalPrompt = matchContext
+    ? prompt.replace("=== MODE EXPERT IA AUTONOME ===", matchContext)
+    : prompt;
+
+  const analysisResp = await apiCall(
+    [{role: "user", content: finalPrompt}],
+    false, // pas de search sur la passe analyse
+    true   // JSON only
+  );
+  const txt = extractText(analysisResp);
   return repairJSON(txt);
 }
 
@@ -948,15 +998,26 @@ async function generate() {
     await new Promise(r => setTimeout(r, 300));
     addStep("📊 Construction contexte expert : forme, H2H, enjeu, météo...", "done");
 
-    // Étape 3 : Analyse probabiliste par Claude Expert
-    addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "active");
+    // Étape 3 : Recherche web + Analyse experte
+    const liveMatchesAvailable = matches.length > 0;
+    if (!liveMatchesAvailable) {
+      addStep("🔍 Recherche web des matchs réels du jour en cours...", "active");
+      // La recherche se fait à l'intérieur de callClaude — le step sera mis à jour après
+    } else {
+      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "active");
+    }
 
-    const results = await Promise.allSettled([callClaude(prompt)]);
+    const results = await Promise.allSettled([callClaude(prompt, liveMatchesAvailable)]);
     const validResults = results
       .filter(r => r.status === "fulfilled" && r.value)
       .map(r => r.value);
 
-    addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
+    if (!liveMatchesAvailable) {
+      addStep("🔍 Recherche web des matchs réels du jour en cours...", "done");
+      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
+    } else {
+      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
+    }
     addStep("🔬 Détection value bets (edge > +5%) & filtrage qualité...", "active");
 
     // Validation, scoring et tri des résultats
