@@ -159,10 +159,10 @@
     <span style="font-size:11px;color:var(--muted);white-space:nowrap;">→ Mise Kelly calculée</span>
   </div>
 
-  <div class="apikey-panel" id="apikey-panel" style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,214,0,0.03);border:1px solid rgba(255,214,0,0.18);border-radius:12px;margin-bottom:18px;">
-    <span style="font-size:12px;color:#3d4260;white-space:nowrap;">🔑 Clé API Anthropic</span>
+  <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;background:rgba(255,214,0,0.03);border:1px solid rgba(255,214,0,0.18);border-radius:12px;margin-bottom:18px;">
+    <span style="font-size:12px;color:var(--muted);white-space:nowrap;">🔑 Clé API</span>
     <input id="apikey-input" type="password" placeholder="sk-ant-..." style="flex:1;background:rgba(0,0,0,0.4);border:1px solid rgba(255,214,0,0.2);border-radius:8px;padding:8px 12px;color:#ffd600;font-family:monospace;font-size:13px;outline:none;width:100%;">
-    <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-size:10px;color:#3d4260;white-space:nowrap;text-decoration:none;">Obtenir une clé ↗</a>
+    <a href="https://console.anthropic.com/settings/keys" target="_blank" style="font-size:10px;color:var(--muted);white-space:nowrap;text-decoration:none;">Obtenir ↗</a>
   </div>
 
   <div class="league-filter" id="league-filter">
@@ -210,6 +210,24 @@
 
 <script>
 const today = new Date();
+
+// Sauvegarde et chargement de la clé API
+const STORAGE_KEY = 'scout_pro_api_key';
+function loadApiKey() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    const input = document.getElementById('apikey-input');
+    if (input) input.value = saved;
+  }
+}
+function saveApiKey(key) {
+  if (key) localStorage.setItem(STORAGE_KEY, key);
+}
+document.addEventListener('DOMContentLoaded', () => {
+  loadApiKey();
+  const input = document.getElementById('apikey-input');
+  if (input) input.addEventListener('change', () => saveApiKey(input.value.trim()));
+});
 document.getElementById('today-fr').textContent = today.toLocaleDateString('fr-FR', {weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
 let selectedLeague = 'all';
@@ -347,62 +365,26 @@ async function analyzeMatches() {
   const todayDate = today.toLocaleDateString('fr-FR', {day:'numeric', month:'long', year:'numeric'});
   const todayISO = today.toISOString().split('T')[0];
 
-  const prompt = `Tu es Scout Pro, un expert en analyse football et paris sportifs. 
+  const prompt = `Scout Pro - Expert football IA. Date: ${todayDate} (${todayISO}). Ligues: ${leagueLabel}.
 
-DATE AUJOURD'HUI : ${todayDate} (${todayISO})
-LIGUES DEMANDÉES : ${leagueLabel}
+Cherche avec web_search les matchs de football du ${todayISO} dans ces ligues, puis analyse-les.
 
-MISSION EN 2 ÉTAPES :
+Réponds UNIQUEMENT en JSON valide, sans texte ni backticks:
+{"matches":[{"match":"Équipe A vs Équipe B","league":"🇫🇷 Ligue 1","competition":"Ligue 1 - J28","time":"21:00","pick":"Pari recommandé","odds":1.85,"prob_win":62,"confidence":74,"home_form":"WDWWL","away_form":"LWDWW","analysis":"Analyse 2-3 phrases : forme, H2H, absences, valeur du pari.","data_sources":["Forme","H2H","Blessures","Cotes"]}]}
 
-**ÉTAPE 1 - RECHERCHE WEB** : Utilise l'outil web_search pour chercher les vrais matchs de football du jour ${todayDate} dans ces ligues. Cherche activement :
-- "matchs football ${todayISO} programme"
-- "fixtures ${selectedLeague === 'all' ? 'top 5 leagues' : leagueLabel} today ${todayISO}"
-- Pour chaque match trouvé : cherche la forme récente des équipes, les confrontations directes H2H, les blessures/absences importantes, les statistiques clés
-- Cherche aussi les cotes actuelles sur les bookmakers (Bet365, Betclic, etc.)
-
-**ÉTAPE 2 - ANALYSE EXPERTE** : Pour chaque match pertinent trouvé (minimum 5-8 matchs), génère une analyse complète et calcule les value bets.
-
-RÉPONDS UNIQUEMENT avec un JSON valide, aucun texte avant ou après, sans backticks, format exact :
-
-{
-  "matches": [
-    {
-      "match": "Équipe A vs Équipe B",
-      "league": "🇫🇷 Ligue 1",
-      "competition": "Ligue 1 - J28",
-      "time": "21:00",
-      "pick": "Description claire du pari (ex: Victoire Équipe A, BTTS Oui, +2.5 buts)",
-      "odds": 1.85,
-      "prob_win": 62,
-      "confidence": 74,
-      "home_form": "WDWWL",
-      "away_form": "LWDWW",
-      "analysis": "Analyse détaillée en 3-4 phrases : forme des équipes, H2H, absences, contexte, pourquoi ce pari a de la valeur. Sois précis avec des données réelles trouvées sur le web.",
-      "data_sources": ["Forme vérifiée", "H2H analysé", "Blessures vérifiées", "Cotes marché"]
-    }
-  ]
-}
-
-Règles d'or :
-- UNIQUEMENT des vrais matchs du ${todayDate} (pas inventés)
-- Si un match est trouvé mais avec peu d'infos : l'inclure quand même avec les données disponibles
-- Les cotes doivent être réalistes (1.40 à 4.50 pour les sélections)
-- Probabilité réelle = estimation honnête, pas la cote bookmaker inversée
-- Edge = (prob_win/100 * odds - 1) * 100 > 0 pour un value bet
-- Inclure uniquement les matchs avec au moins 50% de confiance
-- Analyse en français, détaillée et basée sur des faits réels`;
+Règles: vrais matchs du ${todayISO} uniquement, cotes 1.40-4.50, confiance ≥50%, analyse en français.`
 
   try {
     setStep(stepsData, 0, 'done');
     setStep(stepsData, 1, 'active');
 
-    // Récupérer la clé API saisie par l'utilisateur
+    // Récupérer et sauvegarder la clé API
     const apiKey = document.getElementById('apikey-input').value.trim();
+    if (apiKey) saveApiKey(apiKey);
     if (!apiKey || !apiKey.startsWith('sk-ant-')) {
-      throw new Error('Veuillez saisir une clé API Anthropic valide (commence par sk-ant-). Obtenez-en une sur console.anthropic.com');
+      throw new Error('Veuillez saisir une clé API Anthropic valide (commence par sk-ant-).');
     }
 
-    // Appel direct à l'API Anthropic avec la clé fournie
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
@@ -413,7 +395,7 @@ Règles d'or :
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 4000,
+        max_tokens: 2000,
         tools: [{ type: 'web_search_20250305', name: 'web_search' }],
         messages: [{ role: 'user', content: prompt }]
       })
