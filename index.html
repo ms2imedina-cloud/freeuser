@@ -637,17 +637,15 @@ function repairJSON(raw) {
 // ── CALL CLAUDE — EXPERT MODE AVEC WEB SEARCH ──
 const SYSTEM_EXPERT = "Tu es un analyste expert en paris sportifs football de niveau professionnel. Tu appliques une méthodologie rigoureuse basée sur les probabilités réelles, la détection de value bets et la gestion de bankroll Kelly. Tes analyses sont factuelles, précises et basées sur des données réelles. Tu ne gonfles jamais artificiellement la confiance — la précision est ta priorité absolue.";
 
-async function apiCall(messages, useSearch = false, jsonOnly = false) {
+async function rawApiCall(messages, tools, systemExtra = "") {
   const body = {
     model: "claude-sonnet-4-20250514",
     max_tokens: 8000,
-    system: SYSTEM_EXPERT + (jsonOnly ? " Tu réponds UNIQUEMENT en JSON valide, sans aucun texte avant ou après, sans markdown." : ""),
+    system: SYSTEM_EXPERT + systemExtra,
     messages,
-    temperature: useSearch ? 0.5 : 0.3,
+    temperature: 0.3,
   };
-  if (useSearch) {
-    body.tools = [{ type: "web_search_20250305", name: "web_search" }];
-  }
+  if (tools && tools.length) body.tools = tools;
   const r = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: {
@@ -659,54 +657,60 @@ async function apiCall(messages, useSearch = false, jsonOnly = false) {
     body: JSON.stringify(body)
   });
   const d = await r.json();
-  if (d.error) throw new Error(d.error.message || "Erreur API Claude");
+  if (d.error) throw new Error(d.error.message || "Erreur Claude : " + JSON.stringify(d.error));
   return d;
 }
 
-// Extrait tout le texte d'une réponse (contenu + tool results)
-function extractText(d) {
-  return (d.content || []).map(b => b.type === "text" ? b.text : "").join("");
-}
+// ── PASSE 1 : recherche web avec gestion du cycle tool_use complet ──
+async function searchMatchesToday() {
+  const WEB_TOOLS = [{ type: "web_search_20250305", name: "web_search" }];
+  const searchQuery = `football matches today ${TODAY} schedule Premier League Serie A LaLiga Bundesliga Ligue1 Champions League`;
 
-async function callClaude(prompt, liveMatchesAvailable) {
-  // ── PASSE 1 : Recherche web des vrais matchs du jour (si pas de données live) ──
-  let matchContext = "";
-  if (!liveMatchesAvailable) {
-    const searchPrompt = `Recherche sur le web les vrais matchs de football programmés AUJOURD'HUI (${TODAY}).
-Cherche spécifiquement : "football matches today ${TODAY}" et "matchs football aujourd'hui ${TODAY}".
-Inclus Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League, Conference League.
-Donne-moi une liste structurée avec : Équipe domicile vs Équipe extérieure | Compétition | Heure (UTC+1).
-Si tu trouves des résultats web récents, utilise-les. Sinon indique clairement "Aucun match trouvé".`;
+  let messages = [{
+    role: "user",
+    content: `Recherche les matchs de football programmés aujourd'hui ${TODAY}. 
+Fais une recherche web avec : "${searchQuery}"
+Puis liste TOUS les matchs trouvés sous ce format exact (un par ligne) :
+MATCH: [Équipe domicile] vs [Équipe extérieure] | [Compétition] | [Heure locale]
+Ne manque aucun match important. Inclus Premier League, La Liga, Serie A, Bundesliga, Ligue 1, Champions League, Europa League.`
+  }];
 
-    try {
-      const searchResp = await apiCall(
-        [{role: "user", content: searchPrompt}],
-        true,  // useSearch
-        false  // pas besoin de JSON ici
-      );
-      matchContext = extractText(searchResp);
-      // Si la réponse contient des résultats de recherche utiles
-      if (matchContext.length > 100) {
-        matchContext = "=== MATCHS DU JOUR TROUVÉS VIA RECHERCHE WEB ===\n" + matchContext;
-      }
-    } catch(e) {
-      matchContext = ""; // fallback silencieux
+  // Cycle tool_use : max 4 tours pour laisser Claude finir sa recherche
+  for (let turn = 0; turn < 4; turn++) {
+    const resp = await rawApiCall(messages, WEB_TOOLS);
+
+    // Ajouter la réponse assistant à l'historique
+    messages.push({ role: "assistant", content: resp.content });
+
+    // Si Claude a fini (end_turn ou pas de tool_use) → extraire le texte
+    const hasToolUse = (resp.content || []).some(b => b.type === "tool_use");
+    if (!hasToolUse || resp.stop_reason === "end_turn") {
+      const txt = (resp.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+      return txt;
     }
+
+    // Construire les tool_result pour chaque outil appelé
+    const toolResults = (resp.content || [])
+      .filter(b => b.type === "tool_use")
+      .map(b => ({
+        type: "tool_result",
+        tool_use_id: b.id,
+        content: b.input ? JSON.stringify(b.input) : "Recherche effectuée"
+      }));
+
+    messages.push({ role: "user", content: toolResults });
   }
 
-  // ── PASSE 2 : Analyse experte + génération JSON ──
-  const finalPrompt = matchContext
-    ? prompt.replace("=== MODE EXPERT IA AUTONOME ===", matchContext)
-    : prompt;
-
-  const analysisResp = await apiCall(
-    [{role: "user", content: finalPrompt}],
-    false, // pas de search sur la passe analyse
-    true   // JSON only
-  );
-  const txt = extractText(analysisResp);
-  return repairJSON(txt);
+  // Fallback : extraire le dernier texte disponible
+  const last = messages.filter(m => m.role === "assistant").pop();
+  if (last) {
+    const blocks = Array.isArray(last.content) ? last.content : [];
+    return blocks.filter(b => b.type === "text").map(b => b.text).join("\n");
+  }
+  return "";
 }
+
+// callClaude inline dans generate()
 
 // ── VALIDATION & SCORING DES RÉSULTATS ──
 function mergeByConsensus(results) {
@@ -998,36 +1002,67 @@ async function generate() {
     await new Promise(r => setTimeout(r, 300));
     addStep("📊 Construction contexte expert : forme, H2H, enjeu, météo...", "done");
 
-    // Étape 3 : Recherche web + Analyse experte
+    // Étape 3 : Recherche web des vrais matchs du jour
     const liveMatchesAvailable = matches.length > 0;
+    let result;
+
     if (!liveMatchesAvailable) {
-      addStep("🔍 Recherche web des matchs réels du jour en cours...", "active");
-      // La recherche se fait à l'intérieur de callClaude — le step sera mis à jour après
+      addStep("🔍 Recherche web des matchs football du jour...", "active");
+      let matchContext = "";
+      try {
+        const searchResult = await searchMatchesToday();
+        if (searchResult && searchResult.length > 80) {
+          matchContext = "=== MATCHS DU JOUR TROUVÉS VIA RECHERCHE WEB TEMPS RÉEL ===\n" + searchResult;
+          addStep("🔍 Recherche web des matchs football du jour...", "done");
+          addStep(`📋 Matchs récupérés — analyse experte en cours...`, "active");
+        } else {
+          addStep("🔍 Recherche web : résultats limités → mode expert autonome", "done");
+          addStep("🧠 Claude analyse les matchs du jour en autonomie...", "active");
+        }
+        // Injecter les matchs dans le prompt
+        if (matchContext) {
+          prompt = prompt.replace(
+            /=== MODE EXPERT IA AUTONOME ===[\s\S]*?(?=
+═)/,
+            matchContext + "\n"
+          );
+        }
+      } catch(searchErr) {
+        addStep("🔍 Recherche web indisponible → mode expert autonome", "done");
+        addStep("🧠 Claude analyse les matchs du jour en autonomie...", "active");
+      }
+
+      // Passe finale : analyse JSON
+      result = await rawApiCall(
+        [{ role: "user", content: prompt }],
+        null,
+        " Réponds UNIQUEMENT avec du JSON valide. Aucun texte avant ou après. Aucun markdown."
+      );
+      const stepLabel = matchContext ? "📋 Matchs récupérés — analyse experte en cours..." : "🧠 Claude analyse les matchs du jour en autonomie...";
+      addStep(stepLabel, "done");
+
     } else {
       addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "active");
-    }
-
-    const results = await Promise.allSettled([callClaude(prompt, liveMatchesAvailable)]);
-    const validResults = results
-      .filter(r => r.status === "fulfilled" && r.value)
-      .map(r => r.value);
-
-    if (!liveMatchesAvailable) {
-      addStep("🔍 Recherche web des matchs réels du jour en cours...", "done");
-      addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
-    } else {
+      result = await rawApiCall(
+        [{ role: "user", content: prompt }],
+        null,
+        " Réponds UNIQUEMENT avec du JSON valide. Aucun texte avant ou après. Aucun markdown."
+      );
       addStep("🧠 Claude Sonnet — analyse probabiliste experte en cours...", "done");
     }
-    addStep("🔬 Détection value bets (edge > +5%) & filtrage qualité...", "active");
 
-    // Validation, scoring et tri des résultats
-    const merged = mergeByConsensus(validResults);
-    await new Promise(r => setTimeout(r, 200));
-    addStep("🔬 Détection value bets (edge > +5%) & filtrage qualité...", "done");
+    // Parser la réponse JSON
+    const rawTxt = (result.content || []).filter(b => b.type === "text").map(b => b.text).join("");
+    if (!rawTxt || rawTxt.trim().length < 10) throw new Error("Réponse vide — vérifie ta clé Claude API");
+    const parsed = repairJSON(rawTxt);
 
-    // Étape 4 : Calcul Kelly
-    addStep("💰 Calcul mises Kelly fractionnées (÷4 — gestion risque)...", "active");
+    addStep("🔬 Détection value bets (edge > +5%) & scoring qualité...", "active");
+    const merged = mergeByConsensus([parsed]);
     await new Promise(r => setTimeout(r, 150));
+    addStep("🔬 Détection value bets (edge > +5%) & scoring qualité...", "done");
+
+    addStep("💰 Calcul mises Kelly fractionnées (÷4 — gestion risque)...", "active");
+    await new Promise(r => setTimeout(r, 100));
     addStep("💰 Calcul mises Kelly fractionnées (÷4 — gestion risque)...", "done");
 
     const n = merged.events?.length || 0;
