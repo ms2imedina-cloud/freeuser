@@ -308,7 +308,7 @@ body{background:var(--bg);}
     </div>
     <div id="status-ok" class="key-status ok">✅ Clé activée — données live Football <span id="api-saved-badge" style="display:none;background:rgba(0,230,118,0.12);border:1px solid rgba(0,230,118,0.25);border-radius:8px;padding:2px 8px;font-size:10px;margin-left:6px;">💾 sauvegardée</span></div>
     <div id="status-demo" class="key-status demo">🟣 Mode IA pur actif — analyse Claude sans données externes</div>
-    <div id="demo-link" class="demo-link" onclick="demoMode()">→ Continuer sans clé (mode IA pur, toujours fonctionnel)</div>
+    <div id="demo-link" class="demo-link" onclick="demoMode()" style="display:block;margin-top:10px;padding:8px 14px;background:rgba(163,116,255,0.08);border:1px solid rgba(163,116,255,0.2);border-radius:8px;color:var(--purple);font-size:12px;cursor:pointer;text-align:center;">→ Pas de clé API-Football ? Continuer en mode IA (Claude recherche les matchs seul)</div>
   </div>
 
   <!-- CLAUDE API KEY PANEL -->
@@ -410,7 +410,7 @@ function loadSavedKeys() {
       apiKey = savedApi; keyOk = true;
       $("status-ok").style.display = "block";
       $("status-demo").style.display = "none";
-      $("demo-link").style.display = "none";
+      if ($("demo-link")) $("demo-link").style.display = "none";
       showSavedBadge("api");
     }
     if (savedClaude) {
@@ -469,14 +469,31 @@ function demoMode() {
   if (claudeKey) setKeySet(true);
 }
 
-$("key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateKey(); });
-$("claude-key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateClaudeKey(); });
-
-window.addEventListener("DOMContentLoaded", loadSavedKeys);
-
 // ── STEPS ──
-const stepsEl = $("steps");
-let stepsData = [];
+let stepsEl, stepsData = [];
+
+function initUI() {
+  stepsEl = $("steps");
+
+  // Listeners clavier
+  $("key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateKey(); });
+  $("claude-key-input").addEventListener("keydown", e => { if(e.key === "Enter") activateClaudeKey(); });
+
+  // Auto-activation dès que la clé Claude est remplie (utile si la clé est collée)
+  $("claude-key-input").addEventListener("input", () => {
+    const k = $("claude-key-input").value.trim();
+    if (k.length > 20) {
+      claudeKey = k;
+      $("claude-status-ok").style.display = "block";
+      checkReady();
+    }
+  });
+
+  // Charger les clés sauvegardées
+  loadSavedKeys();
+}
+
+window.addEventListener("DOMContentLoaded", initUI);
 
 function addStep(label, state) {
   const existing = stepsData.find(s => s.label === label);
@@ -486,6 +503,7 @@ function addStep(label, state) {
 }
 
 function renderSteps() {
+  if (!stepsEl) stepsEl = $("steps");
   stepsEl.style.display = stepsData.length ? "flex" : "none";
   stepsEl.innerHTML = stepsData.map(s => `
     <div class="step ${s.state}">
