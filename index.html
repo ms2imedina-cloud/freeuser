@@ -165,6 +165,64 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 .modal-footer a:hover{color:var(--accent)}
 .key-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);border-radius:20px;padding:3px 12px;font-size:.63rem;color:rgba(0,255,136,.7);font-family:'Space Mono',monospace;cursor:pointer;transition:all .2s;margin-left:.5rem}
 .key-badge:hover{background:rgba(0,255,136,.15);border-color:rgba(0,255,136,.4)}
+
+/* ── ODDS SECTION ── */
+.odds-section{background:rgba(0,0,0,.2);border:1px solid rgba(79,195,247,.12);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.odds-title{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--a3);font-weight:700;margin-bottom:.75rem}
+.odds-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem}
+.odds-col-title{font-size:.58rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);margin-bottom:.4rem;font-weight:700}
+.orow{display:flex;justify-content:space-between;align-items:center;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.orow:last-child{border-bottom:none}
+.olb{font-size:.68rem;color:rgba(226,232,240,.6)}
+.oval{font-family:'Space Mono',monospace;font-size:.72rem;color:var(--gold);font-weight:700}
+.orow.ovb{background:rgba(255,215,0,.06);border-radius:5px;padding:3px 5px;margin:1px -5px}
+.orow.ovb .oval{color:var(--accent)}
+
+/* ── STATS BARS ── */
+.stats-section{background:rgba(0,0,0,.15);border:1px solid rgba(0,255,136,.08);border-radius:12px;padding:1rem;margin-bottom:1rem}
+.stats-title{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:.75rem;display:flex;justify-content:space-between;align-items:center}
+.stats-legend{display:flex;gap:.4rem}
+.leg-h{font-size:.58rem;padding:1px 6px;border-radius:4px;background:rgba(0,255,136,.15);color:var(--accent)}
+.leg-a{font-size:.58rem;padding:1px 6px;border-radius:4px;background:rgba(255,107,53,.15);color:var(--a2)}
+.sbar-row{display:grid;grid-template-columns:110px 1fr 80px;align-items:center;gap:.5rem;margin-bottom:.45rem}
+.sbar-lbl{font-size:.63rem;color:rgba(226,232,240,.55)}
+.sbar-wrap{height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden;display:flex}
+.sbar-h{height:100%;background:linear-gradient(90deg,var(--accent),#00ccff);border-radius:3px 0 0 3px;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.sbar-a{height:100%;background:linear-gradient(90deg,var(--a2),#ff3366);border-radius:0 3px 3px 0;transition:width 1.2s cubic-bezier(.4,0,.2,1)}
+.sbar-vals{font-family:'Space Mono',monospace;font-size:.6rem;color:var(--muted);text-align:right}
+.sbar-sep{margin:0 3px;opacity:.4}
+.rates-row{display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.6rem}
+.rate-pill{font-size:.6rem;padding:2px 8px;border-radius:5px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);color:var(--accent);font-family:'Space Mono',monospace}
+.rate-pill.rate-a{background:rgba(255,107,53,.08);border-color:rgba(255,107,53,.2);color:var(--a2)}
+.rate-pill.rate-o{background:rgba(255,215,0,.08);border-color:rgba(255,215,0,.2);color:var(--gold)}
+
+/* ── CONTEXT ── */
+.context-section{background:rgba(79,195,247,.04);border:1px solid rgba(79,195,247,.1);border-radius:10px;padding:.8rem;margin-bottom:1rem}
+.ctx-row{display:flex;gap:.6rem;margin-bottom:.5rem;font-size:.75rem;line-height:1.5}
+.ctx-row:last-child{margin-bottom:0}
+.ctx-icon{flex-shrink:0;font-size:.9rem}
+.ctx-text{color:rgba(226,232,240,.75)}
+
+/* ── FORM DETAILS ── */
+.form-details{margin-bottom:.8rem}
+.form-det-row{display:flex;gap:.5rem;margin-bottom:.3rem;font-size:.68rem;line-height:1.5}
+.form-team{color:var(--accent);font-weight:700;min-width:80px;flex-shrink:0}
+.form-str{color:var(--muted)}
+
+/* ── SECONDARY BETS ── */
+.sec-bets{background:rgba(255,215,0,.04);border:1px solid rgba(255,215,0,.12);border-radius:10px;padding:.8rem;margin-bottom:1rem}
+.sec-title{font-size:.63rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:.6rem}
+.sec-item{display:flex;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px solid rgba(255,255,255,.04)}
+.sec-item:last-child{border-bottom:none}
+.sec-label{flex:1;font-size:.72rem;color:var(--text)}
+.sec-odds{font-family:'Space Mono',monospace;font-size:.72rem;color:var(--gold);font-weight:700}
+.sec-conf{font-size:.55rem;padding:1px 6px;border-radius:4px;border:1px solid}
+
+/* ── BEST BET BANNER ── */
+.vb-banner{background:linear-gradient(135deg,rgba(255,215,0,.15),rgba(255,215,0,.05));border:1px solid rgba(255,215,0,.35);border-radius:8px;padding:.4rem .8rem;font-size:.68rem;font-weight:700;color:var(--gold);margin-bottom:.6rem;text-align:center;letter-spacing:1px}
+.best-reason{background:rgba(0,255,136,.05);border-left:2px solid var(--accent);border-radius:0 6px 6px 0;padding:.5rem .75rem;font-size:.73rem;color:rgba(226,232,240,.8);line-height:1.6;margin:.6rem 0}
+.bet-inner{display:flex;align-items:center;justify-content:space-between}
+@media(max-width:680px){.odds-grid{grid-template-columns:1fr 1fr}.sbar-row{grid-template-columns:90px 1fr 65px}}
 </style>
 </head>
 <body>
@@ -343,11 +401,52 @@ function ui(loading){
 function showErr(m){var e=document.getElementById('err');e.classList.add('on');document.getElementById('errd').textContent=m}
 function clearErr(){document.getElementById('err').classList.remove('on')}
 
-/* ── PROMPT court et solide ── */
-var SYS='Tu es ORACLE SPORT, expert paris sportifs (xG, forme, bookmakers). Réponds UNIQUEMENT en JSON valide sans markdown.';
+/* ── PROMPTS ORACLE v4 ULTRA ── */
+var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises : xG, statistiques avancées, lecture des marchés bookmakers (Bet365, Unibet, Winamax, Pinnacle), détection de value bets, analyse des corners, tirs, hors-jeu, cartons, possession, BTTS, over/under buts/corners/tirs. Tu connais parfaitement les cotes réelles du marché. Tu réponds UNIQUEMENT en JSON valide strict, sans markdown, sans texte avant ou après le JSON.`;
 
-var USR='Analyse ces 8 matchs réels du 4 avril 2026 et génère des pronostics.\n\nMATCHS:\n1. Ligue1 J28: RC Strasbourg vs OGC Nice 17h\n2. Ligue1 J28: Stade Brestois vs Stade Rennais 19h\n3. Ligue1 J28: LOSC Lille vs RC Lens 21h05 (derby du Nord, Lens 2e à 1pt du PSG)\n4. Bundesliga J28: Bayer Leverkusen vs Wolfsburg\n5. Bundesliga J28: Fribourg vs Bayern Munich\n6. Bundesliga J28: VfB Stuttgart vs Borussia Dortmund\n7. NBA: Miami Heat vs Washington Wizards\n8. NBA: Denver Nuggets vs San Antonio Spurs (Wembanyama 41pts match précédent)\n\nFormat JSON requis (remplis TOUS les champs):\n{"stats":{"winRate":"71%","roi":"+15%","valueBets":"3"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"3.20 / 3.10 / 2.30","confidence":"medium","recommendation":"Victoire Nice","cote":"2.30","isValueBet":false,"analysis":"Analyse experte ici en 2-3 phrases avec données statistiques.","factors":[{"label":"facteur","type":"pos"}]}]}\n\nRègles: analyses en français 2-3 phrases avec stats, cotes entre 1.45-3.40, 3 valueBets max, confidence high/medium/low. Pour NBA probDraw=0.';
+var USR=`Date: 4 avril 2026. Analyse experte ultra-complète de ces 8 matchs réels avec cotes réelles de marché.
 
+MATCHS DU JOUR:
+1. Ligue1 J28: RC Strasbourg vs OGC Nice — 17h00
+2. Ligue1 J28: Stade Brestois vs Stade Rennais — 19h00
+3. Ligue1 J28: LOSC Lille vs RC Lens — 21h05 (derby du Nord — Lens 2e, 1pt derrière PSG)
+4. Bundesliga J28: Bayer Leverkusen vs Wolfsburg
+5. Bundesliga J28: SC Fribourg vs Bayern Munich
+6. Bundesliga J28: VfB Stuttgart vs Borussia Dortmund
+7. NBA: Miami Heat vs Washington Wizards
+8. NBA: Denver Nuggets vs San Antonio Spurs (Wembanyama 41pts match précédent)
+
+COTES RÉELLES BOOKMAKERS (Bet365/Unibet/Winamax):
+1. Strasbourg-Nice: 1X2: 2.90/3.10/2.55 | BTTS Oui: 1.72 Non: 2.05 | O2.5: 1.88 U2.5: 1.88 | O9.5crn: 1.80 | O24.5tirs: 1.85
+2. Brest-Rennes: 1X2: 2.60/3.20/2.70 | BTTS Oui: 1.68 Non: 2.10 | O2.5: 1.82 U2.5: 1.92 | O9.5crn: 1.75 | O24.5tirs: 1.80
+3. Lille-Lens: 1X2: 2.20/3.30/3.20 | BTTS Oui: 1.62 Non: 2.22 | O2.5: 1.72 U2.5: 2.02 | O9.5crn: 1.72 | O25.5tirs: 1.78
+4. Leverkusen-Wolfsburg: 1X2: 1.45/4.50/6.50 | BTTS Oui: 1.65 Non: 2.15 | O2.5: 1.55 U2.5: 2.38 | O10.5crn: 1.78 | O27.5tirs: 1.82
+5. Fribourg-Bayern: 1X2: 5.50/4.20/1.55 | BTTS Oui: 1.70 Non: 2.08 | O2.5: 1.62 U2.5: 2.25 | O9.5crn: 1.80 | O26.5tirs: 1.78
+6. Stuttgart-Dortmund: 1X2: 2.40/3.30/2.90 | BTTS Oui: 1.72 Non: 2.05 | O2.5: 1.70 U2.5: 2.08 | O9.5crn: 1.75 | O25.5tirs: 1.82
+7. Miami-Washington: ML: 1.35/3.25 | O220.5pts: 1.90 U220.5: 1.90
+8. Denver-SanAntonio: ML: 1.28/3.70 | O229.5pts: 1.88 U229.5: 1.88
+
+INSTRUCTIONS ANALYSE ULTRA-COMPLÈTE:
+Pour chaque match football, fournis:
+- Forme récente 5 matchs avec scores réels
+- xG moyens offensifs et défensifs cette saison
+- Moyenne corners dom/ext et tendance over/under
+- Moyenne tirs totaux et cadrés par match
+- Hors-jeu moyens, cartons moyens (jaunes/rouges)
+- Possession moyenne domicile/extérieur
+- Taux BTTS et Over 2.5 sur la saison
+- Absents/suspendus clés
+- Analyse tactique (système, style de jeu)
+- Signal bookmaker: mouvements de cotes, où est l'argent
+- Identification du MEILLEUR pari parmi tous les marchés disponibles
+- Paris secondaires recommandés (2-3 alternatives)
+
+Pour NBA: points/rebonds/passes moyens, pace, efficacité offensive/défensive, forme récente.
+
+FORMAT JSON STRICT (UNIQUEMENT le JSON, rien d'autre):
+{"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"47"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"StrasbG 5 derniers: W 2-1, D 1-1, L 0-2, W 3-1, D 1-1","awayFormDetails":"Nice 5 derniers: W 2-0, W 1-0, D 0-0, L 1-2, W 3-1","probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"2.90 / 3.10 / 2.55","oddsDetails":{"bttsOui":"1.72","bttsNon":"2.05","over25":"1.88","under25":"1.88","over35":"2.90","under35":"1.40","over95corners":"1.80","under95corners":"1.95","over245tirs":"1.85","under245tirs":"1.90","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.42","awayXG":"1.18","homeXGConceded":"1.35","awayXGConceded":"0.92","homeCornersAvg":"5.2","awayCornersAvg":"4.8","homeShotsAvg":"13.1","awayShotsAvg":"11.8","homeShotsOnTarget":"4.8","awayShotsOnTarget":"4.1","homeOffsideAvg":"2.1","awayOffsideAvg":"1.8","homeYellowAvg":"1.9","awayYellowAvg":"1.6","homePossession":"48%","awayPossession":"54%","homeBTTSrate":"52%","awayBTTSrate":"58%","homeOver25rate":"55%","awayOver25rate":"62%"},"absentees":"Strasbourg: Joueur1 (blessé) | Nice: Joueur2 (suspendu)","tactique":"Strasbourg 4-3-3 pressant vs Nice 4-2-3-1 compact","bookmakerSignal":"Nice raccourci de 2.80 à 2.55 — argent sur victoire extérieure. BTTS stable.","confidence":"medium","bestBet":"BTTS Oui","bestBetOdds":"1.72","bestBetReason":"52% BTTS Strasbourg + 58% BTTS Nice cette saison. Valeur claire à 1.72.","recommendation":"BTTS Oui @ 1.72","cote":"1.72","isValueBet":true,"analysis":"Analyse détaillée 4-5 phrases avec stats clés, contexte tactique, mouvements de cotes et justification.","factors":[{"label":"xG dom 1.42/match","type":"pos"},{"label":"Nice forme 4V/5","type":"neg"},{"label":"BTTS 55% historique","type":"pos"},{"label":"Absent clé","type":"neg"},{"label":"Cotes bougées vers Nice","type":"neu"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.88","confidence":"medium"},{"label":"Nice HC -0.5","odds":"1.62","confidence":"medium"}]}]}
+
+Génère les 8 matchs COMPLETS avec toutes les stats réelles. Utilise les vraies cotes fournies. Identifie LE MEILLEUR événement pour chaque match parmi tous les marchés. UNIQUEMENT le JSON.`;
 async function go(){
   if(!API_KEY){document.getElementById('apiModal').style.display='flex';return;}
   clearErr();
@@ -364,7 +463,7 @@ async function go(){
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:4096,
+        max_tokens:8000,
         system:SYS,
         messages:[{role:'user',content:USR}]
       })
@@ -428,6 +527,20 @@ function ftags(f){
   }).join('');
 }
 
+function oddsRow(label, val, highlight){
+  if(!val)return'';
+  return'<div class="orow'+(highlight?' ovb':'')+'"><span class="olb">'+x(label)+'</span><span class="oval">'+x(val)+'</span></div>';
+}
+
+function statBar(label, home, away){
+  if(!home&&!away)return'';
+  var hv=parseFloat(home)||0, av=parseFloat(away)||0, tot=hv+av||1;
+  var hp=Math.round(hv/tot*100), ap=100-hp;
+  return'<div class="sbar-row"><span class="sbar-lbl">'+x(label)+'</span>'+
+    '<div class="sbar-wrap"><div class="sbar-h" style="width:'+hp+'%"></div><div class="sbar-a" style="width:'+ap+'%"></div></div>'+
+    '<span class="sbar-vals">'+x(String(home))+'<span class="sbar-sep">|</span>'+x(String(away))+'</span></div>';
+}
+
 function render(ms){
   var g=document.getElementById('grid');
   g.innerHTML='';
@@ -443,33 +556,153 @@ function render(ms){
   fl.forEach(function(m,i){
     var ph=+m.probHome||33,pd=+m.probDraw||0,pa=+m.probAway||33;
     var bk=(m.sport||'').toLowerCase().includes('basket')||(m.sport||'').toLowerCase()==='nba';
+    var st=m.stats||{};
+    var od=m.oddsDetails||{};
+    var sb=m.secondaryBets||[];
+
     var c=document.createElement('div');
     c.className='card';c.style.animationDelay=(i*.07)+'s';
+
     var drawCol=bk
-      ?'<div class="pbi"><div class="pbl" style="visibility:hidden">—</div><div class="pbt"></div><div class="pp" style="visibility:hidden">—</div></div>'
+      ?''
       :'<div class="pbi"><div class="pbl">Nul</div><div class="pbt"><div class="pbf fd3" data-w="'+pd+'"></div></div><div class="pp d">'+pd+'%</div></div>';
+
+    // Odds section
+    var oddsHtml='';
+    if(!bk){
+      oddsHtml='<div class="odds-section">'+
+        '<div class="odds-title">📊 Marchés & Cotes</div>'+
+        '<div class="odds-grid">'+
+          '<div class="odds-col">'+
+            '<div class="odds-col-title">Résultat</div>'+
+            oddsRow('1 (Dom.)', m.bookmakerOdds?(m.bookmakerOdds.split('/')[0]||'').trim():'')+
+            oddsRow('X (Nul)', m.bookmakerOdds?(m.bookmakerOdds.split('/')[1]||'').trim():'')+
+            oddsRow('2 (Ext.)', m.bookmakerOdds?(m.bookmakerOdds.split('/')[2]||'').trim():'')+
+            oddsRow('Handicap', od.handicap)+
+          '</div>'+
+          '<div class="odds-col">'+
+            '<div class="odds-col-title">Buts</div>'+
+            oddsRow('BTTS Oui', od.bttsOui)+
+            oddsRow('BTTS Non', od.bttsNon)+
+            oddsRow('Over 2.5', od.over25)+
+            oddsRow('Under 2.5', od.under25)+
+            oddsRow('Over 3.5', od.over35)+
+          '</div>'+
+          '<div class="odds-col">'+
+            '<div class="odds-col-title">Corners & Tirs</div>'+
+            oddsRow('O9.5 Corners', od.over95corners)+
+            oddsRow('U9.5 Corners', od.under95corners)+
+            oddsRow('O10.5 Corners', od.over105corners)+
+            oddsRow('O24.5 Tirs', od.over245tirs)+
+            oddsRow('O25.5 Tirs', od.over255tirs)+
+            oddsRow('O27.5 Tirs', od.over275tirs)+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    } else {
+      oddsHtml='<div class="odds-section">'+
+        '<div class="odds-title">📊 Marchés & Cotes</div>'+
+        '<div class="odds-grid">'+
+          '<div class="odds-col">'+
+            '<div class="odds-col-title">Money Line</div>'+
+            oddsRow('Dom.', m.bookmakerOdds?(m.bookmakerOdds.split('/')[0]||'').trim():'')+
+            oddsRow('Ext.', m.bookmakerOdds?(m.bookmakerOdds.split('/')[1]||'').trim():'')+
+          '</div>'+
+          '<div class="odds-col">'+
+            '<div class="odds-col-title">Total Points</div>'+
+            oddsRow('Over 220.5', od.over2205)+
+            oddsRow('Under 220.5', od.under2205)+
+            oddsRow('Over 229.5', od.over2295)+
+            oddsRow('Under 229.5', od.under2295)+
+          '</div>'+
+        '</div>'+
+      '</div>';
+    }
+
+    // Stats section
+    var statsHtml='';
+    if(!bk && (st.homeXG||st.homeCornersAvg||st.homeShotsAvg)){
+      statsHtml='<div class="stats-section">'+
+        '<div class="stats-title">📈 Statistiques Avancées <span class="stats-legend"><span class="leg-h">DOM</span><span class="leg-a">EXT</span></span></div>'+
+        statBar('xG offensif / match', st.homeXG, st.awayXG)+
+        statBar('xG concédé / match', st.homeXGConceded, st.awayXGConceded)+
+        statBar('Corners / match', st.homeCornersAvg, st.awayCornersAvg)+
+        statBar('Tirs totaux / match', st.homeShotsAvg, st.awayShotsAvg)+
+        statBar('Tirs cadrés / match', st.homeShotsOnTarget, st.awayShotsOnTarget)+
+        statBar('Possession', st.homePossession?st.homePossession.replace('%',''):null, st.awayPossession?st.awayPossession.replace('%',''):null)+
+        statBar('Hors-jeu / match', st.homeOffsideAvg, st.awayOffsideAvg)+
+        statBar('Cartons jaunes / match', st.homeYellowAvg, st.awayYellowAvg)+
+        '<div class="rates-row">'+
+          (st.homeBTTSrate?'<div class="rate-pill">BTTS DOM '+x(st.homeBTTSrate)+'</div>':'')+
+          (st.awayBTTSrate?'<div class="rate-pill rate-a">BTTS EXT '+x(st.awayBTTSrate)+'</div>':'')+
+          (st.homeOver25rate?'<div class="rate-pill rate-o">O2.5 DOM '+x(st.homeOver25rate)+'</div>':'')+
+          (st.awayOver25rate?'<div class="rate-pill rate-o">O2.5 EXT '+x(st.awayOver25rate)+'</div>':'')+
+        '</div>'+
+      '</div>';
+    }
+
+    // Absentees + tactic
+    var contextHtml='';
+    if(m.absentees||m.tactique){
+      contextHtml='<div class="context-section">'+
+        (m.absentees?'<div class="ctx-row"><span class="ctx-icon">🚑</span><span class="ctx-text">'+x(m.absentees)+'</span></div>':'')+
+        (m.tactique?'<div class="ctx-row"><span class="ctx-icon">🧩</span><span class="ctx-text">'+x(m.tactique)+'</span></div>':'')+
+        (m.bookmakerSignal?'<div class="ctx-row"><span class="ctx-icon">📡</span><span class="ctx-text">'+x(m.bookmakerSignal)+'</span></div>':'')+
+      '</div>';
+    }
+
+    // Secondary bets
+    var secHtml='';
+    if(sb.length){
+      secHtml='<div class="sec-bets"><div class="sec-title">🎯 Paris Alternatifs</div>'+
+        sb.map(function(b){
+          return'<div class="sec-item"><span class="sec-label">'+x(b.label||'')+'</span>'+
+            '<span class="sec-odds">'+x(b.odds||'')+'</span>'+
+            (b.confidence?'<span class="sec-conf '+pc(b.confidence)+'">'+pl(b.confidence)+'</span>':'')+
+          '</div>';
+        }).join('')+
+      '</div>';
+    }
+
+    // Form details
+    var formHtml='';
+    if(m.homeFormDetails||m.awayFormDetails){
+      formHtml='<div class="form-details">'+
+        (m.homeFormDetails?'<div class="form-det-row"><span class="form-team">'+x(m.homeTeam||'Dom.')+'</span><span class="form-str">'+x(m.homeFormDetails)+'</span></div>':'')+
+        (m.awayFormDetails?'<div class="form-det-row"><span class="form-team">'+x(m.awayTeam||'Ext.')+'</span><span class="form-str">'+x(m.awayFormDetails)+'</span></div>':'')+
+      '</div>';
+    }
+
     c.innerHTML=
       '<div class="cn">'+(i+1)+'</div>'+
       '<div class="ch"><div class="cm"><div class="sb">'+em(m.sport)+'</div><div><div class="cl">'+x(m.league||'')+'</div><div class="ct">⏰ '+x(m.time||'TBD')+'</div></div></div>'+
       '<div class="pill '+pc(m.confidence)+'">'+pl(m.confidence)+'</div></div>'+
       '<div class="cb">'+
-      '<div class="tr">'+
-        '<div class="tm"><div class="tn">'+x(m.homeTeam||'')+'</div><div class="tf">'+formDots(m.homeForm)+'</div></div>'+
-        '<div class="vs"><div class="vst">VS</div><div class="vso">'+x(m.bookmakerOdds||'')+'</div></div>'+
-        '<div class="tm aw"><div class="tn">'+x(m.awayTeam||'')+'</div><div class="tf">'+formDots(m.awayForm)+'</div></div>'+
-      '</div>'+
-      '<div class="ps"><div class="ph2"><span class="pt">Probabilités IA</span><span class="pm2">Oracle v3</span></div>'+
-      '<div class="pb">'+
-        '<div class="pbi"><div class="pbl">'+(bk?'Domicile':'Dom.')+'</div><div class="pbt"><div class="pbf fh" data-w="'+ph+'"></div></div><div class="pp h">'+ph+'%</div></div>'+
-        drawCol+
-        '<div class="pbi"><div class="pbl">'+(bk?'Extérieur':'Ext.')+'</div><div class="pbt"><div class="pbf fa" data-w="'+pa+'"></div></div><div class="pp a">'+pa+'%</div></div>'+
-      '</div></div>'+
-      '<hr class="dv">'+
-      '<div class="ah"><span>🔬</span><span class="al">Analyse Expert IA</span></div>'+
-      '<div class="ab">'+x(m.analysis||'')+'</div>'+
-      '<div class="ft">'+ftags(m.factors)+'</div>'+
-      '<div class="bet"><div><div class="bl">Pari recommandé</div><div class="bn">'+x(m.recommendation||'—')+'</div></div>'+
-      '<div class="br"><div class="bcl">Cote</div><div class="bc">'+x(String(m.cote||'—'))+'</div>'+(m.isValueBet?'<div class="vb">⭐ VALUE BET</div>':'')+'</div></div>'+
+        '<div class="tr">'+
+          '<div class="tm"><div class="tn">'+x(m.homeTeam||'')+'</div><div class="tf">'+formDots(m.homeForm)+'</div></div>'+
+          '<div class="vs"><div class="vst">VS</div><div class="vso">'+x(m.bookmakerOdds||'')+'</div></div>'+
+          '<div class="tm aw"><div class="tn">'+x(m.awayTeam||'')+'</div><div class="tf">'+formDots(m.awayForm)+'</div></div>'+
+        '</div>'+
+        formHtml+
+        '<div class="ps"><div class="ph2"><span class="pt">Probabilités IA</span><span class="pm2">Oracle v4</span></div>'+
+        '<div class="pb">'+
+          '<div class="pbi"><div class="pbl">'+(bk?'Domicile':'Dom.')+'</div><div class="pbt"><div class="pbf fh" data-w="'+ph+'"></div></div><div class="pp h">'+ph+'%</div></div>'+
+          drawCol+
+          '<div class="pbi"><div class="pbl">'+(bk?'Extérieur':'Ext.')+'</div><div class="pbt"><div class="pbf fa" data-w="'+pa+'"></div></div><div class="pp a">'+pa+'%</div></div>'+
+        '</div></div>'+
+        oddsHtml+
+        statsHtml+
+        contextHtml+
+        '<hr class="dv">'+
+        '<div class="ah"><span>🔬</span><span class="al">Analyse Expert IA</span></div>'+
+        '<div class="ab">'+x(m.analysis||'')+'</div>'+
+        (m.bestBetReason?'<div class="best-reason">💡 '+x(m.bestBetReason)+'</div>':'')+
+        '<div class="ft">'+ftags(m.factors)+'</div>'+
+        secHtml+
+        '<div class="bet">'+(m.isValueBet?'<div class="vb-banner">⭐ VALUE BET DÉTECTÉ</div>':'')+
+        '<div class="bet-inner"><div><div class="bl">Meilleur Pari</div><div class="bn">'+x(m.bestBet||m.recommendation||'—')+'</div></div>'+
+        '<div class="br"><div class="bcl">Cote</div><div class="bc">'+x(String(m.bestBetOdds||m.cote||'—'))+'</div></div></div>'+
+        '</div>'+
       '</div>';
     g.appendChild(c);
   });
