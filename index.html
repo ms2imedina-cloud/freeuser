@@ -147,6 +147,13 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 .date-nav{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.9rem;transition:all .2s}
 .date-nav:hover{border-color:rgba(0,255,136,.35);color:var(--accent)}
 .src-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:20px;padding:2px 10px;font-size:.6rem;font-weight:700;letter-spacing:1px;color:var(--a3);text-transform:uppercase;margin-top:4px}
+/* SECOND MODAL (API-SPORTS) */
+.modal2-note{background:rgba(79,195,247,.07);border:1px solid rgba(79,195,247,.2);border-radius:8px;padding:.6rem .9rem;font-size:.72rem;color:var(--a3);margin-bottom:1rem;line-height:1.6}
+.modal2-note a{color:var(--accent);text-decoration:none}
+.modal2-note a:hover{text-decoration:underline}
+.step2-badge{display:inline-flex;align-items:center;gap:5px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.3);border-radius:20px;padding:3px 12px;font-size:.62rem;font-weight:700;letter-spacing:1px;color:var(--a3);text-transform:uppercase;margin-top:5px}
+.skip-btn{width:100%;background:transparent;border:1px solid var(--border);color:var(--muted);cursor:pointer;padding:10px;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:600;font-size:.82rem;margin-top:.5rem;transition:all .2s}
+.skip-btn:hover{border-color:rgba(255,255,255,.2);color:var(--text)}
 
 
 @media(max-width:680px){.sstats{grid-template-columns:repeat(2,1fr)}header,main{padding-left:1rem;padding-right:1rem}.tabs{padding:.8rem 1rem 0;overflow-x:auto}.topbar{flex-direction:column;align-items:flex-start}.tn{font-size:.9rem}}
@@ -237,6 +244,29 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 </head>
 <body>
 
+<!-- MODAL CLÉ API SPORTS -->
+<div class="modal-overlay" id="sportsModal" style="display:none">
+  <div class="modal-box">
+    <div class="modal-icon">🏟️</div>
+    <div class="modal-title">Clé API-Sports</div>
+    <div class="modal-sub">Pour afficher les <strong style="color:var(--accent)">vrais matchs du jour</strong>, entrez votre clé API-Sports (gratuite).</div>
+    <div class="modal2-note">
+      🆓 <strong>Plan gratuit :</strong> 100 requêtes/jour — suffisant.<br>
+      📌 Inscription sur <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a><br>
+      🔑 Copiez votre clé depuis l'onglet <strong>API Key</strong> du dashboard.
+    </div>
+    <label class="modal-label">Votre clé API-Sports.io</label>
+    <div class="modal-input-wrap">
+      <input class="modal-input" type="password" id="sportsKeyInput" placeholder="Votre clé API-Sports..." autocomplete="off" oninput="clearSportsErr()" onkeydown="if(event.key==='Enter')saveSportsKey()">
+      <button class="modal-eye" onclick="toggleVisSports()">👁</button>
+    </div>
+    <div class="modal-err" id="sportsErr"></div>
+    <button class="modal-btn" onclick="saveSportsKey()">✅ Activer Matchs Réels</button>
+    <button class="skip-btn" onclick="skipSportsKey()">⚡ Continuer sans (analyse IA seule)</button>
+    <div class="modal-footer">Les clés sont stockées localement sur votre appareil</div>
+  </div>
+</div>
+
 <!-- MODAL CLÉ API -->
 <div class="modal-overlay" id="apiModal">
   <div class="modal-box">
@@ -274,8 +304,8 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
     <div class="dinfo">
       <div class="dl">Pronostics — Vrais matchs</div>
       <div class="dv" id="dateDisplay">SAMEDI 4 AVRIL 2026</div>
-      <div class="tag-real">✅ Matchs réels vérifiés</div>
-      <div class="src-badge">🧠 Calendriers officiels · Saison 2025-2026</div>
+      <div class="tag-real" id="matchTag">✅ Matchs réels vérifiés</div>
+      <div class="src-badge" id="srcBadge">🧠 Analyse IA — Calendriers officiels</div>
     </div>
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.6rem">
       <div class="date-wrap">
@@ -333,8 +363,9 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 var all=[], sport='football';
 var slp=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 
-/* ── GESTION CLÉ API ── */
+/* ── CLÉS API ── */
 var API_KEY='';
+var SPORTS_KEY='';
 
 function initKey(){
   var saved=localStorage.getItem('oracle_api_key')||'';
@@ -342,14 +373,16 @@ function initKey(){
     API_KEY=saved;
     document.getElementById('apiModal').style.display='none';
     showKeyBadge(saved);
+    // Check if sports key exists
+    var sk=localStorage.getItem('oracle_sports_key')||'';
+    if(sk){ SPORTS_KEY=sk; updateLiveBadge(true); }
+    else { document.getElementById('sportsModal').style.display='flex'; }
   } else {
     document.getElementById('apiModal').style.display='flex';
     setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
   }
-  // Init date to today
   var today=new Date();
-  var ymd=today.toISOString().split('T')[0];
-  document.getElementById('dateInput').value=ymd;
+  document.getElementById('dateInput').value=formatDateISO(today);
   updateDateDisplay(today);
   updateSportUI();
 }
@@ -357,13 +390,49 @@ function initKey(){
 function saveKey(){
   var v=(document.getElementById('apiKeyInput').value||'').trim();
   if(!v){showModalErr('Veuillez entrer votre clé API.');return;}
-  if(!v.startsWith('sk-ant-')){showModalErr('Clé invalide — elle doit commencer par sk-ant-');return;}
-  if(v.length<40){showModalErr("Clé trop courte, vérifiez qu'elle est complète.");return;}
+  if(!v.startsWith('sk-ant-')){showModalErr('Clé invalide — doit commencer par sk-ant-');return;}
+  if(v.length<40){showModalErr("Clé trop courte.");return;}
   API_KEY=v;
   localStorage.setItem('oracle_api_key',v);
   document.getElementById('apiModal').style.display='none';
   showKeyBadge(v);
+  var sk=localStorage.getItem('oracle_sports_key')||'';
+  if(sk){ SPORTS_KEY=sk; updateLiveBadge(true); }
+  else { document.getElementById('sportsModal').style.display='flex'; }
   document.getElementById('apiKeyInput').value='';
+}
+
+function saveSportsKey(){
+  var v=(document.getElementById('sportsKeyInput').value||'').trim();
+  if(!v){showSportsErr('Veuillez entrer votre clé API-Sports.');return;}
+  SPORTS_KEY=v;
+  localStorage.setItem('oracle_sports_key',v);
+  document.getElementById('sportsModal').style.display='none';
+  document.getElementById('sportsKeyInput').value='';
+  updateLiveBadge(true);
+  updateSportUI();
+}
+
+function skipSportsKey(){
+  document.getElementById('sportsModal').style.display='none';
+  updateLiveBadge(false);
+  updateSportUI();
+}
+
+function updateLiveBadge(hasLive){
+  var badge=document.getElementById('srcBadge');
+  var tag=document.getElementById('matchTag');
+  if(hasLive){
+    badge.innerHTML='🟢 API-Sports · Matchs Temps Réel';
+    badge.style.background='rgba(0,255,136,.1)';
+    badge.style.borderColor='rgba(0,255,136,.3)';
+    badge.style.color='var(--accent)';
+    tag.innerHTML='✅ Matchs réels en direct';
+  } else {
+    badge.innerHTML='🧠 Analyse IA — Calendriers officiels';
+    badge.style.cssText='';
+    tag.innerHTML='🔮 Analyse IA intelligente';
+  }
 }
 
 function changeKey(){
@@ -381,12 +450,17 @@ function showKeyBadge(k){
 
 function showModalErr(m){var e=document.getElementById('modalErr');e.textContent=m;e.classList.add('on');}
 function clearModalErr(){document.getElementById('modalErr').classList.remove('on');}
+function showSportsErr(m){var e=document.getElementById('sportsErr');e.textContent=m;e.classList.add('on');}
+function clearSportsErr(){document.getElementById('sportsErr').classList.remove('on');}
 
 function toggleVis(){
-  var inp=document.getElementById('apiKeyInput');
-  var btn=document.getElementById('eyeBtn');
-  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
-  else{inp.type='password';btn.textContent='👁';}
+  var inp=document.getElementById('apiKeyInput'),btn=document.getElementById('eyeBtn');
+  inp.type=inp.type==='password'?'text':'password';
+  btn.textContent=inp.type==='password'?'👁':'🙈';
+}
+function toggleVisSports(){
+  var inp=document.getElementById('sportsKeyInput');
+  inp.type=inp.type==='password'?'text':'password';
 }
 
 /* ── DATE MANAGEMENT ── */
@@ -475,7 +549,106 @@ function setSport(s,el){
   updateSportUI();
 }
 
-/* ── PROMPTS DYNAMIQUES PAR SPORT (avec web_search) ── */
+/* ── API-SPORTS : RÉCUPÉRATION VRAIS MATCHS ── */
+
+// IDs des ligues principales football
+var FOOTBALL_LEAGUES=[
+  {id:61,name:'Ligue 1'},{id:62,name:'Ligue 2'},
+  {id:78,name:'Bundesliga'},{id:79,name:'Bundesliga 2'},
+  {id:39,name:'Premier League'},{id:40,name:'Championship'},
+  {id:140,name:'La Liga'},{id:141,name:'La Liga 2'},
+  {id:135,name:'Serie A'},{id:136,name:'Serie B'},
+  {id:2,name:'Champions League'},{id:3,name:'Europa League'},{id:848,name:'Conference League'},
+  {id:4,name:'Euro'},{id:1,name:'Coupe du Monde'}
+];
+
+async function fetchFootballMatches(dateStr){
+  // Fetch top leagues in parallel
+  var leagueIds=[61,78,39,140,135,2,3,848,62,4];
+  var promises=leagueIds.map(function(lid){
+    return fetch('https://v3.football.api-sports.io/fixtures?date='+dateStr+'&league='+lid+'&season=2025',{
+      headers:{'x-apisports-key':SPORTS_KEY}
+    }).then(function(r){return r.json();}).catch(function(){return null;});
+  });
+  var results=await Promise.all(promises);
+  var matches=[];
+  results.forEach(function(res){
+    if(!res||!res.response)return;
+    res.response.forEach(function(f){
+      var fix=f.fixture,teams=f.teams,league=f.league,goals=f.goals,score=f.score;
+      matches.push({
+        id:fix.id,
+        league:league.name+' '+league.round,
+        homeTeam:teams.home.name,
+        awayTeam:teams.away.name,
+        time:fix.date?new Date(fix.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'TBD',
+        status:fix.status.short,
+        score:goals.home!==null?goals.home+'-'+goals.away:null,
+        leagueId:league.id,
+        leagueLogo:league.logo,
+        homeLogo:teams.home.logo,
+        awayLogo:teams.away.logo,
+        venue:fix.venue?fix.venue.name+', '+fix.venue.city:''
+      });
+    });
+  });
+  return matches;
+}
+
+async function fetchTennisMatches(dateStr){
+  // ATP/WTA via API-Tennis (api-sports)
+  var res=await fetch('https://v1.tennis.api-sports.io/games?date='+dateStr,{
+    headers:{'x-apisports-key':SPORTS_KEY}
+  }).then(function(r){return r.json();}).catch(function(){return null;});
+  if(!res||!res.response)return[];
+  return res.response.map(function(g){
+    var p=g.players||{},t=g.tournament||{};
+    return{
+      id:g.id,
+      league:t.name||'ATP/WTA',
+      surface:t.surface||'',
+      homeTeam:(p.player1&&p.player1.name)||'Joueur 1',
+      awayTeam:(p.player2&&p.player2.name)||'Joueur 2',
+      time:g.date?new Date(g.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'TBD',
+      status:g.status&&g.status.short,
+      score:g.scores?JSON.stringify(g.scores):null
+    };
+  });
+}
+
+async function fetchBasketMatches(dateStr){
+  // NBA via API-Basketball
+  var res=await fetch('https://v1.basketball.api-sports.io/games?date='+dateStr+'&league=12&season=2024-2025',{
+    headers:{'x-apisports-key':SPORTS_KEY}
+  }).then(function(r){return r.json();}).catch(function(){return null;});
+  if(!res||!res.response)return[];
+  return res.response.map(function(g){
+    var t=g.teams||{},s=g.scores||{},st=g.status||{};
+    return{
+      id:g.id,
+      league:'NBA',
+      homeTeam:t.home&&t.home.name||'Home',
+      awayTeam:t.visitors&&t.visitors.name||'Away',
+      time:g.date?new Date(g.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'TBD',
+      status:st.short,
+      score:s.home&&s.visitors?s.home.total+'-'+s.visitors.total:null,
+      homeLogo:t.home&&t.home.logo,
+      awayLogo:t.visitors&&t.visitors.logo
+    };
+  });
+}
+
+function formatMatchListForPrompt(matches, sportType){
+  if(!matches||!matches.length) return 'Aucun match trouvé via API.';
+  return matches.slice(0,12).map(function(m,i){
+    var line=(i+1)+'. '+m.league+': '+m.homeTeam+' vs '+m.awayTeam+' — '+m.time;
+    if(m.surface) line+=' ('+m.surface+')';
+    if(m.venue) line+=' | '+m.venue;
+    return line;
+  }).join('\n');
+}
+
+/* ── PROMPTS DYNAMIQUES PAR SPORT ── */
 var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises xG, statistiques avancées, bookmakers (Bet365, Unibet, Winamax, Pinnacle), value bets, tous les marchés disponibles.
 
 RÈGLES ABSOLUES:
@@ -483,18 +656,18 @@ RÈGLES ABSOLUES:
 2. Ne génère JAMAIS de matchs fictifs avec des noms inventés. Utilise les vraies équipes et vrais joueurs.
 3. Ta réponse finale commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks, JAMAIS de markdown. JSON brut valide uniquement.`;
 
-function buildPrompt(sportType, dateStr, dateFR){
+function buildPrompt(sportType, dateStr, dateFR, realMatchesList){
 
-  var footballPrompt=`Date demandée: ${dateFR} (${dateStr}).
+  var matchesInfo = realMatchesList && realMatchesList.trim() && realMatchesList!=='Aucun match trouvé via API.'
+    ? '✅ MATCHS RÉELS RÉCUPÉRÉS EN DIRECT :\n'+realMatchesList
+    : '⚠️ Aucune donnée API disponible — utilise tes connaissances du calendrier '+dateFR+' pour déterminer les matchs les plus probables.';
 
-Génère les matchs de football RÉELS qui se jouent ce jour selon les calendriers officiels :
-- Ligue 1 (France) — journée en cours
-- Bundesliga (Allemagne) — journée en cours  
-- Premier League (Angleterre) si applicable
-- La Liga (Espagne) si applicable
-- Champions League / Europa League si applicable ce jour
+  var footballPrompt=`Date: ${dateFR} (${dateStr}).
 
-UTILISE UNIQUEMENT de vraies équipes avec leurs vrais noms. Si tu n'es pas certain des matchs exacts de cette date précise, base-toi sur la journée de championnat la plus probable selon le calendrier de la saison 2025-2026.
+${matchesInfo}
+
+Génère une analyse ultra-complète pour CHACUN des matchs listés ci-dessus (ou les matchs les plus probables du jour si pas de données API).
+UTILISE UNIQUEMENT les vrais noms d'équipes de la liste. Ne génère aucun match fictif.
 
 ANALYSE REQUISE PAR MATCH:
 - Forme 5 derniers matchs avec scores réels
@@ -511,16 +684,14 @@ FORMAT JSON strict (commence par {, finis par }, rien d'autre):
 {"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"52"},"matches":[{"id":1,"sport":"football","league":"Ligue 1","homeTeam":"VRAI NOM EQUIPE","awayTeam":"VRAI NOM EQUIPE","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers: W 2-1 vs NomRéel, D 1-1 vs NomRéel...","awayFormDetails":"5 derniers: W 2-0 vs NomRéel...","probHome":35,"probDraw":28,"probAway":37,"bookmakerOdds":"2.70 / 3.10 / 2.55","oddsDetails":{"bttsOui":"1.72","bttsNon":"2.05","over25":"1.88","under25":"1.88","over35":"2.90","under35":"1.40","over95corners":"1.80","under95corners":"1.95","over245tirs":"1.85","under245tirs":"1.90","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.42","awayXG":"1.18","homeXGConceded":"1.35","awayXGConceded":"0.92","homeCornersAvg":"5.2","awayCornersAvg":"4.8","homeShotsAvg":"13.1","awayShotsAvg":"11.8","homeShotsOnTarget":"4.8","awayShotsOnTarget":"4.1","homeOffsideAvg":"2.1","awayOffsideAvg":"1.8","homeYellowAvg":"1.9","awayYellowAvg":"1.6","homePossession":"48%","awayPossession":"54%","homeBTTSrate":"52%","awayBTTSrate":"58%","homeOver25rate":"55%","awayOver25rate":"62%"},"absentees":"Absents connus ou 'Non communiqués'","tactique":"Style de jeu réel des deux équipes","bookmakerSignal":"Mouvement de cote réaliste basé sur forme.","confidence":"medium","bestBet":"BTTS Oui","bestBetOdds":"1.72","bestBetReason":"Justification basée sur stats réelles des équipes.","recommendation":"BTTS Oui @ 1.72","cote":"1.72","isValueBet":true,"analysis":"Analyse 4-5 phrases avec stats réelles, contexte du match, enjeux.","factors":[{"label":"xG dom 1.42","type":"pos"},{"label":"BTTS 55% saison","type":"pos"},{"label":"Blessé clé","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.88","confidence":"medium"},{"label":"Corners +9.5","odds":"1.82","confidence":"low"}]}]}
 Génère 5-7 matchs football RÉELS du ${dateFR}. JSON brut uniquement.`;
 
-  var tennisPrompt=`Date demandée: ${dateFR} (${dateStr}).
+  var tennisPrompt=`Date: ${dateFR} (${dateStr}).
 
-Génère les matchs de tennis RÉELS qui se jouent ce jour selon le calendrier ATP/WTA officiel :
-- Identifie quel tournoi ATP et WTA est en cours cette semaine-là
-- Détermine le tour (1er tour, 2e tour, quarts, demis, finale selon la date dans la semaine)
-- Utilise les vrais joueurs ATP/WTA avec leurs vrais noms et classements
+${matchesInfo}
 
-UTILISE UNIQUEMENT de vrais joueurs professionnels avec leurs vrais noms. Base-toi sur le calendrier ATP/WTA 2025-2026.
+Génère une analyse complète pour CHACUN des matchs tennis listés (ou les matchs ATP/WTA les plus probables du jour).
+UTILISE UNIQUEMENT les vrais noms de joueurs de la liste.
 
-ANALYSE REQUISE PAR MATCH:
+MARCHÉS TENNIS À ANALYSER:
 - Forme récente (5 derniers matchs avec score et tournoi réels)
 - Classement ATP/WTA actuel
 - Stats surface: % victoires, tournois gagnés sur cette surface
@@ -537,33 +708,30 @@ FORMAT JSON strict:
 {"stats":{"winRate":"71%","roi":"+16%","valueBets":"3","totalMarchés":"38"},"matches":[{"id":1,"sport":"tennis","league":"NOM TOURNOI RÉEL","homeTeam":"VRAI JOUEUR 1","awayTeam":"VRAI JOUEUR 2","time":"11:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers: W 6-3 6-2 vs NomRéel (Monte-Carlo), W 7-5 6-4 vs NomRéel...","awayFormDetails":"5 derniers: W 6-4 6-3 vs NomRéel...","probHome":62,"probDraw":0,"probAway":38,"bookmakerOdds":"1.55 / — / 2.45","oddsDetails":{"over215jeux":"1.85","under215jeux":"1.90","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.10","under25sets":"1.68","handicap":"-2.5 jeux @ 2.00","acesJ1over":"1.90","acesJ2over":"1.85","tiebreak":"2.20"},"stats":{"rankHome":"ATP #4","rankAway":"ATP #18","surfaceWinHome":"78%","surfaceWinAway":"61%","serve1PctHome":"67%","serve1PctAway":"63%","acesAvgHome":"8.2","acesAvgAway":"5.1","dfAvgHome":"2.8","dfAvgAway":"3.4","returnPtsHome":"44%","returnPtsAway":"38%","h2h":"4-2 pour Joueur1","h2hDetails":"Dernière conf: Joueur1 bat Joueur2 6-3 7-5 (Roland Garros 2024)"},"absentees":"Aucune blessure signalée","tactique":"Style réel: agressif baseline, grosse 1ère balle / défenseur fond de court","bookmakerSignal":"Cote raccourcie sur le favori — argent clair.","confidence":"high","bestBet":"VRAI JOUEUR vainqueur","bestBetOdds":"1.55","bestBetReason":"Stats réelles: 78% victoires sur terre, H2H 4-2, forme excellente.","recommendation":"VRAI JOUEUR @ 1.55","cote":"1.55","isValueBet":false,"analysis":"Analyse 4-5 phrases avec stats réelles, H2H, surface, enjeux.","factors":[{"label":"78% win surface","type":"pos"},{"label":"H2H 4-2 favorable","type":"pos"},{"label":"Adversaire en forme","type":"neu"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.85","confidence":"medium"},{"label":"Tiebreak Oui","odds":"2.20","confidence":"low"}]}]}
 Génère 5-6 matchs tennis RÉELS du ${dateFR}. JSON brut uniquement.`;
 
-  var basketPrompt=`Date demandée: ${dateFR} (${dateStr}).
+  var basketPrompt=`Date: ${dateFR} (${dateStr}).
 
-Génère les matchs NBA RÉELS qui se jouent ce soir selon le calendrier NBA officiel 2025-2026 :
-- Identifie les matchs NBA programmés ce jour précis
-- Utilise les vrais noms d'équipes NBA et vrais joueurs stars
-- Tiens compte de la période de la saison (regular season, play-in, playoffs)
-- Recherche les absents/blessés connus de cette période
+${matchesInfo}
 
-UTILISE UNIQUEMENT de vraies équipes NBA avec leurs vrais noms.
+Génère une analyse complète pour CHACUN des matchs NBA listés (ou les matchs NBA les plus probables du soir).
+UTILISE UNIQUEMENT les vrais noms d'équipes NBA de la liste.
 
-ANALYSE REQUISE PAR MATCH:
+MARCHÉS NBA À ANALYSER:
+- Money Line, Spread, Total points O/U, Rebonds O/U, Passes O/U, Q1 vainqueur, Props joueurs stars
+
+ANALYSE REQUISE:
 - Forme récente 5 derniers matchs avec scores réels
-- Classement conférence actuel et position playoff
-- Offensive/Defensive Rating saison réel
-- Pace (possessions/48min) réel
+- Classement conférence et position playoff
+- Offensive/Defensive Rating saison
+- Pace (possessions/48min)
 - Points moyens marqués et concédés
-- Rebonds et passes décisives moyennes
-- % tirs 3pts
-- Stats head-to-head saison actuelle
-- Absents/blessés connus (liste réelle)
+- Rebonds, passes décisives moyennes, % tirs 3pts
+- H2H saison actuelle
+- Absents/blessés connus
 - Style de jeu réel de l'équipe
 - Signal bookmaker réaliste
 
-MARCHÉS: Money Line, Spread, Total points O/U, Rebonds O/U, Passes O/U, Q1 vainqueur, Props joueurs stars
-
 FORMAT JSON strict:
-{"stats":{"winRate":"69%","roi":"+14%","valueBets":"3","totalMarchés":"31"},"matches":[{"id":1,"sport":"basketball","league":"NBA","homeTeam":"VRAIE EQUIPE NBA","awayTeam":"VRAIE EQUIPE NBA","time":"01:00","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","L"],"homeFormDetails":"5 derniers: W 108-98 vs NomRéel, W 115-102 vs NomRéel...","awayFormDetails":"5 derniers: L 95-112 vs NomRéel...","probHome":68,"probDraw":0,"probAway":32,"bookmakerOdds":"1.45 / 2.75","oddsDetails":{"spread":"Equipe1 -6.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"1.88","under2295":"1.88","q1Dom":"1.72","q1Away":"2.08","prop1":"LeBron James O25.5 pts @ 1.85","prop2":"Jokic O11.5 reb @ 1.90"},"stats":{"homeOffRtg":"116.2","awayOffRtg":"108.4","homeDefRtg":"110.1","awayDefRtg":"117.8","homePace":"99.2","awayPace":"101.3","homePPG":"115.4","awayPPG":"107.8","homeOppPPG":"109.7","awayOppPPG":"119.2","homeRebAvg":"45.1","awayRebAvg":"42.3","homeAstAvg":"27.4","awayAstAvg":"24.1","home3PctAvg":"37.8%","away3PctAvg":"34.2%","h2h":"3-1 Equipe1 cette saison"},"absentees":"Liste réelle des absents connus","tactique":"Style de jeu réel: pace, système offensif","bookmakerSignal":"Mouvement de cote réaliste selon forme et absents.","confidence":"high","bestBet":"VRAIE EQUIPE -6.5","bestBetOdds":"1.90","bestBetReason":"Justification basée sur stats réelles et absents.","recommendation":"EQUIPE -6.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse 4-5 phrases avec stats réelles, blessés, matchup, enjeux playoff.","factors":[{"label":"OffRtg 116.2 top 5 NBA","type":"pos"},{"label":"Adversaire 4-16 extérieur","type":"pos"},{"label":"Star blessé absent","type":"neg"},{"label":"H2H 3-1 favorable","type":"pos"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"},{"label":"Equipe1 gagne Q1","odds":"1.72","confidence":"medium"},{"label":"Star Over 25.5 pts","odds":"1.85","confidence":"medium"}]}]}
+{"stats":{"winRate":"69%","roi":"+14%","valueBets":"3","totalMarchés":"31"},"matches":[{"id":1,"sport":"basketball","league":"NBA","homeTeam":"VRAIE EQUIPE NBA","awayTeam":"VRAIE EQUIPE NBA","time":"01:00","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","L"],"homeFormDetails":"5 derniers: W 108-98 vs NomRéel, W 115-102 vs NomRéel...","awayFormDetails":"5 derniers: L 95-112 vs NomRéel...","probHome":68,"probDraw":0,"probAway":32,"bookmakerOdds":"1.45 / 2.75","oddsDetails":{"spread":"Equipe1 -6.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"1.88","under2295":"1.88","q1Dom":"1.72","q1Away":"2.08","prop1":"LeBron James O25.5 pts @ 1.85","prop2":"Jokic O11.5 reb @ 1.90"},"stats":{"homeOffRtg":"116.2","awayOffRtg":"108.4","homeDefRtg":"110.1","awayDefRtg":"117.8","homePace":"99.2","awayPace":"101.3","homePPG":"115.4","awayPPG":"107.8","homeOppPPG":"109.7","awayOppPPG":"119.2","homeRebAvg":"45.1","awayRebAvg":"42.3","homeAstAvg":"27.4","awayAstAvg":"24.1","home3PctAvg":"37.8%","away3PctAvg":"34.2%","h2h":"3-1 Equipe1 cette saison"},"absentees":"Liste réelle des absents","tactique":"Style de jeu réel","bookmakerSignal":"Mouvement de cote réaliste.","confidence":"high","bestBet":"VRAIE EQUIPE -6.5","bestBetOdds":"1.90","bestBetReason":"Justification stats réelles.","recommendation":"EQUIPE -6.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse 4-5 phrases avec stats réelles.","factors":[{"label":"OffRtg top 5","type":"pos"},{"label":"Adversaire 4-16 ext","type":"pos"},{"label":"Star blessé","type":"neg"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"}]}]}
 Génère 4-6 matchs NBA RÉELS du ${dateFR}. JSON brut uniquement.`;
 
   if(sportType==='tennis') return tennisPrompt;
@@ -616,9 +784,31 @@ async function go(){
   var d=getSelectedDate();
   var dateStr=formatDateISO(d);
   var dateFR=formatDateFR(d);
-  var USR=buildPrompt(sport,dateStr,dateFR);
 
+  // Step 1: Fetch real matches from API-Sports if key available
+  var realMatchesList='';
+  if(SPORTS_KEY){
+    document.getElementById('lmsg').textContent='🔍 Récupération des vrais matchs API-Sports...';
+    try{
+      var rawMatches=[];
+      if(sport==='football') rawMatches=await fetchFootballMatches(dateStr);
+      else if(sport==='tennis') rawMatches=await fetchTennisMatches(dateStr);
+      else if(sport==='basketball') rawMatches=await fetchBasketMatches(dateStr);
+      if(rawMatches&&rawMatches.length){
+        realMatchesList=formatMatchListForPrompt(rawMatches,sport);
+        updateLiveBadge(true);
+      } else {
+        realMatchesList='Aucun match trouvé via API.';
+      }
+    }catch(err){
+      console.warn('API-Sports error:',err);
+      realMatchesList='Erreur API-Sports: '+err.message;
+    }
+  }
+
+  var USR=buildPrompt(sport,dateStr,dateFR,realMatchesList);
   var anim=animS();
+
   try{
     var r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
@@ -633,12 +823,11 @@ async function go(){
     await anim;
     if(!r.ok){
       var t=await r.text().catch(function(){return '';});
-      if(r.status===429)throw new Error('⏳ Limite atteinte. Patientez 1-2 min.');
-      if(r.status===401||r.status===403)throw new Error('🔑 Clé API invalide ('+r.status+').');
+      if(r.status===429)throw new Error('⏳ Limite de requêtes atteinte. Patientez 1-2 min puis réessayez.');
+      if(r.status===401||r.status===403)throw new Error('🔑 Clé API Anthropic invalide ('+r.status+'). Vérifiez votre clé.');
       throw new Error('Erreur API '+r.status+': '+t.slice(0,200));
     }
     var d2=await r.json();
-    // Extract text blocks only (ignore tool_use / tool_result blocks)
     var raw=(d2.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
     if(!raw)throw new Error('Réponse vide');
     var p=parseJ(raw);
