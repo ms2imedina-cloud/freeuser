@@ -548,36 +548,54 @@ var FOOTBALL_LEAGUES=[
 ];
 
 async function fetchFootballMatches(dateStr){
-  // Fetch top leagues in parallel
-  var leagueIds=[61,78,39,140,135,2,3,848,62,4];
-  var promises=leagueIds.map(function(lid){
-    return fetch('https://v3.football.api-sports.io/fixtures?date='+dateStr+'&league='+lid+'&season=2025',{
-      headers:{'x-apisports-key':SPORTS_KEY}
-    }).then(function(r){return r.json();}).catch(function(){return null;});
-  });
-  var results=await Promise.all(promises);
-  var matches=[];
-  results.forEach(function(res){
-    if(!res||!res.response)return;
-    res.response.forEach(function(f){
-      var fix=f.fixture,teams=f.teams,league=f.league,goals=f.goals,score=f.score;
-      matches.push({
-        id:fix.id,
-        league:league.name+' '+league.round,
-        homeTeam:teams.home.name,
-        awayTeam:teams.away.name,
+  var d=new Date(dateStr);
+  var y=d.getFullYear(), mo=d.getMonth()+1;
+  var season=(mo>=7)?y:(y-1);
+
+  function parseFixtures(res){
+    if(!res||!res.response)return[];
+    return res.response.map(function(f){
+      var fix=f.fixture,teams=f.teams,league=f.league,goals=f.goals;
+      return{
+        id:fix.id,leagueId:league.id,
+        league:league.name+(league.round?' - '+league.round:''),
+        homeTeam:teams.home.name,awayTeam:teams.away.name,
         time:fix.date?new Date(fix.date).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'TBD',
         status:fix.status.short,
-        score:goals.home!==null?goals.home+'-'+goals.away:null,
-        leagueId:league.id,
-        leagueLogo:league.logo,
-        homeLogo:teams.home.logo,
-        awayLogo:teams.away.logo,
+        score:(goals.home!==null&&goals.away!==null)?goals.home+'-'+goals.away:null,
+        leagueLogo:league.logo,homeLogo:teams.home.logo,awayLogo:teams.away.logo,
         venue:fix.venue?fix.venue.name+', '+fix.venue.city:''
-      });
+      };
     });
+  }
+
+  // Strategie 1: tous les matchs du jour par date uniquement
+  var res=await fetch('https://v3.football.api-sports.io/fixtures?date='+dateStr,{
+    headers:{'x-apisports-key':SPORTS_KEY}
+  }).then(function(r){return r.json();}).catch(function(){return null;});
+
+  var matches=parseFixtures(res);
+
+  // Strategie 2 fallback: par ligue + saison dynamique
+  if(!matches.length){
+    var leagueIds=[39,61,140,135,78,2,3,848,62,40,141,136,79];
+    var promises=leagueIds.map(function(lid){
+      return fetch('https://v3.football.api-sports.io/fixtures?date='+dateStr+'&league='+lid+'&season='+season,{
+        headers:{'x-apisports-key':SPORTS_KEY}
+      }).then(function(r){return r.json();}).catch(function(){return null;});
+    });
+    var results=await Promise.all(promises);
+    results.forEach(function(r){matches=matches.concat(parseFixtures(r));});
+  }
+
+  // Trier ligues prioritaires en premier
+  var prio=[39,61,140,135,78,2,3,848,62,40];
+  matches.sort(function(a,b){
+    var ia=prio.indexOf(a.leagueId),ib=prio.indexOf(b.leagueId);
+    if(ia<0)ia=999;if(ib<0)ib=999;
+    return ia-ib;
   });
-  return matches;
+  return matches.slice(0,15);
 }
 
 async function fetchTennisMatches(dateStr){
@@ -602,8 +620,13 @@ async function fetchTennisMatches(dateStr){
 }
 
 async function fetchBasketMatches(dateStr){
-  // NBA via API-Basketball
-  var res=await fetch('https://v1.basketball.api-sports.io/games?date='+dateStr+'&league=12&season=2024-2025',{
+  // NBA via API-Basketball - saison dynamique
+  var d=new Date(dateStr);
+  var y=d.getFullYear(), mo=d.getMonth()+1;
+  // NBA: saison commence en octobre, finit en juin
+  var seasonStart=(mo>=10)?y:(y-1);
+  var season=seasonStart+'-'+(seasonStart+1);
+  var res=await fetch('https://v1.basketball.api-sports.io/games?date='+dateStr+'&league=12&season='+season,{
     headers:{'x-apisports-key':SPORTS_KEY}
   }).then(function(r){return r.json();}).catch(function(){return null;});
   if(!res||!res.response)return[];
@@ -781,12 +804,15 @@ async function go(){
       realMatchesList=formatMatchListForPrompt(rawMatches,sport);
       updateLiveBadge(true);
     } else {
-      throw new Error('Aucun match trouvé pour cette date. Essayez une autre date.');
+      throw new Error('Aucun match trouvé pour cette date via API-Sports. Vérifiez votre clé ou essayez une autre date.');
     }
   }catch(err){
     ui(false);
     document.getElementById('emp').style.display='flex';
-    showErr('❌ API-Sports: '+err.message);
+    var msg=err.message||'Erreur inconnue';
+    if(msg.includes('401')||msg.includes('403'))msg='Clé API-Sports invalide. Vérifiez votre clé dans Configuration.';
+    if(msg.includes('429'))msg='Quota API-Sports dépassé (100 req/jour). Réessayez demain.';
+    showErr('❌ API-Sports: '+msg);
     return;
   }
 
