@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ORACLE SPORT — 4 Avril 2026</title>
+<title>ORACLE SPORT — Pronostics IA Temps Réel</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#060810;--card:#0d1320;--border:#1e2a3a;--accent:#00ff88;--a2:#ff6b35;--a3:#4fc3f7;--gold:#ffd700;--text:#e2e8f0;--muted:#5a7090;--danger:#ef4444;--ok:#22c55e}
@@ -139,6 +139,16 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 .disc{background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.16);border-radius:11px;padding:.9rem 1.2rem;margin-top:1.5rem;font-size:.73rem;color:var(--muted);line-height:1.7;text-align:center;display:none}
 .disc strong{color:var(--danger)}
 
+/* ── DATE PICKER ── */
+.date-wrap{display:flex;align-items:center;gap:.5rem}
+.date-lbl{font-size:.62rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.date-input{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;padding:6px 12px;color:var(--text);font-family:'Space Mono',monospace;font-size:.78rem;outline:none;cursor:pointer;transition:border-color .2s;color-scheme:dark}
+.date-input:focus,.date-input:hover{border-color:rgba(0,255,136,.4);box-shadow:0 0 0 2px rgba(0,255,136,.07)}
+.date-nav{background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:7px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--muted);font-size:.9rem;transition:all .2s}
+.date-nav:hover{border-color:rgba(0,255,136,.35);color:var(--accent)}
+.src-badge{display:inline-flex;align-items:center;gap:4px;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.2);border-radius:20px;padding:2px 10px;font-size:.6rem;font-weight:700;letter-spacing:1px;color:var(--a3);text-transform:uppercase;margin-top:4px}
+
+
 @media(max-width:680px){.sstats{grid-template-columns:repeat(2,1fr)}header,main{padding-left:1rem;padding-right:1rem}.tabs{padding:.8rem 1rem 0;overflow-x:auto}.topbar{flex-direction:column;align-items:flex-start}.tn{font-size:.9rem}}
 
 /* MODAL CLÉ API */
@@ -263,12 +273,21 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
   <div class="topbar">
     <div class="dinfo">
       <div class="dl">Pronostics — Vrais matchs</div>
-      <div class="dv">SAMEDI 4 AVRIL 2026</div>
+      <div class="dv" id="dateDisplay">SAMEDI 4 AVRIL 2026</div>
       <div class="tag-real">✅ Matchs réels vérifiés</div>
+      <div class="src-badge">🔍 FlashScore · Livescore · ESPN</div>
     </div>
-    <button class="gbtn" id="gb" onclick="go()">
-      <span id="bi">⚡</span> <span id="gbLabel">Analyser Football</span>
-    </button>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:.6rem">
+      <div class="date-wrap">
+        <span class="date-lbl">Date</span>
+        <button class="date-nav" onclick="shiftDate(-1)" title="Jour précédent">‹</button>
+        <input class="date-input" type="date" id="dateInput" onchange="onDateChange()" />
+        <button class="date-nav" onclick="shiftDate(1)" title="Jour suivant">›</button>
+      </div>
+      <button class="gbtn" id="gb" onclick="go()">
+        <span id="bi">⚡</span> <span id="gbLabel">Analyser Football</span>
+      </button>
+    </div>
   </div>
 
   <div class="sstats">
@@ -284,12 +303,12 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
       <div class="lic">🔮</div>
     </div>
     <div class="steps">
-      <div class="step" id="s1"><div class="sdot"></div><span class="sck">✅</span> Chargement matchs du 4 avril...</div>
-      <div class="step" id="s2"><div class="sdot"></div><span class="sck">✅</span> Analyse forme et statistiques...</div>
-      <div class="step" id="s3"><div class="sdot"></div><span class="sck">✅</span> Lecture cotes bookmakers...</div>
-      <div class="step" id="s4"><div class="sdot"></div><span class="sck">✅</span> Modèle probabiliste Oracle v3...</div>
-      <div class="step" id="s5"><div class="sdot"></div><span class="sck">✅</span> Détection value bets...</div>
-      <div class="step" id="s6"><div class="sdot"></div><span class="sck">✅</span> Rédaction analyses expertes...</div>
+      <div class="step" id="s1"><div class="sdot"></div><span class="sck">✅</span> 🔍 Recherche matchs FlashScore...</div>
+      <div class="step" id="s2"><div class="sdot"></div><span class="sck">✅</span> ✅ Vérification programme du jour...</div>
+      <div class="step" id="s3"><div class="sdot"></div><span class="sck">✅</span> 📊 Analyse forme et statistiques...</div>
+      <div class="step" id="s4"><div class="sdot"></div><span class="sck">✅</span> 💰 Lecture cotes bookmakers...</div>
+      <div class="step" id="s5"><div class="sdot"></div><span class="sck">✅</span> 🎯 Détection value bets Oracle...</div>
+      <div class="step" id="s6"><div class="sdot"></div><span class="sck">✅</span> ✨ Rédaction analyses expertes...</div>
     </div>
     <div class="lmsg" id="lmsg">Initialisation...</div>
   </div>
@@ -327,6 +346,11 @@ function initKey(){
     document.getElementById('apiModal').style.display='flex';
     setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
   }
+  // Init date to today
+  var today=new Date();
+  var ymd=today.toISOString().split('T')[0];
+  document.getElementById('dateInput').value=ymd;
+  updateDateDisplay(today);
   updateSportUI();
 }
 
@@ -365,30 +389,69 @@ function toggleVis(){
   else{inp.type='password';btn.textContent='👁';}
 }
 
+/* ── DATE MANAGEMENT ── */
+var DAYS_FR=['Dimanche','Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi'];
+var MONTHS_FR=['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function getSelectedDate(){
+  var v=document.getElementById('dateInput').value;
+  if(!v)return new Date();
+  var p=v.split('-');
+  return new Date(+p[0],+p[1]-1,+p[2]);
+}
+
+function formatDateFR(d){
+  return DAYS_FR[d.getDay()]+' '+d.getDate()+' '+MONTHS_FR[d.getMonth()]+' '+d.getFullYear();
+}
+
+function formatDateISO(d){
+  var y=d.getFullYear();
+  var m=String(d.getMonth()+1).padStart(2,'0');
+  var dd=String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+dd;
+}
+
+function updateDateDisplay(d){
+  document.getElementById('dateDisplay').textContent=formatDateFR(d).toUpperCase();
+}
+
+function onDateChange(){
+  var d=getSelectedDate();
+  updateDateDisplay(d);
+  all=[];
+  document.getElementById('grid').style.display='none';
+  document.getElementById('grid').innerHTML='';
+  document.getElementById('emp').style.display='flex';
+  document.getElementById('disc').style.display='none';
+  clearErr();
+  updateSportHints(d);
+}
+
+function shiftDate(delta){
+  var d=getSelectedDate();
+  d.setDate(d.getDate()+delta);
+  document.getElementById('dateInput').value=formatDateISO(d);
+  onDateChange();
+}
+
 /* ── SPORT CONFIG ── */
 var SPORT_CFG={
-  football:{
-    label:'Analyser Football', orb:'⚽', title:'Football — Prêt',
-    hints:[
-      '⚽ Ligue 1 J28 : Strasbourg-Nice · Brest-Rennes · Lille-Lens',
-      '⚽ Bundesliga J28 : Leverkusen-Wolfsburg · Fribourg-Bayern · Stuttgart-Dortmund'
-    ]
-  },
-  tennis:{
-    label:'Analyser Tennis', orb:'🎾', title:'Tennis — Prêt',
-    hints:[
-      '🎾 ATP Monte-Carlo : matchs du jour 4 Avril 2026',
-      '🎾 Analyse sets, jeux, surface, forme, H2H, quota aces/DFs'
-    ]
-  },
-  basketball:{
-    label:'Analyser Basket', orb:'🏀', title:'NBA — Prêt',
-    hints:[
-      '🏀 NBA : Miami Heat vs Washington Wizards',
-      '🏀 NBA : Denver Nuggets vs San Antonio Spurs (Wembanyama 41pts)'
-    ]
-  }
+  football:{label:'Analyser Football',orb:'⚽',title:'Football — Prêt'},
+  tennis:{label:'Analyser Tennis',orb:'🎾',title:'Tennis — Prêt'},
+  basketball:{label:'Analyser Basket',orb:'🏀',title:'NBA — Prêt'}
 };
+
+function updateSportHints(d){
+  var dateFR=formatDateFR(d);
+  var hints={
+    football:['⚽ Recherche des vrais matchs football du '+dateFR,'🔍 Sources: FlashScore · Livescore · ESPN · BBC Sport'],
+    tennis:['🎾 Recherche des vrais matchs tennis ATP/WTA du '+dateFR,'🔍 Sources: FlashScore · ATPtour · WTAtour · ESPN'],
+    basketball:['🏀 Recherche des vrais matchs NBA du '+dateFR,'🔍 Sources: FlashScore · NBA.com · ESPN · Basketball-Reference']
+  };
+  var h=document.getElementById('empHints');
+  var cfg=hints[sport]||hints.football;
+  h.innerHTML=cfg.map(function(t){return'<div class="ehint">'+t+'</div>';}).join('');
+}
 
 function updateSportUI(){
   var cfg=SPORT_CFG[sport]||SPORT_CFG.football;
@@ -396,8 +459,7 @@ function updateSportUI(){
   document.getElementById('empOrb').textContent=cfg.orb;
   document.getElementById('empTitle').textContent=cfg.title;
   document.getElementById('empSub').innerHTML='Cliquez sur <strong style="color:var(--accent)">'+cfg.label+'</strong> pour lancer l\'analyse IA.';
-  var h=document.getElementById('empHints');
-  h.innerHTML=cfg.hints.map(function(t){return'<div class="ehint">'+t+'</div>';}).join('');
+  updateSportHints(getSelectedDate());
 }
 
 function setSport(s,el){
@@ -413,129 +475,114 @@ function setSport(s,el){
   updateSportUI();
 }
 
-/* ── PROMPTS PAR SPORT ── */
+/* ── PROMPTS DYNAMIQUES PAR SPORT (avec web_search) ── */
 var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises xG, statistiques avancées, bookmakers (Bet365, Unibet, Winamax, Pinnacle), value bets, tous les marchés disponibles.
-RÈGLE ABSOLUE: Ta réponse commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks, JAMAIS de markdown. JSON brut valide uniquement.`;
+RÈGLE ABSOLUE: Ta réponse finale commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks, JAMAIS de markdown. JSON brut valide uniquement.`;
 
-var PROMPTS={
+function buildPrompt(sportType, dateStr, dateFR){
 
-football:`Date: 4 avril 2026. Analyse ultra-complète football avec cotes réelles.
+  var footballPrompt=`Aujourd'hui c'est le ${dateFR}. 
 
-MATCHS:
-1. Ligue1 J28: RC Strasbourg vs OGC Nice — 17h00
-2. Ligue1 J28: Stade Brestois vs Stade Rennais — 19h00
-3. Ligue1 J28: LOSC Lille vs RC Lens — 21h05 (derby du Nord)
-4. Bundesliga J28: Bayer Leverkusen vs Wolfsburg
-5. Bundesliga J28: SC Fribourg vs Bayern Munich
-6. Bundesliga J28: VfB Stuttgart vs Borussia Dortmund
+MISSION CRITIQUE: Utilise l'outil web_search pour trouver les VRAIS matchs de football qui se jouent AUJOURD'HUI ${dateFR} (${dateStr}).
 
-COTES RÉELLES (Bet365/Unibet/Winamax):
-1. Strasbourg-Nice: 1X2: 2.90/3.10/2.55 | BTTS Oui:1.72 Non:2.05 | O2.5:1.88 U2.5:1.88 | O9.5crn:1.80 | O24.5tirs:1.85
-2. Brest-Rennes: 1X2: 2.60/3.20/2.70 | BTTS Oui:1.68 Non:2.10 | O2.5:1.82 U2.5:1.92 | O9.5crn:1.75 | O24.5tirs:1.80
-3. Lille-Lens: 1X2: 2.20/3.30/3.20 | BTTS Oui:1.62 Non:2.22 | O2.5:1.72 U2.5:2.02 | O9.5crn:1.72 | O25.5tirs:1.78
-4. Leverkusen-Wolfsburg: 1X2: 1.45/4.50/6.50 | BTTS Oui:1.65 Non:2.15 | O2.5:1.55 U2.5:2.38 | O10.5crn:1.78 | O27.5tirs:1.82
-5. Fribourg-Bayern: 1X2: 5.50/4.20/1.55 | BTTS Oui:1.70 Non:2.08 | O2.5:1.62 U2.5:2.25 | O9.5crn:1.80 | O26.5tirs:1.78
-6. Stuttgart-Dortmund: 1X2: 2.40/3.30/2.90 | BTTS Oui:1.72 Non:2.05 | O2.5:1.70 U2.5:2.08 | O9.5crn:1.75 | O25.5tirs:1.82
+ÉTAPES OBLIGATOIRES:
+1. Recherche "football matches today ${dateStr} flashscore" 
+2. Recherche "matchs football aujourd'hui ${dateStr} ligue 1 bundesliga premier league"
+3. Recherche les cotes réelles sur "odds football ${dateStr} bet365"
+4. Avec les vrais matchs trouvés, génère une analyse complète
 
 ANALYSE REQUISE PAR MATCH:
 - Forme 5 derniers matchs avec scores
 - xG offensif et défensif saison
 - Moyenne corners, tirs totaux, tirs cadrés par match
-- Hors-jeu moyens, cartons jaunes moyens
-- Possession moyenne
+- Hors-jeu moyens, cartons jaunes moyens, possession moyenne
 - Taux BTTS et Over 2.5 saison
-- Absents/suspendus clés
+- Absents/suspendus clés (cherche sur les sources)
 - Tactique et style de jeu
-- Signal bookmaker (mouvements de cotes, où est l'argent)
+- Signal bookmaker (mouvements de cotes)
 - Meilleur pari identifié parmi TOUS les marchés + justification
 - 2-3 paris secondaires
 
 FORMAT JSON (commence par {, finis par }, rien d'autre):
-{"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"52"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers: W 2-1 vs X, D 1-1 vs Y...","awayFormDetails":"5 derniers: W 2-0 vs X...","probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"2.90 / 3.10 / 2.55","oddsDetails":{"bttsOui":"1.72","bttsNon":"2.05","over25":"1.88","under25":"1.88","over35":"2.90","under35":"1.40","over95corners":"1.80","under95corners":"1.95","over245tirs":"1.85","under245tirs":"1.90","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.42","awayXG":"1.18","homeXGConceded":"1.35","awayXGConceded":"0.92","homeCornersAvg":"5.2","awayCornersAvg":"4.8","homeShotsAvg":"13.1","awayShotsAvg":"11.8","homeShotsOnTarget":"4.8","awayShotsOnTarget":"4.1","homeOffsideAvg":"2.1","awayOffsideAvg":"1.8","homeYellowAvg":"1.9","awayYellowAvg":"1.6","homePossession":"48%","awayPossession":"54%","homeBTTSrate":"52%","awayBTTSrate":"58%","homeOver25rate":"55%","awayOver25rate":"62%"},"absentees":"Strasbourg: Joueur1 blessé | Nice: Joueur2 suspendu","tactique":"4-3-3 pressant vs 4-2-3-1 compact","bookmakerSignal":"Nice raccourci 2.80->2.55, argent ext. BTTS stable.","confidence":"medium","bestBet":"BTTS Oui","bestBetOdds":"1.72","bestBetReason":"52% BTTS dom + 58% BTTS ext cette saison. Valeur à 1.72.","recommendation":"BTTS Oui @ 1.72","cote":"1.72","isValueBet":true,"analysis":"Analyse 4-5 phrases fr avec stats clés, tactique, cotes.","factors":[{"label":"xG dom 1.42","type":"pos"},{"label":"Nice 4V/5","type":"neg"},{"label":"BTTS 55%","type":"pos"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.88","confidence":"medium"}]}]}
-Génère les 6 matchs football complets. JSON brut uniquement.`,
+{"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"52"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers: W 2-1 vs X, D 1-1 vs Y...","awayFormDetails":"5 derniers: W 2-0 vs X...","probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"2.90 / 3.10 / 2.55","oddsDetails":{"bttsOui":"1.72","bttsNon":"2.05","over25":"1.88","under25":"1.88","over35":"2.90","under35":"1.40","over95corners":"1.80","under95corners":"1.95","over245tirs":"1.85","under245tirs":"1.90","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.42","awayXG":"1.18","homeXGConceded":"1.35","awayXGConceded":"0.92","homeCornersAvg":"5.2","awayCornersAvg":"4.8","homeShotsAvg":"13.1","awayShotsAvg":"11.8","homeShotsOnTarget":"4.8","awayShotsOnTarget":"4.1","homeOffsideAvg":"2.1","awayOffsideAvg":"1.8","homeYellowAvg":"1.9","awayYellowAvg":"1.6","homePossession":"48%","awayPossession":"54%","homeBTTSrate":"52%","awayBTTSrate":"58%","homeOver25rate":"55%","awayOver25rate":"62%"},"absentees":"Joueur blessé info réelle","tactique":"4-3-3 pressant vs 4-2-3-1 compact","bookmakerSignal":"Mouvement de cote réel détecté.","confidence":"medium","bestBet":"BTTS Oui","bestBetOdds":"1.72","bestBetReason":"Justification basée sur stats réelles.","recommendation":"BTTS Oui @ 1.72","cote":"1.72","isValueBet":true,"analysis":"Analyse 4-5 phrases avec stats clés réelles.","factors":[{"label":"xG dom 1.42","type":"pos"},{"label":"BTTS 55%","type":"pos"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.88","confidence":"medium"}]}]}
+Génère les matchs football RÉELS du ${dateFR} trouvés via web_search. JSON brut uniquement.`;
 
-tennis:`Date: 4 avril 2026. Analyse ultra-complète tennis ATP/WTA du jour avec cotes réelles.
+  var tennisPrompt=`Aujourd'hui c'est le ${dateFR}.
 
-TOURNOI: Monte-Carlo Masters (ATP 1000) — 4 Avril 2026, surface: terre battue
+MISSION CRITIQUE: Utilise l'outil web_search pour trouver les VRAIS matchs tennis qui se jouent AUJOURD'HUI ${dateFR} (${dateStr}).
 
-MATCHS DU JOUR (génère les matchs réels probables du tournoi):
-Analyse les matchs de 2e tour et 3e tour ATP Monte-Carlo qui se jouent aujourd'hui 4 avril 2026. Utilise tes connaissances des joueurs présents au tournoi.
+ÉTAPES OBLIGATOIRES:
+1. Recherche "tennis matches today ${dateStr} flashscore ATP WTA"
+2. Recherche "tennis schedule ${dateStr} ATP WTA results"
+3. Recherche les cotes réelles "tennis odds ${dateStr}"
+4. Avec les vrais matchs trouvés, génère une analyse complète
 
 MARCHÉS TENNIS À ANALYSER:
-- Vainqueur du match (ML)
-- Handicap jeux (-2.5 / +2.5)
-- Total jeux over/under (ex: O21.5, O22.5, O23.5)
-- Total sets (O2.5 / U2.5)  
-- Set gagnant (1er set, 2e set)
-- Aces over/under par joueur
-- Double fautes over/under
-- Tiebreak dans le match (Oui/Non)
+- Vainqueur du match (ML), Handicap jeux (-2.5/+2.5)
+- Total jeux over/under (O21.5, O22.5, O23.5)
+- Total sets (O2.5/U2.5), Set gagnant
+- Aces over/under, Double fautes, Tiebreak Oui/Non
 
-ANALYSE REQUISE PAR MATCH:
+ANALYSE REQUISE:
 - Forme récente (5 derniers matchs avec score et tournoi)
-- Classement ATP/WTA actuel et points
-- Stats surface terre battue: % victoires, tournois gagnés
-- Stats service: % 1er service, % points gagnés sur 1er service, aces moyens, DFs moyens
+- Classement ATP/WTA actuel
+- Stats surface: % victoires, tournois gagnés
+- Stats service: % 1er service, aces moyens, DFs moyens
 - Stats retour: % points gagnés en retour
-- H2H (confrontations directes avec résultats)
+- H2H (confrontations directes)
 - Condition physique / blessures récentes
-- Style de jeu et profil (agressif, défenseur de fond, serveur-volleyeur)
-- Signal bookmaker: mouvements de cotes, valeur détectée
-- Meilleur pari identifié parmi TOUS les marchés
-- 2-3 paris secondaires
+- Style de jeu et profil
+- Signal bookmaker: mouvements de cotes
 
 FORMAT JSON (commence par {, finis par }, rien d'autre):
-{"stats":{"winRate":"71%","roi":"+16%","valueBets":"3","totalMarchés":"38"},"matches":[{"id":1,"sport":"tennis","league":"ATP Monte-Carlo Masters","homeTeam":"Joueur1","awayTeam":"Joueur2","time":"11:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers: W 6-3 6-2 vs X (Rome), W 7-5 6-4 vs Y...","awayFormDetails":"5 derniers: W 6-4 6-3 vs X...","probHome":62,"probDraw":0,"probAway":38,"bookmakerOdds":"1.55 / — / 2.45","oddsDetails":{"over215jeux":"1.85","under215jeux":"1.90","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.10","under25sets":"1.68","handicap":"-2.5 jeux @ 2.00","acesJ1over":"1.90","acesJ2over":"1.85","tiebreak":"2.20"},"stats":{"rankHome":"ATP #4","rankAway":"ATP #18","surfaceWinHome":"78%","surfaceWinAway":"61%","serve1PctHome":"67%","serve1PctAway":"63%","acesAvgHome":"8.2","acesAvgAway":"5.1","dfAvgHome":"2.8","dfAvgAway":"3.4","returnPtsHome":"44%","returnPtsAway":"38%","h2h":"4-2 pour Joueur1","h2hDetails":"Dernière confrontation: Joueur1 6-3 7-5 (Roland Garros 2025)"},"absentees":"Aucune blessure signalée","tactique":"Joueur1: agressif baseline, grosse 1ère balle | Joueur2: défenseur fond de court","bookmakerSignal":"Joueur1 raccourci de 1.70 à 1.55 — argent clair sur favori.","confidence":"high","bestBet":"Joueur1 vainqueur","bestBetOdds":"1.55","bestBetReason":"78% victoires terre battue, 4-2 en H2H, forme excellente 4V/5.","recommendation":"Joueur1 @ 1.55","cote":"1.55","isValueBet":false,"analysis":"Analyse 4-5 phrases fr: forme, stats surface, H2H, cotes, tactique.","factors":[{"label":"78% win terre battue","type":"pos"},{"label":"H2H 4-2 favorable","type":"pos"},{"label":"Adversaire solide","type":"neu"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.85","confidence":"medium"},{"label":"Tiebreak Oui","odds":"2.20","confidence":"low"}]}]}
-Génère 5-6 matchs tennis Monte-Carlo complets et réalistes. JSON brut uniquement.`,
+{"stats":{"winRate":"71%","roi":"+16%","valueBets":"3","totalMarchés":"38"},"matches":[{"id":1,"sport":"tennis","league":"ATP Monte-Carlo Masters","homeTeam":"Joueur1","awayTeam":"Joueur2","time":"11:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers: W 6-3 6-2 vs X (Rome), W 7-5 6-4 vs Y...","awayFormDetails":"5 derniers: W 6-4 6-3 vs X...","probHome":62,"probDraw":0,"probAway":38,"bookmakerOdds":"1.55 / — / 2.45","oddsDetails":{"over215jeux":"1.85","under215jeux":"1.90","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.10","under25sets":"1.68","handicap":"-2.5 jeux @ 2.00","acesJ1over":"1.90","acesJ2over":"1.85","tiebreak":"2.20"},"stats":{"rankHome":"ATP #4","rankAway":"ATP #18","surfaceWinHome":"78%","surfaceWinAway":"61%","serve1PctHome":"67%","serve1PctAway":"63%","acesAvgHome":"8.2","acesAvgAway":"5.1","dfAvgHome":"2.8","dfAvgAway":"3.4","returnPtsHome":"44%","returnPtsAway":"38%","h2h":"4-2 pour Joueur1","h2hDetails":"Dernière confrontation: Joueur1 6-3 7-5"},"absentees":"Aucune blessure signalée","tactique":"Style de jeu réel des joueurs","bookmakerSignal":"Mouvement de cote réel.","confidence":"high","bestBet":"Joueur1 vainqueur","bestBetOdds":"1.55","bestBetReason":"Stats réelles justifiant le pari.","recommendation":"Joueur1 @ 1.55","cote":"1.55","isValueBet":false,"analysis":"Analyse 4-5 phrases avec stats réelles.","factors":[{"label":"78% win surface","type":"pos"},{"label":"H2H favorable","type":"pos"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.85","confidence":"medium"}]}]}
+Génère 5-6 matchs tennis RÉELS du ${dateFR} trouvés via web_search. JSON brut uniquement.`;
 
-basketball:`Date: 4 avril 2026. Analyse ultra-complète NBA du jour avec cotes réelles.
+  var basketPrompt=`Aujourd'hui c'est le ${dateFR}.
 
-MATCHS NBA DU JOUR:
-1. Miami Heat vs Washington Wizards
-2. Denver Nuggets vs San Antonio Spurs (Wembanyama 41pts match précédent)
-3. Génère 2-3 autres matchs NBA réalistes du 4 avril 2026
+MISSION CRITIQUE: Utilise l'outil web_search pour trouver les VRAIS matchs NBA qui se jouent AUJOURD'HUI ${dateFR} (${dateStr}).
 
-COTES RÉELLES (Bet365/Unibet):
-1. Miami-Washington: ML: 1.35/3.25 | O220.5pts: 1.90 U220.5: 1.90 | Spread: Miami -7.5 @ 1.90
-2. Denver-SanAntonio: ML: 1.28/3.70 | O229.5pts: 1.88 U229.5: 1.88 | Spread: Denver -9.5 @ 1.90
+ÉTAPES OBLIGATOIRES:
+1. Recherche "NBA games today ${dateStr} schedule flashscore"
+2. Recherche "NBA schedule ${dateStr} ESPN"
+3. Recherche les cotes réelles "NBA odds ${dateStr} bet365"
+4. Recherche les blessés et absents "NBA injuries ${dateStr}"
+5. Avec les vrais matchs trouvés, génère une analyse complète
 
 MARCHÉS NBA À ANALYSER:
-- Money Line (vainqueur)
-- Spread (handicap points: -7.5, -9.5 etc)
+- Money Line, Spread (handicap points)
 - Total points over/under
-- Total rebonds over/under
-- Total passes over/under
+- Total rebonds/passes over/under
 - 1er quart-temps vainqueur
-- Meilleur marqueur du match
-- Props joueurs (points/rebonds/passes joueur spécifique)
+- Props joueurs (points/rebonds/passes)
 
-ANALYSE REQUISE PAR MATCH:
-- Forme récente 5 derniers matchs avec scores et stats
+ANALYSE REQUISE:
+- Forme récente 5 derniers matchs avec scores
 - Classement conférence actuel
-- Offensive/Defensive Rating cette saison
-- Pace (possessions par 48min)
-- Points moyens marqués et concédés par match
-- Rebonds offensifs/défensifs moyens
-- Passes décisives moyennes
+- Offensive/Defensive Rating saison
+- Pace (possessions/48min)
+- Points moyens marqués et concédés
+- Rebonds, passes décisives moyennes
 - % tirs 3pts et à 2pts
 - Stats head-to-head saison
-- Absents/blessés (impact sur le jeu)
-- Style de jeu (pace rapide, iso, pick-and-roll, défense zone/homme)
-- Signal bookmaker: mouvements de cotes, valeur
-- Meilleur pari identifié + justification
-- 2-3 paris secondaires incluant props joueurs
+- Absents/blessés actuels (impact sur le jeu)
+- Style de jeu
+- Signal bookmaker
 
 FORMAT JSON (commence par {, finis par }, rien d'autre):
-{"stats":{"winRate":"69%","roi":"+14%","valueBets":"3","totalMarchés":"31"},"matches":[{"id":1,"sport":"basketball","league":"NBA","homeTeam":"Miami Heat","awayTeam":"Washington Wizards","time":"20:00","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","L"],"homeFormDetails":"5 derniers: W 108-98 vs X, W 115-102 vs Y...","awayFormDetails":"5 derniers: L 95-112 vs X...","probHome":74,"probDraw":0,"probAway":26,"bookmakerOdds":"1.35 / 3.25","oddsDetails":{"spread":"Miami -7.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"1.88","under2295":"1.88","q1Dom":"1.75","q1Away":"2.05"},"stats":{"homeOffRtg":"114.2","awayOffRtg":"106.8","homeDefRtg":"109.5","awayDefRtg":"118.3","homePace":"98.4","awayPace":"100.1","homePPG":"112.5","awayPPG":"105.2","homeOppPPG":"108.3","awayOppPPG":"120.1","homeRebAvg":"44.2","awayRebAvg":"41.8","homeAstAvg":"26.1","awayAstAvg":"23.4","home3PctAvg":"37.2%","away3PctAvg":"33.8%","h2h":"3-1 Miami cette saison"},"absentees":"Miami: Butler doubtful | Washington: Sarr out","tactique":"Miami: défense switch-tout, transition rapide | Washington: iso-ball, lent","bookmakerSignal":"Miami stable 1.35, peu de mouvement. Washington spread a raccourci légèrement.","confidence":"high","bestBet":"Miami -7.5","bestBetOdds":"1.90","bestBetReason":"Washington 4-16 loin de chez eux, défense poreuse 120.1 pts concédés/match. Miami couvre le spread à domicile dans 68% des cas.","recommendation":"Miami -7.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse 4-5 phrases fr: forme, stats, matchup, cotes, tactique.","factors":[{"label":"Washington 4-16 extérieur","type":"pos"},{"label":"Miami OffRtg 114.2","type":"pos"},{"label":"Butler incertain","type":"neg"},{"label":"H2H 3-1 Miami","type":"pos"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"},{"label":"Miami gagne Q1","odds":"1.75","confidence":"medium"}]}]}
-Génère 4-5 matchs NBA complets. JSON brut uniquement.`
+{"stats":{"winRate":"69%","roi":"+14%","valueBets":"3","totalMarchés":"31"},"matches":[{"id":1,"sport":"basketball","league":"NBA","homeTeam":"Miami Heat","awayTeam":"Washington Wizards","time":"20:00","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","L"],"homeFormDetails":"5 derniers: W 108-98 vs X, W 115-102 vs Y...","awayFormDetails":"5 derniers: L 95-112 vs X...","probHome":74,"probDraw":0,"probAway":26,"bookmakerOdds":"1.35 / 3.25","oddsDetails":{"spread":"Miami -7.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"1.88","under2295":"1.88","q1Dom":"1.75","q1Away":"2.05"},"stats":{"homeOffRtg":"114.2","awayOffRtg":"106.8","homeDefRtg":"109.5","awayDefRtg":"118.3","homePace":"98.4","awayPace":"100.1","homePPG":"112.5","awayPPG":"105.2","homeOppPPG":"108.3","awayOppPPG":"120.1","homeRebAvg":"44.2","awayRebAvg":"41.8","homeAstAvg":"26.1","awayAstAvg":"23.4","home3PctAvg":"37.2%","away3PctAvg":"33.8%","h2h":"3-1 Miami cette saison"},"absentees":"Absents réels trouvés via web_search","tactique":"Style de jeu réel de l'équipe","bookmakerSignal":"Mouvement de cote réel.","confidence":"high","bestBet":"Miami -7.5","bestBetOdds":"1.90","bestBetReason":"Justification basée sur stats réelles.","recommendation":"Miami -7.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse 4-5 phrases avec stats réelles.","factors":[{"label":"Stat réelle positive","type":"pos"},{"label":"Blessé clé absent","type":"neg"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"}]}]}
+Génère 4-5 matchs NBA RÉELS du ${dateFR} trouvés via web_search. JSON brut uniquement.`;
 
-};
+  if(sportType==='tennis') return tennisPrompt;
+  if(sportType==='basketball') return basketPrompt;
+  return footballPrompt;
+}
 
 /* ── ANIMATIONS LOADING ── */
 var ANIM_CFG={
-  football:['Chargement matchs Ligue1/Bundesliga...','Analyse xG et statistiques...','Lecture cotes bookmakers...','Calcul probabilités...','Détection value bets...','Rédaction analyses expertes...'],
-  tennis:['Chargement matchs Monte-Carlo...','Analyse stats surface/service...','Lecture cotes bookmakers...','Calcul H2H et forme...','Détection value bets tennis...','Rédaction analyses expertes...'],
-  basketball:['Chargement matchs NBA...','Analyse OffRtg/DefRtg/Pace...','Lecture cotes bookmakers...','Calcul matchups et forme...','Détection value bets NBA...','Rédaction analyses expertes...']
+  football:['🔍 Recherche matchs FlashScore...','⚽ Vérification programme du jour...','📊 Analyse xG et statistiques...','💰 Lecture cotes bookmakers...','🎯 Calcul probabilités Oracle...','✨ Rédaction analyses expertes...'],
+  tennis:['🔍 Recherche matchs ATP/WTA FlashScore...','🎾 Vérification programme du tournoi...','📊 Analyse stats surface/service...','💰 Lecture cotes bookmakers...','🎯 Calcul H2H et forme...','✨ Rédaction analyses expertes...'],
+  basketball:['🔍 Recherche matchs NBA FlashScore...','🏀 Vérification programme du jour...','📊 Analyse OffRtg/DefRtg/Pace...','💰 Lecture cotes bookmakers...','🎯 Calcul matchups et blessés...','✨ Rédaction analyses expertes...']
 };
 
 async function animS(){
@@ -546,7 +593,7 @@ async function animS(){
     if(i>0)document.getElementById(ids[i-1]).className='step dn';
     document.getElementById(ids[i]).className='step act';
     document.getElementById('lmsg').textContent=msgs[i];
-    await slp(600+Math.random()*400);
+    await slp(700+Math.random()*500);
   }
   document.getElementById(ids[5]).className='step dn';
 }
@@ -573,7 +620,11 @@ async function go(){
   document.getElementById('disc').style.display='none';
   document.getElementById('grid').innerHTML='';
 
-  var USR=PROMPTS[sport]||PROMPTS.football;
+  var d=getSelectedDate();
+  var dateStr=formatDateISO(d);
+  var dateFR=formatDateFR(d);
+  var USR=buildPrompt(sport,dateStr,dateFR);
+
   var anim=animS();
   try{
     var r=await fetch('https://api.anthropic.com/v1/messages',{
@@ -583,6 +634,7 @@ async function go(){
         model:'claude-sonnet-4-20250514',
         max_tokens:16000,
         system:SYS,
+        tools:[{"type":"web_search_20250305","name":"web_search"}],
         messages:[{role:'user',content:USR}]
       })
     });
@@ -593,8 +645,9 @@ async function go(){
       if(r.status===401||r.status===403)throw new Error('🔑 Clé API invalide ('+r.status+').');
       throw new Error('Erreur API '+r.status+': '+t.slice(0,200));
     }
-    var d=await r.json();
-    var raw=(d.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    var d2=await r.json();
+    // Extract text blocks only (ignore tool_use / tool_result blocks)
+    var raw=(d2.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
     if(!raw)throw new Error('Réponse vide');
     var p=parseJ(raw);
     if(!p||!Array.isArray(p.matches)||!p.matches.length){
