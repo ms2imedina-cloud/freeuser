@@ -262,7 +262,7 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
     </div>
     <div class="modal-err" id="sportsErr"></div>
     <button class="modal-btn" onclick="saveSportsKey()">✅ Activer Matchs Réels</button>
-    <button class="skip-btn" onclick="skipSportsKey()">⚡ Continuer sans (analyse IA seule)</button>
+    <button class="skip-btn" onclick="skipSportsKey()">✖ Annuler (clé requise pour les vrais matchs)</button>
     <div class="modal-footer">Les clés sont stockées localement sur votre appareil</div>
   </div>
 </div>
@@ -417,6 +417,7 @@ function skipSportsKey(){
   document.getElementById('sportsModal').style.display='none';
   updateLiveBadge(false);
   updateSportUI();
+  showErr('⚠️ Clé API-Sports requise. Cliquez sur Analyser pour la saisir.');
 }
 
 function updateLiveBadge(hasLive){
@@ -652,22 +653,20 @@ function formatMatchListForPrompt(matches, sportType){
 var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises xG, statistiques avancées, bookmakers (Bet365, Unibet, Winamax, Pinnacle), value bets, tous les marchés disponibles.
 
 RÈGLES ABSOLUES:
-1. Utilise UNIQUEMENT les matchs que tu connais RÉELLEMENT pour la date demandée. Si tu ne connais pas les matchs exacts d'une date, utilise les matchs les plus probables/réalistes selon le calendrier officiel des compétitions (journée de championnat, tournoi en cours, etc.).
-2. Ne génère JAMAIS de matchs fictifs avec des noms inventés. Utilise les vraies équipes et vrais joueurs.
+1. La liste des matchs ci-dessous provient de l'API-Sports officielle en temps réel. Ce sont des matchs RÉELS. Analyse CHACUN d'eux.
+2. N'invente AUCUN match supplémentaire. Travaille UNIQUEMENT avec les matchs fournis dans le prompt.
 3. Ta réponse finale commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks, JAMAIS de markdown. JSON brut valide uniquement.`;
 
 function buildPrompt(sportType, dateStr, dateFR, realMatchesList){
 
-  var matchesInfo = realMatchesList && realMatchesList.trim() && realMatchesList!=='Aucun match trouvé via API.'
-    ? '✅ MATCHS RÉELS RÉCUPÉRÉS EN DIRECT :\n'+realMatchesList
-    : '⚠️ Aucune donnée API disponible — utilise tes connaissances du calendrier '+dateFR+' pour déterminer les matchs les plus probables.';
+  var matchesInfo = '✅ MATCHS RÉELS RÉCUPÉRÉS VIA API-SPORTS (données officiel temps réel):\n'+realMatchesList;
 
   var footballPrompt=`Date: ${dateFR} (${dateStr}).
 
 ${matchesInfo}
 
-Génère une analyse ultra-complète pour CHACUN des matchs listés ci-dessus (ou les matchs les plus probables du jour si pas de données API).
-UTILISE UNIQUEMENT les vrais noms d'équipes de la liste. Ne génère aucun match fictif.
+Génère une analyse ultra-complète pour CHACUN des matchs listés ci-dessus.
+UTILISE UNIQUEMENT les vrais noms d'équipes de la liste. Ces matchs proviennent de l'API officielle — ne génère aucun match fictif, ne modifie pas les équipes.
 
 ANALYSE REQUISE PAR MATCH:
 - Forme 5 derniers matchs avec scores réels
@@ -688,8 +687,8 @@ Génère 5-7 matchs football RÉELS du ${dateFR}. JSON brut uniquement.`;
 
 ${matchesInfo}
 
-Génère une analyse complète pour CHACUN des matchs tennis listés (ou les matchs ATP/WTA les plus probables du jour).
-UTILISE UNIQUEMENT les vrais noms de joueurs de la liste.
+Génère une analyse complète pour CHACUN des matchs tennis listés.
+UTILISE UNIQUEMENT les vrais noms de joueurs de la liste. Ces matchs proviennent de l'API officielle — ne génère aucun match fictif.
 
 MARCHÉS TENNIS À ANALYSER:
 - Forme récente (5 derniers matchs avec score et tournoi réels)
@@ -712,8 +711,8 @@ Génère 5-6 matchs tennis RÉELS du ${dateFR}. JSON brut uniquement.`;
 
 ${matchesInfo}
 
-Génère une analyse complète pour CHACUN des matchs NBA listés (ou les matchs NBA les plus probables du soir).
-UTILISE UNIQUEMENT les vrais noms d'équipes NBA de la liste.
+Génère une analyse complète pour CHACUN des matchs NBA listés.
+UTILISE UNIQUEMENT les vrais noms d'équipes NBA de la liste. Ces matchs proviennent de l'API officielle — ne génère aucun match fictif.
 
 MARCHÉS NBA À ANALYSER:
 - Money Line, Spread, Total points O/U, Rebonds O/U, Passes O/U, Q1 vainqueur, Props joueurs stars
@@ -774,6 +773,7 @@ function clearErr(){document.getElementById('err').classList.remove('on')}
 
 async function go(){
   if(!API_KEY){document.getElementById('apiModal').style.display='flex';return;}
+  if(!SPORTS_KEY){document.getElementById('sportsModal').style.display='flex';return;}
   clearErr();
   all=[];
   ui(true);
@@ -785,25 +785,25 @@ async function go(){
   var dateStr=formatDateISO(d);
   var dateFR=formatDateFR(d);
 
-  // Step 1: Fetch real matches from API-Sports if key available
+  // Step 1: Fetch real matches from API-Sports (obligatoire)
+  var rawMatches=[];
   var realMatchesList='';
-  if(SPORTS_KEY){
-    document.getElementById('lmsg').textContent='🔍 Récupération des vrais matchs API-Sports...';
-    try{
-      var rawMatches=[];
-      if(sport==='football') rawMatches=await fetchFootballMatches(dateStr);
-      else if(sport==='tennis') rawMatches=await fetchTennisMatches(dateStr);
-      else if(sport==='basketball') rawMatches=await fetchBasketMatches(dateStr);
-      if(rawMatches&&rawMatches.length){
-        realMatchesList=formatMatchListForPrompt(rawMatches,sport);
-        updateLiveBadge(true);
-      } else {
-        realMatchesList='Aucun match trouvé via API.';
-      }
-    }catch(err){
-      console.warn('API-Sports error:',err);
-      realMatchesList='Erreur API-Sports: '+err.message;
+  document.getElementById('lmsg').textContent='🔍 Récupération des vrais matchs API-Sports...';
+  try{
+    if(sport==='football') rawMatches=await fetchFootballMatches(dateStr);
+    else if(sport==='tennis') rawMatches=await fetchTennisMatches(dateStr);
+    else if(sport==='basketball') rawMatches=await fetchBasketMatches(dateStr);
+    if(rawMatches&&rawMatches.length){
+      realMatchesList=formatMatchListForPrompt(rawMatches,sport);
+      updateLiveBadge(true);
+    } else {
+      throw new Error('Aucun match trouvé pour cette date. Essayez une autre date.');
     }
+  }catch(err){
+    ui(false);
+    document.getElementById('emp').style.display='flex';
+    showErr('❌ API-Sports: '+err.message);
+    return;
   }
 
   var USR=buildPrompt(sport,dateStr,dateFR,realMatchesList);
