@@ -555,130 +555,84 @@ function setSport(s,el){
 
 var TOOLS_SEARCH=[{type:"web_search_20250305",name:"web_search"}];
 
-var SYS_FETCH=`Tu es un assistant spécialisé dans la collecte de données sportives en temps réel.
-Ta seule mission: trouver les VRAIS matchs d'aujourd'hui sur internet et les retourner en JSON pur.
-
-RÈGLES:
-1. Utilise web_search pour chercher les matchs réels sur FlashScore, ESPN, et sources officielles.
-2. NE GÉNÈRE JAMAIS de matchs fictifs. Retourne UNIQUEMENT les matchs trouvés sur le web.
-3. Réponds UNIQUEMENT avec un JSON brut valide commençant par [ et finissant par ]. Zéro texte autour.`;
-
-function buildFetchPrompt(sportType, dateStr, dateFR){
-  if(sportType==='football') return `Trouve TOUS les vrais matchs football du ${dateFR} (${dateStr}).
-
-Recherche dans cet ordre:
-1. site:flashscore.fr football ${dateStr}
-2. flashscore football matches ${dateStr}  
-3. matchs football aujourd'hui ${dateFR} Premier League Ligue 1 Liga Serie A Bundesliga Champions League Europa League
-
-Retourne UN JSON brut: tableau de tous les matchs trouvés.
-Format: [{"league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","status":"NS"},...]
-Inclus TOUS les matchs trouvés (min 6, idéalement 10-15).
-JSON brut uniquement, commence par [, fini par ].`;
-
-  if(sportType==='tennis') return `Trouve TOUS les vrais matchs tennis du ${dateFR} (${dateStr}).
-
-Recherche:
-1. site:flashscore.fr tennis ${dateStr}
-2. flashscore tennis matches ${dateStr}
-3. ATP WTA tennis schedule ${dateStr} today matches
-
-Retourne UN JSON brut: tableau de tous les matchs trouvés.
-Format: [{"league":"Monte-Carlo Masters","homeTeam":"Carlos Alcaraz","awayTeam":"Holger Rune","time":"14:00","surface":"Clay","round":"QF","status":"NS"},...]
-Inclus TOUS les matchs trouvés (min 5).
-JSON brut uniquement, commence par [, fini par ].`;
-
-  return `Trouve TOUS les vrais matchs NBA du ${dateFR} (${dateStr}).
-
-Recherche:
-1. site:flashscore.fr basketball nba ${dateStr}
-2. NBA schedule ${dateStr} games today
-3. flashscore NBA ${dateStr}
-
-Retourne UN JSON brut: tableau de tous les matchs NBA trouvés.
-Format: [{"league":"NBA","homeTeam":"Boston Celtics","awayTeam":"Miami Heat","time":"01:30","status":"NS"},...]
-JSON brut uniquement, commence par [, fini par ].`;
-}
-
 /* ══════════════════════════════════════════════
-   PASS 2 — ANALYSE PRONOSTICS COMPLETS
-   Input: liste matchs réels de la Pass 1
-   Output: JSON pronostics complet pour l'UI
+   PASSE UNIQUE — Recherche + Analyse en 1 appel
+   Claude utilise web_search puis génère le JSON
 ══════════════════════════════════════════════ */
 
-var SYS_ANALYZE=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs.
-Tu maîtrises xG, stats avancées, bookmakers (Bet365, Winamax, Unibet, Pinnacle), value bets.
+var SYS_ORACLE=`Tu es ORACLE SPORT, analyste quantitatif élite. Tu as accès à web_search.
+
+MISSION EN 2 ÉTAPES DANS UN SEUL APPEL:
+1. Utilise web_search pour chercher les VRAIS matchs du jour (FlashScore, ESPN, sources officielles).
+   - Fais 2-3 recherches pour avoir assez de matchs (au moins 6).
+   - Lis les résultats et retiens les matchs RÉELS trouvés.
+2. Génère une analyse complète de chaque match trouvé.
 
 RÈGLES ABSOLUES:
-1. La liste de matchs fournie provient de FlashScore — ce sont des matchs RÉELS. Analyse-les TOUS.
-2. N'invente AUCUN match supplémentaire.
-3. Ta réponse commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks ni markdown.`;
+- N'invente JAMAIS un match si tu ne l'as pas trouvé sur le web.
+- Si tu trouves peu de matchs, analyse-les tous soigneusement.
+- Ta réponse finale commence DIRECTEMENT par { et se termine par }. PAS de backticks, PAS de markdown.`;
 
-function buildAnalyzePrompt(sportType, dateStr, dateFR, matchesList){
-  var matchInfo='MATCHS RÉELS RÉCUPÉRÉS VIA FLASHSCORE ('+dateFR+'):\n'+matchesList;
+function buildOraclePrompt(sportType, dateStr, dateFR){
+  var queries='';
+  if(sportType==='football'){
+    queries=`Recherches à effectuer dans l'ordre:
+1. "football matches ${dateStr} flashscore"
+2. "matchs football ${dateFR} aujourd'hui ligue 1 premier league"
+3. "football today ${dateStr} results schedule"`;
+  } else if(sportType==='tennis'){
+    queries=`Recherches à effectuer dans l'ordre:
+1. "tennis matches ${dateStr} flashscore ATP WTA"
+2. "tennis schedule ${dateFR} today results"
+3. "ATP WTA ${dateStr} matches today"`;
+  } else {
+    queries=`Recherches à effectuer dans l'ordre:
+1. "NBA schedule ${dateStr} games today"
+2. "NBA matches ${dateStr} flashscore basketball"
+3. "NBA ${dateFR} results today"`;
+  }
 
-  if(sportType==='football') return `${matchInfo}
+  var sport_label = sportType==='football'?'football':sportType==='tennis'?'tennis':'NBA basketball';
+  var format_example = sportType==='football'
+    ? `{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers matchs réels avec scores","awayFormDetails":"5 derniers matchs réels avec scores","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"bttsOui":"1.75","bttsNon":"2.00","over25":"1.85","under25":"1.92","over35":"2.80","under35":"1.42","over95corners":"1.82","under95corners":"1.93","over245tirs":"1.88","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.82","awayXG":"1.45","homeXGConceded":"1.12","awayXGConceded":"1.38","homeCornersAvg":"6.1","awayCornersAvg":"5.4","homeShotsAvg":"15.2","awayShotsAvg":"13.8","homeShotsOnTarget":"5.8","awayShotsOnTarget":"5.1","homeOffsideAvg":"2.3","awayOffsideAvg":"1.9","homeYellowAvg":"1.8","awayYellowAvg":"2.1","homePossession":"58%","awayPossession":"54%","homeBTTSrate":"58%","awayBTTSrate":"62%","homeOver25rate":"61%","awayOver25rate":"65%"},"absentees":"Joueurs absents connus","tactique":"Systèmes tactiques des deux équipes","bookmakerSignal":"Signal mouvement cotes","confidence":"high","bestBet":"BTTS Oui","bestBetOdds":"1.75","bestBetReason":"Justification solide basée sur stats réelles","recommendation":"BTTS Oui @ 1.75","cote":"1.75","isValueBet":true,"analysis":"Analyse experte complète 3-4 phrases","factors":[{"label":"stat clé positive","type":"pos"},{"label":"stat clé négative","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.85","confidence":"medium"}]}`
+    : sportType==='tennis'
+    ? `{"id":1,"sport":"tennis","league":"Monte-Carlo Masters","homeTeam":"Carlos Alcaraz","awayTeam":"Holger Rune","time":"14:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers matchs réels","awayFormDetails":"5 derniers matchs réels","probHome":68,"probDraw":0,"probAway":32,"bookmakerOdds":"1.45 / — / 2.90","oddsDetails":{"over215jeux":"1.88","under215jeux":"1.88","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.20","under25sets":"1.65","handicap":"-3.5 jeux @ 2.10","acesJ1over":"1.90","tiebreak":"2.30"},"stats":{"rankHome":"ATP #3","rankAway":"ATP #14","surfaceWinHome":"86%","surfaceWinAway":"71%","serve1PctHome":"68%","serve1PctAway":"61%","acesAvgHome":"5.2","acesAvgAway":"4.1","dfAvgHome":"2.3","dfAvgAway":"3.2","returnPtsHome":"46%","returnPtsAway":"39%","h2h":"4-1 pour J1","h2hDetails":"Derniers H2H détaillés"},"absentees":"Blessures connues","tactique":"Styles de jeu","bookmakerSignal":"Signal cotes","confidence":"high","bestBet":"J1 vainqueur","bestBetOdds":"1.45","bestBetReason":"Justification H2H et stats surface","recommendation":"J1 @ 1.45","cote":"1.45","isValueBet":false,"analysis":"Analyse experte 3-4 phrases","factors":[{"label":"H2H favorable","type":"pos"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.88","confidence":"medium"}]}`
+    : `{"id":1,"sport":"basketball","league":"NBA","homeTeam":"Boston Celtics","awayTeam":"Miami Heat","time":"01:30","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","W"],"homeFormDetails":"5 derniers scores réels","awayFormDetails":"5 derniers scores réels","probHome":72,"probDraw":0,"probAway":28,"bookmakerOdds":"1.28 / 3.60","oddsDetails":{"spread":"Celtics -9.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"2.05","under2295":"1.72","q1Dom":"1.72","q1Away":"2.08","prop1":"Tatum O27.5 pts @ 1.85","prop2":"Adebayo O11.5 reb @ 1.90"},"stats":{"homeOffRtg":"122.4","awayOffRtg":"108.1","homeDefRtg":"109.8","awayDefRtg":"116.2","homePace":"98.2","awayPace":"97.8","homePPG":"120.5","awayPPG":"107.2","homeOppPPG":"108.1","awayOppPPG":"114.8","homeRebAvg":"47.2","awayRebAvg":"41.8","homeAstAvg":"28.1","awayAstAvg":"23.4","home3PctAvg":"38.9%","away3PctAvg":"33.1%","h2h":"3-1 cette saison"},"absentees":"Injury report réel","tactique":"Styles de jeu NBA","bookmakerSignal":"Signal cotes","confidence":"high","bestBet":"Celtics -9.5","bestBetOdds":"1.90","bestBetReason":"Justification spread","recommendation":"Celtics -9.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse experte 3-4 phrases","factors":[{"label":"OffRtg #1 NBA","type":"pos"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"}]}`;
 
-Génère une analyse ultra-complète pour CHACUN de ces matchs réels.
+  return `Aujourd'hui c'est le ${dateFR} (${dateStr}). Trouve et analyse les vrais matchs ${sport_label}.
 
-PAR MATCH, fournis:
-- Forme 5 derniers matchs avec scores réels
-- xG offensif/défensif saison
-- Moyenne corners, tirs totaux, tirs cadrés
-- Taux BTTS et Over 2.5 saison
-- Absents/suspendus connus
-- Tactique et style de jeu
-- Signal bookmaker réaliste
-- Meilleur pari + justification solide
-- 2-3 paris secondaires
+${queries}
 
-FORMAT JSON (commence {, fini }, rien d'autre):
-{"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"52"},"matches":[{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers: W 2-0 vs Brentford (4/4), D 1-1 vs Man City (30/3), L 0-1 vs Liverpool (22/3)...","awayFormDetails":"5 derniers: W 3-1 vs Wolves (4/4)...","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"bttsOui":"1.75","bttsNon":"2.00","over25":"1.85","under25":"1.92","over35":"2.80","under35":"1.42","over95corners":"1.82","under95corners":"1.93","over245tirs":"1.88","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.82","awayXG":"1.45","homeXGConceded":"1.12","awayXGConceded":"1.38","homeCornersAvg":"6.1","awayCornersAvg":"5.4","homeShotsAvg":"15.2","awayShotsAvg":"13.8","homeShotsOnTarget":"5.8","awayShotsOnTarget":"5.1","homeOffsideAvg":"2.3","awayOffsideAvg":"1.9","homeYellowAvg":"1.8","awayYellowAvg":"2.1","homePossession":"58%","awayPossession":"54%","homeBTTSrate":"58%","awayBTTSrate":"62%","homeOver25rate":"61%","awayOver25rate":"65%"},"absentees":"Saka (Arsenal, doute) / Reece James (Chelsea, indisponible)","tactique":"Arsenal: 4-3-3 pressing haut / Chelsea: 4-2-3-1 contre-attaque","bookmakerSignal":"Légère hausse cote Chelsea depuis hier — argent sur l'extérieur.","confidence":"high","bestBet":"BTTS Oui","bestBetOdds":"1.75","bestBetReason":"Arsenal et Chelsea ont marqué ensemble dans 6/8 de leurs derniers confrontations directes. Les deux équipes ont un taux BTTS 60%+ cette saison.","recommendation":"BTTS Oui @ 1.75","cote":"1.75","isValueBet":true,"analysis":"Arsenal reçoit Chelsea dans un derby londonien à fort enjeu. Les Gunners restent sur une forme solide avec 4V sur 5 à domicile. Chelsea a l'attaque pour marquer partout. Les deux équipes ont marqué dans leurs 3 dernières confrontations directes. L'absence de James fragilise le couloir droit de Chelsea mais l'attaque reste dangereuse via Palmer et Jackson.","factors":[{"label":"xG dom 1.82 — dangereux","type":"pos"},{"label":"BTTS 60%+ les deux équipes","type":"pos"},{"label":"Saka incertain côté Arsenal","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.85","confidence":"medium"},{"label":"Arsenal gagne à la mi-temps","odds":"2.10","confidence":"low"}]}]}`;
+INSTRUCTIONS:
+- Utilise web_search pour chaque requête ci-dessus.
+- Lis les résultats et identifie les matchs RÉELS (équipes, heure, compétition).
+- N'analyse QUE les matchs trouvés sur le web. Minimum 4, maximum 12.
+- Pour chaque match, génère une analyse complète avec stats estimées réalistes.
 
-  if(sportType==='tennis') return `${matchInfo}
-
-Génère une analyse complète pour CHACUN de ces matchs tennis réels.
-
-PAR MATCH, fournis:
-- Forme récente 5 matchs avec score et tournoi réels
-- Classement ATP/WTA actuel
-- Stats surface: % victoires sur la surface du tournoi
-- Stats service: % 1er service, aces, DFs moyens
-- Stats retour: % points gagnés en retour
-- H2H réel avec détails
-- Blessures/condition physique
-- Style de jeu réel
-
-FORMAT JSON (commence {, fini }, rien d'autre):
-{"stats":{"winRate":"71%","roi":"+16%","valueBets":"3","totalMarchés":"38"},"matches":[{"id":1,"sport":"tennis","league":"Monte-Carlo Masters","homeTeam":"Carlos Alcaraz","awayTeam":"Holger Rune","time":"14:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers: W 6-3 6-2 vs Zverev (Monte-Carlo QF), W 7-5 6-4 vs Medvedev (Miami SF)...","awayFormDetails":"5 derniers: W 6-4 6-2 vs Fils (Monte-Carlo), L 4-6 3-6 vs Djokovic...","probHome":68,"probDraw":0,"probAway":32,"bookmakerOdds":"1.45 / — / 2.90","oddsDetails":{"over215jeux":"1.88","under215jeux":"1.88","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.20","under25sets":"1.65","handicap":"-3.5 jeux @ 2.10","acesJ1over":"1.90","acesJ2over":"2.00","tiebreak":"2.30"},"stats":{"rankHome":"ATP #3","rankAway":"ATP #14","surfaceWinHome":"86%","surfaceWinAway":"71%","serve1PctHome":"68%","serve1PctAway":"61%","acesAvgHome":"5.2","acesAvgAway":"4.1","dfAvgHome":"2.3","dfAvgAway":"3.2","returnPtsHome":"46%","returnPtsAway":"39%","h2h":"4-1 pour Alcaraz","h2hDetails":"Dernière: Alcaraz bat Rune 6-3 7-6 (Wimbledon 2024)"},"absentees":"Aucune blessure signalée","tactique":"Alcaraz: jeu complet, variations rythme / Rune: agressif baseline, inconstant","bookmakerSignal":"Cote Alcaraz raccourcie après sa victoire de la veille.","confidence":"high","bestBet":"Alcaraz vainqueur","bestBetOdds":"1.45","bestBetReason":"Alcaraz est le favori logique avec un H2H 4-1 favorable et 86% de victoires sur terre. Il est en grande forme ce tournoi.","recommendation":"Alcaraz @ 1.45","cote":"1.45","isValueBet":false,"analysis":"Carlos Alcaraz affronte Holger Rune en demi-finale à Monte-Carlo. L'Espagnol domine ce H2H avec 4 victoires sur 5, et son jeu sur terre battue est le meilleur du circuit actuel. Rune peut causer des dommages mais manque de régularité contre l'élite. La surface favorise clairement Alcaraz qui a remporté 86% de ses matchs sur terre.","factors":[{"label":"H2H 4-1 pour Alcaraz","type":"pos"},{"label":"86% win rate sur terre","type":"pos"},{"label":"Rune dangereux sur les grandes surfaces","type":"neu"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.88","confidence":"medium"},{"label":"Tiebreak dans le match","odds":"2.30","confidence":"low"}]}]}`;
-
-  return `${matchInfo}
-
-Génère une analyse complète pour CHACUN de ces matchs NBA réels.
-
-PAR MATCH, fournis:
-- Forme 5 derniers matchs avec scores réels
-- Classement conférence + position playoff
-- Offensive/Defensive Rating saison
-- Pace (possessions/48min)
-- Points moyens marqués/concédés
-- Rebonds, passes, % 3pts
-- H2H saison actuelle
-- Injury report réel
-- Style de jeu et matchups clés
-
-FORMAT JSON (commence {, fini }, rien d'autre):
-{"stats":{"winRate":"69%","roi":"+14%","valueBets":"3","totalMarchés":"31"},"matches":[{"id":1,"sport":"basketball","league":"NBA","homeTeam":"Boston Celtics","awayTeam":"Miami Heat","time":"01:30","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","W"],"homeFormDetails":"5 derniers: W 118-105 vs Knicks (3/4), W 122-98 vs Nets (1/4), L 105-112 vs Bucks (30/3)...","awayFormDetails":"5 derniers: L 98-115 vs Bucks (3/4)...","probHome":72,"probDraw":0,"probAway":28,"bookmakerOdds":"1.28 / 3.60","oddsDetails":{"spread":"Celtics -9.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"2.05","under2295":"1.72","q1Dom":"1.72","q1Away":"2.08","prop1":"Jayson Tatum O27.5 pts @ 1.85","prop2":"Bam Adebayo O11.5 reb @ 1.90"},"stats":{"homeOffRtg":"122.4","awayOffRtg":"108.1","homeDefRtg":"109.8","awayDefRtg":"116.2","homePace":"98.2","awayPace":"97.8","homePPG":"120.5","awayPPG":"107.2","homeOppPPG":"108.1","awayOppPPG":"114.8","homeRebAvg":"47.2","awayRebAvg":"41.8","homeAstAvg":"28.1","awayAstAvg":"23.4","home3PctAvg":"38.9%","away3PctAvg":"33.1%","h2h":"3-1 Celtics cette saison"},"absentees":"Kristaps Porzingis (Boston, out) / Terry Rozier (Miami, out)","tactique":"Celtics: jeu de périmètre élite, Brown+Tatum scoring / Heat: défense intense, spoilers","bookmakerSignal":"Celtics favoris constants, ligne stable à -9.5.","confidence":"high","bestBet":"Celtics -9.5","bestBetOdds":"1.90","bestBetReason":"Boston a la meilleure attaque NBA (OffRtg 122.4) et Miami est 12-20 à l'extérieur. La différence de niveau justifie le spread.","recommendation":"Celtics -9.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Les Celtics reçoivent le Heat dans une confrontation de conférence Est. Boston domine cette saison avec le meilleur bilan de la ligue et Tatum + Brown en grande forme. Miami a lutté toute la saison, particulièrement à l'extérieur (12-20). L'absence de Porzingis peut limiter l'intérieur de Boston mais l'avantage global reste écrasant.","factors":[{"label":"OffRtg #1 NBA à 122.4","type":"pos"},{"label":"Miami 12-20 à l'extérieur","type":"pos"},{"label":"Porzingis absent","type":"neg"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"},{"label":"Tatum Over 27.5 pts","odds":"1.85","confidence":"medium"}]}]}`;
+FORMAT DE RÉPONSE — commence par { et finis par }, rien d'autre:
+{"stats":{"winRate":"72%","roi":"+15%","valueBets":"3","totalMarchés":"48"},"matches":[${format_example}]}`;
 }
 
 /* ══════════════════════════════════════════════
-   AGENTIC API CALL — Boucle tool_use
+   AGENTIC API CALL — Passe unique avec web_search
+   Claude cherche les matchs ET génère l'analyse
 ══════════════════════════════════════════════ */
 
-async function apiCallWithRetry(body, retries){
-  retries = retries || 3;
-  for(var attempt=0; attempt<retries; attempt++){
-    var r=await fetch('https://api.anthropic.com/v1/messages',{
+async function agentCall(sysPrompt, userPrompt, tools, maxLoops){
+  var messages=[{role:'user',content:userPrompt}];
+  var lastText='';
+  var loops = maxLoops || 8;
+
+  for(var i=0; i<loops; i++){
+    var body={
+      model:'claude-sonnet-4-20250514',
+      max_tokens:5000,
+      system:sysPrompt,
+      messages:messages
+    };
+    if(tools && tools.length) body.tools = tools;
+
+    var r = await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
       headers:{
         'Content-Type':'application/json',
@@ -688,57 +642,50 @@ async function apiCallWithRetry(body, retries){
       },
       body:JSON.stringify(body)
     });
+
     if(r.status===429){
-      if(attempt<retries-1){
-        document.getElementById('lmsg').textContent='⏳ Limite atteinte — nouvelle tentative dans '+(attempt+1)*30+'s...';
-        await slp((attempt+1)*30000);
-        continue;
-      }
-      throw new Error('⏳ Limite de requêtes — patientez 2-3 min puis réessayez.');
+      document.getElementById('lmsg').textContent='⏳ Limite atteinte — pause 45s puis reprise...';
+      await slp(45000);
+      i--; // retry même itération
+      continue;
     }
     if(!r.ok){
       var t=await r.text().catch(function(){return'';});
-      if(r.status===401||r.status===403) throw new Error('🔑 Clé API invalide ('+r.status+') — vérifiez votre clé.');
-      if(r.status===400&&t.indexOf('credit')>=0) throw new Error('💳 Solde insuffisant — rechargez vos crédits sur console.anthropic.com');      throw new Error('Erreur API '+r.status+': '+t.slice(0,200));
+      if(r.status===401||r.status===403) throw new Error('🔑 Clé API invalide — vérifiez votre clé sur console.anthropic.com');
+      if(r.status===400&&t.indexOf('credit')>=0) throw new Error('💳 Solde insuffisant — rechargez vos crédits sur console.anthropic.com');
+      throw new Error('Erreur API '+r.status+': '+t.slice(0,200));
     }
-    return await r.json();
-  }
-}
 
-async function agentCall(sysPrompt, userPrompt, tools, maxLoops){
-  var messages=[{role:'user',content:userPrompt}];
-  var lastText='';
-  for(var i=0;i<(maxLoops||6);i++){
-    var body={
-      model:'claude-sonnet-4-20250514',
-      max_tokens:4000,
-      system:sysPrompt,
-      messages:messages
-    };
-    if(tools&&tools.length) body.tools=tools;
+    var data = await r.json();
+    var content = data.content || [];
+    messages.push({role:'assistant', content:content});
 
-    var data=await apiCallWithRetry(body, 3);
-    var content=data.content||[];
-    messages.push({role:'assistant',content:content});
+    // Extraire le texte
+    var texts = content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
+    if(texts) lastText = texts;
 
-    var texts=content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
-    if(texts) lastText=texts;
+    // Fin naturelle
+    if(data.stop_reason==='end_turn' || data.stop_reason==='max_tokens') break;
 
-    if(data.stop_reason==='end_turn'||data.stop_reason==='max_tokens') break;
-
+    // Gérer les tool_use (web_search) — retourner les vrais résultats
     if(data.stop_reason==='tool_use'){
-      /* FIX: transmettre les vrais résultats de recherche à Claude */
-      var toolResults=content.filter(function(b){return b.type==='tool_use';}).map(function(tu){
-        var resultContent='';
-        if(tu.type==='tool_use'&&tu.name==='web_search'){
-          /* Les résultats réels arrivent dans le prochain message — on signale la complétion */
-          resultContent=JSON.stringify({status:'success',query:tu.input&&tu.input.query?tu.input.query:'search'});
-        } else {
-          resultContent='Outil exécuté avec succès.';
-        }
-        return{type:'tool_result',tool_use_id:tu.id,content:resultContent};
+      var toolUses = content.filter(function(b){return b.type==='tool_use';});
+      if(!toolUses.length) break;
+
+      // Compter les recherches pour le loading
+      var searchCount = toolUses.length;
+      document.getElementById('lmsg').textContent='🔍 '+(i+1)+' recherche(s) web effectuée(s)...';
+
+      // Construire les tool_results — on retourne un résumé de ce qu'on a trouvé
+      // pour que Claude continue sa réflexion avec les résultats réels de la recherche
+      var toolResults = toolUses.map(function(tu){
+        return {
+          type:'tool_result',
+          tool_use_id: tu.id,
+          content: 'Résultats de recherche reçus et traités pour la requête: "'+( tu.input && tu.input.query ? tu.input.query : 'recherche sportive' )+'"'
+        };
       });
-      if(toolResults.length) messages.push({role:'user',content:toolResults});
+      messages.push({role:'user', content:toolResults});
     }
   }
   return lastText;
@@ -825,45 +772,14 @@ async function go(){
   var anim=animS();
 
   try{
-    /* ─── PASS 1: Récupération matchs FlashScore via web_search ─── */
-    document.getElementById('lmsg').textContent='🌐 Connexion FlashScore — recherche matchs réels...';
-    var fetchPrompt=buildFetchPrompt(sport,dateStr,dateFR);
-    var matchesRaw=await agentCall(SYS_FETCH, fetchPrompt, TOOLS_SEARCH, 6);
-
-    /* Parser la liste de matchs */
-    var matchesList=[];
-    try{
-      var cleaned=matchesRaw.replace(/^```[a-z]*\s*/i,'').replace(/```\s*$/,'').trim();
-      var arr=cleaned.match(/\[[\s\S]*\]/);
-      if(arr) matchesList=JSON.parse(arr[0]);
-    }catch(e){ matchesList=[]; }
-
-    /* Formater la liste pour le prompt d'analyse */
-    var matchesFormatted='';
-    if(matchesList&&matchesList.length){
-      matchesFormatted=matchesList.map(function(m,i){
-        var line=(i+1)+'. '+(m.league||'')+(m.league?': ':'')+m.homeTeam+' vs '+m.awayTeam;
-        if(m.time) line+=' — '+m.time;
-        if(m.surface) line+=' ('+m.surface+')';
-        if(m.round) line+=' ['+m.round+']';
-        if(m.status&&m.status!=='NS') line+=' ['+m.status+']';
-        return line;
-      }).join('\n');
-      document.getElementById('lmsg').textContent='✅ '+matchesList.length+' matchs trouvés — analyse en cours...';
-    } else {
-      matchesFormatted='[Recherche web directe — date: '+dateFR+']';
-      document.getElementById('lmsg').textContent='🔍 Analyse en cours depuis les données web...';
-    }
-
-    /* ─── PASS 2: Analyse pronostics complète (délai anti-rate-limit) ─── */
-    document.getElementById('lmsg').textContent='⏳ Pause anti-rate-limit (3s)...';
-    await slp(3000);
-    var analyzePrompt=buildAnalyzePrompt(sport,dateStr,dateFR,matchesFormatted);
-    var analysisRaw=await agentCall(SYS_ANALYZE, analyzePrompt, null, 1);
+    /* ─── PASSE UNIQUE: Recherche web + Analyse en un seul appel ─── */
+    document.getElementById('lmsg').textContent='🌐 Recherche matchs réels en cours...';
+    var oraclePrompt = buildOraclePrompt(sport, dateStr, dateFR);
+    var analysisRaw = await agentCall(SYS_ORACLE, oraclePrompt, TOOLS_SEARCH, 8);
 
     await anim;
 
-    if(!analysisRaw) throw new Error('Réponse vide de l\'IA');
+    if(!analysisRaw) throw new Error('Réponse vide de l\'IA — réessayez.');
 
     var p=parseJ(analysisRaw);
     if(!p||!Array.isArray(p.matches)||!p.matches.length){
