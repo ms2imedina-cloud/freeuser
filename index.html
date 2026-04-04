@@ -665,7 +665,6 @@ function buildAnalysisPrompt(dateStr, dateFR, matchList) {
     'INSERE_LES_'+(n-1)+'_AUTRES_MATCHS\n'+
     ']}';
 }
-}
 
 async function agentCallJSON(sysPrompt, userPrompt) {
   return agentLoop(sysPrompt, userPrompt, false);
