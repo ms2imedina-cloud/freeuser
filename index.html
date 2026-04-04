@@ -542,22 +542,32 @@ function setSport(s,el){
    Prefill JSON garanti, connaissances IA directes
 ══════════════════════════════════════════════ */
 
-var SYS_ORACLE=`Tu es ORACLE CORNERS, expert en statistiques de corners au football. Tu génères des analyses JSON pures sur le marché Over/Under 9.5 corners.
-Ta réponse est UNIQUEMENT la suite du JSON déjà commencé. Aucun texte. Aucune explication. Aucun backtick.`;
+var SYS_ORACLE=`Tu es ORACLE CORNERS, expert en statistiques de corners au football. Tu as accès à la recherche web pour trouver les VRAIS matchs du jour.
+
+PROCESSUS OBLIGATOIRE :
+1. Utilise web_search pour trouver les vrais matchs de football d'aujourd'hui (PL, Ligue 1, Liga, Serie A, Bundesliga, UCL, UEL)
+2. Utilise les résultats pour identifier les matchs réels programmés ce jour
+3. Génère une analyse Over/Under 9.5 corners pour chaque vrai match trouvé
+4. Ta réponse finale = UNIQUEMENT un objet JSON valide, sans texte avant ni après, sans backtick
+
+FORMAT DE RÉPONSE STRICT : commence directement par { et termine par }. Aucun texte, aucune explication, aucun backtick.`;
 
 function buildOraclePrompt(sportType, dateStr, dateFR){
-  return `Date: ${dateFR}. Génère 10 matchs de football réels ou très probables pour cette date (PL, Ligue 1, Liga, Serie A, Bundesliga, UCL selon le calendrier habituel).
+  return `Date: ${dateFR} (${dateStr}).
 
-Chaque match = analyse centrée UNIQUEMENT sur Over/Under 9.5 corners.
+ÉTAPE 1 — Recherche web obligatoire : cherche "football matches today ${dateStr}" et "matchs football ${dateFR}" pour trouver les VRAIS matchs programmés aujourd'hui.
+
+ÉTAPE 2 — Génère un JSON complet avec les vrais matchs trouvés. Analyse centrée UNIQUEMENT sur Over/Under 9.5 corners.
 • bestBet = "Over 9.5 Corners" OU "Under 9.5 Corners" seulement
-• analysis = corners uniquement (moyennes, tendances, H2H, style de jeu)
 • homeFormDetails = "Corners 5J: X,X,X,X,X moy:X.X"
-• cornersProba.expectedCorners = somme des deux moyennes
 
-Continue ce JSON (le { t'est déjà fourni, commence par "stats"):
-"stats":{"winRate":"—","roi":"—","valueBets":"3","totalMarchés":"10"},"matches":[{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"Corners 5J: 12,8,11,9,13 moy:10.6","awayFormDetails":"Corners 5J: 7,10,9,11,8 moy:9.0","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95/3.40/3.80","oddsDetails":{"over95corners":"1.82","under95corners":"1.93","over105corners":"2.20","cornersHandicap":"ARS -1.5@1.90","over25":"1.85","bttsOui":"1.75"},"stats":{"homeCornersAvg":"6.8","awayCornersAvg":"5.2","homeCornersAgainst":"4.5","awayCornersAgainst":"5.8","homeCornersLastH":"12,8,11,9,13","awayCornersLastH":"7,10,9,11,8","cornersH2H":"5 dernières: 10,12,8,11,9 moy:10.0","homeXG":"1.82","awayXG":"1.45","homePossession":"58%","awayPossession":"42%","homeShotsAvg":"15.2","awayShotsAvg":"11.3","homeYellowAvg":"1.8","awayYellowAvg":"2.1"},"absentees":"Saka incertain","tactique":"Arsenal 4-3-3 pressing haut, Chelsea 4-4-2 compact","bookmakerSignal":"Over 9.5: 1.90→1.78","confidence":"high","bestBet":"Over 9.5 Corners","bestBetOdds":"1.82","bestBetReason":"Moy. combinée 12.0 C/match. Arsenal 6.8 DOM + Chelsea concède 5.8 EXT. H2H 4/5 Over 9.5.","cornersProba":{"over95":"68%","under95":"32%","expectedCorners":"12.0"},"recommendation":"Over 9.5 Corners @ 1.82","cote":"1.82","isValueBet":true,"analysis":"Arsenal produit 6.8 corners/match à domicile via pressing haut. Chelsea concède 5.8 corners/match en déplacement. Moy. combinée 12.0 corners. H2H 4/5 Over 9.5.","factors":[{"label":"Moy. 12.0 corners/match combinée","type":"pos"},{"label":"Arsenal pressing = corners offensifs","type":"pos"},{"label":"H2H 4/5 Over 9.5","type":"pos"},{"label":"Chelsea peut se fermer en 2e MT","type":"neg"}],"secondaryBets":[{"label":"Over 10.5 Corners","odds":"2.20","confidence":"medium"}]},REMPLACE_CE_TEXTE_PAR_9_VRAIS_MATCHS]}
+RÉPONDS UNIQUEMENT avec ce JSON complet (commence par { sans aucun texte avant) :
+{"stats":{"winRate":"—","roi":"—","valueBets":"3","totalMarchés":"10"},"matches":[... vrais matchs du jour ...]}
 
-IMPORTANT: Remplace "REMPLACE_CE_TEXTE_PAR_9_VRAIS_MATCHS" par 9 vrais matchs du ${dateFR} avec des équipes et des stats réalistes.`;
+Exemple de structure d'un match :
+{"id":1,"sport":"football","league":"Premier League","homeTeam":"VRAI_EQUIPE_DOM","awayTeam":"VRAI_EQUIPE_EXT","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"Corners 5J: 12,8,11,9,13 moy:10.6","awayFormDetails":"Corners 5J: 7,10,9,11,8 moy:9.0","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95/3.40/3.80","oddsDetails":{"over95corners":"1.82","under95corners":"1.93"},"stats":{"homeCornersAvg":"6.8","awayCornersAvg":"5.2","homeCornersAgainst":"4.5","awayCornersAgainst":"5.8","homeCornersLastH":"12,8,11,9,13","awayCornersLastH":"7,10,9,11,8","cornersH2H":"5 dernières: 10,12,8,11,9 moy:10.0","homeXG":"1.82","awayXG":"1.45","homePossession":"58%","awayPossession":"42%","homeShotsAvg":"15.2","awayShotsAvg":"11.3"},"absentees":"","tactique":"","bookmakerSignal":"","confidence":"high","bestBet":"Over 9.5 Corners","bestBetOdds":"1.82","bestBetReason":"Raison basée sur vraies stats.","cornersProba":{"over95":"68%","under95":"32%","expectedCorners":"12.0"},"recommendation":"Over 9.5 Corners @ 1.82","cote":"1.82","isValueBet":true,"analysis":"Analyse corners basée sur les vraies stats des équipes.","factors":[{"label":"Stat positive","type":"pos"},{"label":"Risque","type":"neg"}],"secondaryBets":[{"label":"Over 10.5 Corners","odds":"2.20","confidence":"medium"}]}
+
+IMPORTANT : Utilise UNIQUEMENT les vrais matchs trouvés via web_search pour le ${dateFR}. Ne génère PAS de matchs fictifs.`;
 }
 
 /* ══════════════════════════════════════════════
@@ -565,18 +575,16 @@ IMPORTANT: Remplace "REMPLACE_CE_TEXTE_PAR_9_VRAIS_MATCHS" par 9 vrais matchs du
 ══════════════════════════════════════════════ */
 
 async function agentCallJSON(sysPrompt, userPrompt){
-  // Prefill: on injecte {"  comme début de réponse assistante
-  // → l'IA NE PEUT PAS commencer par du texte, elle continue le JSON
   var messages=[
-    {role:'user', content:userPrompt},
-    {role:'assistant', content:'{"'}
+    {role:'user', content:userPrompt}
   ];
 
   var body={
     model:'claude-sonnet-4-20250514',
-    max_tokens:12000,
+    max_tokens:16000,
     system:sysPrompt,
-    messages:messages
+    messages:messages,
+    tools:[{"type":"web_search_20250305","name":"web_search"}]
   };
 
   var r = await fetch('https://api.anthropic.com/v1/messages',{
@@ -599,9 +607,9 @@ async function agentCallJSON(sysPrompt, userPrompt){
   }
 
   var data = await r.json();
+  // Extraire uniquement les blocs texte (ignorer tool_use/tool_result)
   var text = (data.content||[]).filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
-  // Réassembler avec le prefill
-  return '{"' + text;
+  return text;
 }
 
 /* ══════════════════════════════════════════════
