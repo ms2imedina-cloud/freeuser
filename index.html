@@ -326,11 +326,11 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
       <div class="lic">🔮</div>
     </div>
     <div class="steps">
-      <div class="step" id="s1"><div class="sdot"></div><span class="sck">✅</span> 🌐 Connexion FlashScore...</div>
-      <div class="step" id="s2"><div class="sdot"></div><span class="sck">✅</span> 📅 Récupération matchs du jour...</div>
-      <div class="step" id="s3"><div class="sdot"></div><span class="sck">✅</span> 📊 Analyse stats et forme...</div>
-      <div class="step" id="s4"><div class="sdot"></div><span class="sck">✅</span> 💰 Lecture cotes bookmakers...</div>
-      <div class="step" id="s5"><div class="sdot"></div><span class="sck">✅</span> 🎯 Calcul value bets Oracle v5...</div>
+      <div class="step" id="s1"><div class="sdot"></div><span class="sck">✅</span> 🌐 Recherche matchs de la date...</div>
+      <div class="step" id="s2"><div class="sdot"></div><span class="sck">✅</span> 📅 Identification des vrais matchs...</div>
+      <div class="step" id="s3"><div class="sdot"></div><span class="sck">✅</span> 📐 Calcul moyennes corners...</div>
+      <div class="step" id="s4"><div class="sdot"></div><span class="sck">✅</span> 📊 Analyse Over/Under 9.5...</div>
+      <div class="step" id="s5"><div class="sdot"></div><span class="sck">✅</span> 💰 Évaluation cotes corners...</div>
       <div class="step" id="s6"><div class="sdot"></div><span class="sck">✅</span> ✨ Rédaction analyses expertes...</div>
     </div>
     <div class="lmsg" id="lmsg">Initialisation...</div>
@@ -537,108 +537,35 @@ function setSport(s,el){
   updateSportUI();
 }
 
-/* ══════════════════════════════════════════════
-   ORACLE CORNERS — BOUCLE AGENTIQUE + MATCHS INJECTÉS
-   Les vrais matchs du jour sont fournis directement
-   dans le prompt pour garantir des résultats réels.
-══════════════════════════════════════════════ */
+/* ══════════════════════════════════════════════════════
+   ORACLE CORNERS v6 — DOUBLE PASSE DATE-AWARE
+   Passe 1 : web_search → vrais matchs de la DATE choisie
+   Passe 2 : analyse JSON corners pour ces matchs
+══════════════════════════════════════════════════════ */
 
-var SYS_ORACLE=`Tu es ORACLE CORNERS, expert en statistiques de corners au football.
-Ta SEULE mission : générer un objet JSON valide avec des analyses Over/Under 9.5 corners pour les matchs fournis.
-FORMAT ABSOLU : réponds UNIQUEMENT avec le JSON. Commence par { et termine par }. Zéro texte avant ou après. Zéro backtick.`;
+var SYS_FETCH = `Tu es un assistant spécialisé en recherche de matchs de football.
+Utilise web_search pour trouver les vrais matchs d'une date donnée.
+Réponds UNIQUEMENT avec un tableau JSON. Commence par [ et termine par ]. Zéro texte. Zéro backtick.
+Format : [{"home":"Equipe1","away":"Equipe2","league":"Ligue","time":"HH:MM"}]`;
 
-/* Base de matchs récurrents par jour de semaine — sera enrichie par les matchs injectés */
-var WEEKDAY_FIXTURES = {
-  /* 0=dim, 1=lun, 2=mar, 3=mer, 4=jeu, 5=ven, 6=sam */
-};
-
-/* Récupère les matchs du jour depuis une API gratuite (football-data.org) ou retourne les matchs connus */
-async function fetchTodayMatches(dateStr) {
-  /* Essai 1 : API football-data.org (clé gratuite non requise pour les ligues publiques) */
-  try {
-    var r = await fetch('https://api.football-data.org/v4/matches?date='+dateStr, {
-      headers: { 'X-Auth-Token': '' }
-    });
-    if(r.ok) {
-      var d = await r.json();
-      var matches = (d.matches||[]).filter(function(m){
-        return ['PL','FL1','PD','BL1','SA','CL','EL'].indexOf(m.competition&&m.competition.code)>=0;
-      });
-      if(matches.length > 0) {
-        return matches.map(function(m){
-          var t = (m.utcDate||'').slice(11,16);
-          return {
-            home: (m.homeTeam&&m.homeTeam.shortName)||'',
-            away: (m.awayTeam&&m.awayTeam.shortName)||'',
-            league: (m.competition&&m.competition.name)||'',
-            time: t
-          };
-        });
-      }
-    }
-  } catch(e) {}
-
-  return null;
-}
-
-function buildOraclePrompt(sportType, dateStr, dateFR, matchList) {
-  var matchBlock = '';
-  if(matchList && matchList.length > 0) {
-    matchBlock = '\n\nVRAIS MATCHS DU '+dateFR+' (source live) :\n';
-    matchList.forEach(function(m, i) {
-      matchBlock += (i+1)+'. '+m.home+' vs '+m.away+' — '+m.league+' — '+m.time+'\n';
-    });
-    matchBlock += '\nAnalyse UNIQUEMENT ces matchs réels ci-dessus.';
-  } else {
-    /* Matchs connus pour le 4 avril 2026 (samedi) — mis à jour manuellement */
-    var today = new Date(dateStr);
-    var dow = today.getDay(); /* 6 = samedi */
-    matchBlock = '\n\nVRAIS MATCHS CONFIRMÉS DU '+dateFR+' :\n'+
-      '1. Southampton vs Arsenal — FA Cup QF — 21:00\n'+
-      '2. Chelsea vs Port Vale — FA Cup QF — 16:30\n'+
-      '3. Man City vs Bournemouth — FA Cup QF — 19:00\n'+
-      '4. Mallorca vs Real Madrid — LaLiga J30 — 16:15\n'+
-      '5. Stuttgart vs Dortmund — Bundesliga J28 — 16:30\n'+
-      '6. Fribourg vs Bayern Munich — Bundesliga J28 — 16:30\n'+
-      '7. Bayer Leverkusen vs Wolfsburg — Bundesliga J28 — 16:30\n'+
-      '8. Strasbourg vs Nice — Ligue 1 J28 — 18:00\n'+
-      '9. Brest vs Rennes — Ligue 1 J28 — 20:00\n'+
-      '10. Lille vs Lens — Ligue 1 J28 — 21:05\n'+
-      '\nAnalyse UNIQUEMENT ces matchs réels.';
-  }
-
-  return `Date : ${dateFR} (${dateStr}).${matchBlock}
-
-Pour chaque match, génère une analyse Over/Under 9.5 corners complète.
-• bestBet = "Over 9.5 Corners" OU "Under 9.5 Corners" uniquement
-• homeFormDetails = "Corners 5J: X,X,X,X,X moy:X.X"
-• analysis = centrée sur les corners (style de jeu, moyennes, H2H)
-
-Réponds UNIQUEMENT avec ce JSON (commence par { directement) :
-{"stats":{"winRate":"—","roi":"—","valueBets":"3","totalMarchés":"10"},"matches":[
-{"id":1,"sport":"football","league":"FA Cup","homeTeam":"Southampton","awayTeam":"Arsenal","time":"21:00","homeForm":["W","W","D","W","W"],"awayForm":["W","W","W","D","W"],"homeFormDetails":"Corners 5J: 5,6,4,7,5 moy:5.4","awayFormDetails":"Corners 5J: 8,9,7,8,10 moy:8.4","probHome":15,"probDraw":15,"probAway":70,"bookmakerOdds":"6.50/4.00/1.45","oddsDetails":{"over95corners":"1.90","under95corners":"1.85"},"stats":{"homeCornersAvg":"5.2","awayCornersAvg":"7.8","homeCornersAgainst":"5.5","awayCornersAgainst":"4.2","homeCornersLastH":"5,6,4,7,5","awayCornersLastH":"8,9,7,8,10","cornersH2H":"moy:12.0","homeXG":"1.10","awayXG":"2.10","homePossession":"42%","awayPossession":"58%","homeShotsAvg":"10.0","awayShotsAvg":"16.0"},"absentees":"Arsenal: Saka, Saliba incertains","tactique":"Southampton 4-2-3-1 défensif, Arsenal 4-3-3 pressing haut","bookmakerSignal":"","confidence":"medium","bestBet":"Over 9.5 Corners","bestBetOdds":"1.90","bestBetReason":"Arsenal génère 7.8 corners/match. Moy. combinée ~13. Southampton défensif = nombreux dégagements.","cornersProba":{"over95":"62%","under95":"38%","expectedCorners":"13.0"},"recommendation":"Over 9.5 Corners @ 1.90","cote":"1.90","isValueBet":false,"analysis":"Arsenal produit 7.8 corners/match via pressing haut et largeur du jeu. Southampton concède 5.5 corners/match. Combiné ~13 corners attendus. Arsenal a dépassé 9.5 corners dans 3 de ses 5 derniers matchs de coupe.","factors":[{"label":"Arsenal 7.8 C/match — pressing haut","type":"pos"},{"label":"Southampton concède 5.5 C/match","type":"pos"},{"label":"Southampton en Championship — résiste bas","type":"neg"}],"secondaryBets":[{"label":"Arsenal Over 5.5 corners","odds":"1.75","confidence":"high"}]},
-INSERE_ICI_LES_9_AUTRES_MATCHS_REELS
-]}
-
-REMPLACE "INSERE_ICI_LES_9_AUTRES_MATCHS_REELS" par les 9 autres matchs de la liste ci-dessus, dans le même format JSON détaillé.`;
-}
+var SYS_ORACLE = `Tu es ORACLE CORNERS, expert en statistiques de corners au football.
+Tu reçois une liste de vrais matchs et tu génères des analyses Over/Under 9.5 corners.
+FORMAT ABSOLU : réponds UNIQUEMENT avec le JSON complet. Commence par { et termine par }. Zéro texte. Zéro backtick.`;
 
 /* ══════════════════════════════════════════════
-   BOUCLE AGENTIQUE — gère tool_use proprement
+   BOUCLE AGENTIQUE GÉNÉRIQUE
 ══════════════════════════════════════════════ */
-
-async function agentCallJSON(sysPrompt, userPrompt){
-  var messages = [{role:'user', content:userPrompt}];
-  var MAX_TURNS = 8;
-
-  for(var turn=0; turn<MAX_TURNS; turn++){
+async function agentLoop(sysPrompt, userPrompt, useWebSearch) {
+  var messages = [{role:'user', content: userPrompt}];
+  var MAX_TURNS = 12;
+  for(var turn = 0; turn < MAX_TURNS; turn++) {
     var body = {
       model: 'claude-sonnet-4-20250514',
       max_tokens: 16000,
       system: sysPrompt,
-      messages: messages,
-      tools: [{"type":"web_search_20250305","name":"web_search"}]
+      messages: messages
     };
+    if(useWebSearch) body.tools = [{"type":"web_search_20250305","name":"web_search"}];
 
     var r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -651,56 +578,109 @@ async function agentCallJSON(sysPrompt, userPrompt){
       body: JSON.stringify(body)
     });
 
-    if(r.status===429){ await slp(45000); continue; }
-    if(!r.ok){
-      var t = await r.text().catch(function(){return'';});
-      if(r.status===401||r.status===403) throw new Error('🔑 Clé API invalide — vérifiez votre clé sur console.anthropic.com');
-      if(r.status===400&&t.indexOf('credit')>=0) throw new Error('💳 Solde insuffisant — rechargez vos crédits sur console.anthropic.com');
-      throw new Error('Erreur API '+r.status+': '+t.slice(0,200));
+    if(r.status === 429) { await slp(45000); continue; }
+    if(!r.ok) {
+      var errTxt = await r.text().catch(function(){return'';});
+      if(r.status===401||r.status===403) throw new Error('\u{1F511} Clé API invalide — vérifiez sur console.anthropic.com');
+      if(r.status===400&&errTxt.indexOf('credit')>=0) throw new Error('\u{1F4B3} Solde insuffisant — rechargez vos crédits');
+      throw new Error('Erreur API '+r.status+': '+errTxt.slice(0,200));
     }
 
     var data = await r.json();
     var stopReason = data.stop_reason;
+    var content = data.content || [];
+    var text = content.filter(function(b){return b.type==='text';}).map(function(b){return b.text;}).join('');
 
-    /* Extraire blocs texte */
-    var textBlocks = (data.content||[]).filter(function(b){return b.type==='text';});
-    var text = textBlocks.map(function(b){return b.text;}).join('');
+    if(stopReason === 'end_turn' || stopReason === 'stop_sequence') return text;
 
-    /* Si fin normale → retourner le texte */
-    if(stopReason === 'end_turn' || stopReason === 'stop_sequence') {
-      return text;
-    }
-
-    /* Si tool_use → traiter les appels outils et continuer */
     if(stopReason === 'tool_use') {
-      /* Ajouter la réponse de l'assistant à l'historique */
-      messages.push({role:'assistant', content: data.content});
-
-      /* Construire les tool_results */
-      var toolResults = [];
-      var toolUseBlocks = (data.content||[]).filter(function(b){return b.type==='tool_use';});
-
-      for(var ti=0; ti<toolUseBlocks.length; ti++){
-        var toolBlock = toolUseBlocks[ti];
-        /* web_search est géré côté serveur Anthropic — résultat déjà inclus dans la prochaine réponse */
-        /* On retourne un placeholder vide pour continuer la boucle */
-        toolResults.push({
-          type: 'tool_result',
-          tool_use_id: toolBlock.id,
-          content: 'Recherche effectuée.'
-        });
-      }
-
+      messages.push({role:'assistant', content: content});
+      var toolResults = content
+        .filter(function(b){return b.type==='tool_use';})
+        .map(function(b){ return {type:'tool_result', tool_use_id: b.id, content: ''}; });
       messages.push({role:'user', content: toolResults});
       continue;
     }
-
-    /* Cas par défaut : retourner ce qu'on a */
     return text;
   }
-
-  throw new Error('Trop de tours agentiques. Réessayez.');
+  throw new Error('Délai dépassé. Réessayez.');
 }
+
+/* ══════════════════════════════════════════════
+   PASSE 1 — Cherche les vrais matchs de la DATE
+   La date est passée explicitement pour éviter
+   toute confusion avec la date du jour.
+══════════════════════════════════════════════ */
+async function fetchMatchesForDate(dateStr, dateFR) {
+  var prompt = `Trouve les matchs de football du ${dateFR} (date ISO: ${dateStr}).
+
+Effectue des recherches web avec ces requêtes :
+- "football matches ${dateStr} fixtures"
+- "matchs football ${dateFR} programme"
+- "Premier League Bundesliga Ligue 1 Liga Serie A ${dateStr}"
+
+IMPORTANT : tu cherches les matchs du ${dateFR}, PAS d'une autre date.
+
+Retourne UNIQUEMENT ce JSON (commence par [ sans rien avant) :
+[{"home":"NomDom","away":"NomExt","league":"Ligue","time":"HH:MM"},...]
+
+Si aucun match trouvé pour le ${dateFR}, retourne [].`;
+
+  var raw = await agentLoop(SYS_FETCH, prompt, true);
+  raw = raw.replace(/```[a-z]*/gi,'').replace(/```/g,'').trim();
+  var s = raw.indexOf('['), e = raw.lastIndexOf(']');
+  if(s < 0 || e < 0) return [];
+  try { return JSON.parse(raw.slice(s, e+1)); } catch(err) { return []; }
+}
+
+/* ══════════════════════════════════════════════
+   PASSE 2 — Génère l'analyse corners
+══════════════════════════════════════════════ */
+function buildAnalysisPrompt(dateStr, dateFR, matchList) {
+  var matchLines = matchList.map(function(m, i){
+    return (i+1)+'. '+m.home+' vs '+m.away+' — '+m.league+' — '+(m.time||'TBD');
+  }).join('\n');
+
+  return `Date : ${dateFR} (${dateStr})
+
+MATCHS DU ${dateFR} À ANALYSER :
+${matchLines}
+
+Pour chaque match, génère une analyse Over/Under 9.5 corners.
+• bestBet = "Over 9.5 Corners" OU "Under 9.5 Corners" uniquement
+• homeFormDetails = "Corners 5J: X,X,X,X,X moy:X.X"
+• analysis = centrée sur les corners (style, moyennes, H2H)
+
+Réponds UNIQUEMENT avec ce JSON complet (commence par { sans rien avant) :
+{"stats":{"winRate":"—","roi":"—","valueBets":"?","totalMarchés":"${matchList.length}"},"matches":[
+{
+  "id":1,"sport":"football","league":"LIGUE","homeTeam":"DOM","awayTeam":"EXT","time":"HH:MM",
+  "homeForm":["W","D","L","W","W"],"awayForm":["W","L","W","W","D"],
+  "homeFormDetails":"Corners 5J: 6,7,5,8,6 moy:6.4","awayFormDetails":"Corners 5J: 5,4,6,5,7 moy:5.4",
+  "probHome":45,"probDraw":27,"probAway":28,"bookmakerOdds":"2.10/3.30/3.40",
+  "oddsDetails":{"over95corners":"1.85","under95corners":"1.90"},
+  "stats":{"homeCornersAvg":"6.2","awayCornersAvg":"5.1","homeCornersAgainst":"4.8","awayCornersAgainst":"5.3",
+    "homeCornersLastH":"6,7,5,8,6","awayCornersLastH":"5,4,6,5,7","cornersH2H":"moy:10.0",
+    "homeXG":"1.65","awayXG":"1.40","homePossession":"52%","awayPossession":"48%",
+    "homeShotsAvg":"13.0","awayShotsAvg":"11.5"},
+  "absentees":"","tactique":"","bookmakerSignal":"","confidence":"medium",
+  "bestBet":"Over 9.5 Corners","bestBetOdds":"1.85",
+  "bestBetReason":"Moy. combinée 11.3 C/match.",
+  "cornersProba":{"over95":"60%","under95":"40%","expectedCorners":"11.3"},
+  "recommendation":"Over 9.5 Corners @ 1.85","cote":"1.85","isValueBet":false,
+  "analysis":"Analyse corners détaillée.",
+  "factors":[{"label":"Stat positive","type":"pos"},{"label":"Risque","type":"neg"}],
+  "secondaryBets":[{"label":"Over 10.5 Corners","odds":"2.10","confidence":"low"}]
+},
+... INSERE TOUS LES AUTRES MATCHS ...
+]}`;
+}
+
+async function agentCallJSON(sysPrompt, userPrompt) {
+  return agentLoop(sysPrompt, userPrompt, false);
+}
+
+
 
 /* ══════════════════════════════════════════════
    LOADING ANIMATIONS
@@ -708,12 +688,12 @@ async function agentCallJSON(sysPrompt, userPrompt){
 
 var ANIM_CFG={
   football:[
-    '📐 Recherche matchs football du jour...',
-    '⚽ Analyse moyennes corners par équipe...',
-    '🔍 Collecte stats corners historiques...',
-    '📊 Calcul Over/Under 9.5 probabilités...',
-    '💰 Évaluation cotes bookmakers corners...',
-    '✨ Rédaction analyses expertes corners...'
+    '🌐 Recherche des matchs de la date...',
+    '📅 Identification vrais matchs...',
+    '📐 Analyse moyennes corners...',
+    '📊 Calcul Over/Under 9.5...',
+    '💰 Évaluation cotes corners...',
+    '✨ Rédaction analyses expertes...'
   ]
 };
 
@@ -766,10 +746,15 @@ async function go(){
   var anim=animS();
 
   try{
-    document.getElementById('lmsg').textContent='🌐 Récupération des matchs du jour...';
-    var matchList = await fetchTodayMatches(dateStr);
-    document.getElementById('lmsg').textContent='📐 Analyse corners Over/Under 9.5 en cours...';
-    var prompt = buildOraclePrompt(sport, dateStr, dateFR, matchList);
+    /* Passe 1 : vrais matchs de la DATE selectionnee */
+    document.getElementById('lmsg').textContent='Recherche matchs du '+dateFR+'...';
+    var matchList = await fetchMatchesForDate(dateStr, dateFR);
+    if(!matchList || matchList.length === 0) {
+      throw new Error('Aucun match trouve pour le '+dateFR+'. Verifiez la date ou reessayez.');
+    }
+    /* Passe 2 : analyse corners */
+    document.getElementById('lmsg').textContent='Analyse Over/Under 9.5 en cours ('+matchList.length+' matchs)...';
+    var prompt = buildAnalysisPrompt(dateStr, dateFR, matchList);
     var raw = await agentCallJSON(SYS_ORACLE, prompt);
 
     await anim;
