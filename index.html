@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ORACLE SPORT — Pronostics IA Temps Réel</title>
+<title>ORACLE CORNERS — Spécialiste Over/Under 9.5 Corners</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#060810;--card:#0d1320;--border:#1e2a3a;--accent:#00ff88;--a2:#ff6b35;--a3:#4fc3f7;--gold:#ffd700;--text:#e2e8f0;--muted:#5a7090;--danger:#ef4444;--ok:#22c55e}
@@ -281,7 +281,7 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 <div id="sportsErr" style="display:none"></div>
 
 <header>
-  <div class="logo">ORACLE<span class="logo-s">⚡</span>SPORT</div>
+  <div class="logo">ORACLE<span class="logo-s">📐</span>CORNERS</div>
   <div style="display:flex;align-items:center;gap:.6rem">
     <span id="keyIndicator" style="display:none" class="key-badge" onclick="changeKey()" title="Changer la clé">🔑 <span id="keyPreview"></span> ✎</span>
     <div class="live"><div class="dot"></div>IA Active</div>
@@ -289,13 +289,13 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 </header>
 
 <nav class="tabs">
-  <button class="tab on" id="tab-football" onclick="setSport('football',this)">⚽ Football</button>
+  <button class="tab on" id="tab-football" onclick="setSport('football',this)">📐 Corners 9.5</button>
 </nav>
 
 <main>
   <div class="topbar">
     <div class="dinfo">
-      <div class="dl">Pronostics — FlashScore · Web Search IA</div>
+      <div class="dl">Spécialiste Over/Under 9.5 Corners — IA Temps Réel</div>
       <div class="dv" id="dateDisplay">SAMEDI 4 AVRIL 2026</div>
       <div class="tag-real" id="matchTag">🌐 FlashScore · Matchs Temps Réel</div>
       <div class="src-badge" id="srcBadge">🌐 FlashScore + Web Search IA</div>
@@ -314,10 +314,10 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
   </div>
 
   <div class="sstats">
-    <div class="sc g"><div class="slb">Réussite</div><div class="svl" id="sw">—</div><div class="ssb">7 derniers jours</div></div>
+    <div class="sc g"><div class="slb">Over 9.5 ✅</div><div class="svl" id="sw">—</div><div class="ssb">Matchs recommandés</div></div>
     <div class="sc o"><div class="slb">Matchs</div><div class="svl" id="st">8</div><div class="ssb">Analysés ce jour</div></div>
-    <div class="sc b"><div class="slb">ROI</div><div class="svl" id="sr">—</div><div class="ssb">30 jours</div></div>
-    <div class="sc gd"><div class="slb">Value Bets</div><div class="svl" id="sv">—</div><div class="ssb">Identifiés</div></div>
+    <div class="sc b"><div class="slb">Under 9.5 ✅</div><div class="svl" id="sr">—</div><div class="ssb">Matchs recommandés</div></div>
+    <div class="sc gd"><div class="slb">Value Bets</div><div class="svl" id="sv">—</div><div class="ssb">Corners identifiés</div></div>
   </div>
 
   <div class="ld" id="ld">
@@ -506,13 +506,13 @@ function shiftDate(delta){
 
 /* ── SPORT CONFIG ── */
 var SPORT_CFG={
-  football:{label:'Analyser Football',orb:'⚽',title:'Football — Prêt'}
+  football:{label:'Analyser Corners 9.5',orb:'📐',title:'Corners Over/Under 9.5 — Prêt'}
 };
 
 function updateSportHints(d){
   var dateFR=formatDateFR(d);
   var h=document.getElementById('empHints');
-  h.innerHTML='<div class="ehint">🌐 Recherche FlashScore · matchs football du '+dateFR+'</div><div class="ehint">⚽ Premier League · Ligue 1 · Liga · Serie A · Bundesliga · UCL · Europa League</div>';
+  h.innerHTML='<div class="ehint">📐 Recherche matchs à fort potentiel corners — Over/Under 9.5 du '+dateFR+'</div><div class="ehint">⚽ Sélection basée sur : moyenne corners/match · style de jeu · confrontations directes · arbitre</div>';
 }
 
 function updateSportUI(){
@@ -550,40 +550,57 @@ var TOOLS_SEARCH=[{type:"web_search_20250305",name:"web_search"}];
    Claude utilise web_search puis génère le JSON
 ══════════════════════════════════════════════ */
 
-var SYS_ORACLE=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé football. Tu as accès à web_search.
+var SYS_ORACLE=`Tu es ORACLE CORNERS, analyste quantitatif élite spécialisé dans le marché Over/Under 9.5 corners au football. Tu as accès à web_search.
 
 MISSION EN 2 ÉTAPES:
-1. Effectue les recherches web demandées pour trouver exactement 20 vrais matchs football du jour.
-2. Génère une analyse complète et professionnelle pour chacun des 20 matchs.
+1. Effectue les recherches web pour trouver exactement 15 vrais matchs football du jour avec le plus fort potentiel corners.
+2. Pour chaque match, génère une analyse EXPERTE ET DÉTAILLÉE uniquement centrée sur le marché Over/Under 9.5 corners.
+
+CRITÈRES DE SÉLECTION DES MATCHS:
+- Privilégie les équipes connues pour leur volume élevé de corners (haut pressing, jeu sur les côtés)
+- Inclus des matchs avec équipes en forme défensive basse (peu de buts = plus de corners)
+- Évite les matchs entre équipes défensives fermées avec faible volume corners historique
+
+CRITÈRES D'ANALYSE CORNERS:
+- Moyenne corners/match des 2 équipes (pondérée domicile/extérieur)
+- Tendance des 5 derniers matchs (série Over ou Under)
+- Style de jeu : équipes à haut pressing → plus de corners
+- Arbitre : certains arbitres accordent plus facilement les corners
+- Météo/terrain si pertinent
+- H2H corners sur les 5 dernières rencontres
+- Cotation Over 9.5 / Under 9.5 pour identifier la value
 
 RÈGLES ABSOLUES:
 - N'invente JAMAIS un match — uniquement des matchs trouvés sur le web.
-- Exactement 20 matchs dans ta réponse (ou le maximum trouvé si < 20 ce jour-là).
+- 15 matchs maximum (ou le nombre réel trouvé).
 - Ta réponse finale commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks ni markdown.
-- Les stats (xG, corners, BTTS rate, etc.) doivent être réalistes et cohérentes avec les équipes.`;
+- Le champ "bestBet" DOIT être soit "Over 9.5 Corners" soit "Under 9.5 Corners".
+- L'analyse doit être UNIQUEMENT centrée sur les corners, pas sur le résultat du match.`;
 
 function buildOraclePrompt(sportType, dateStr, dateFR){
-  var format_example = `{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers matchs réels avec scores","awayFormDetails":"5 derniers matchs réels avec scores","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"bttsOui":"1.75","bttsNon":"2.00","over25":"1.85","under25":"1.92","over35":"2.80","under35":"1.42","over95corners":"1.82","under95corners":"1.93","over245tirs":"1.88","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.82","awayXG":"1.45","homeXGConceded":"1.12","awayXGConceded":"1.38","homeCornersAvg":"6.1","awayCornersAvg":"5.4","homeShotsAvg":"15.2","awayShotsAvg":"13.8","homeShotsOnTarget":"5.8","awayShotsOnTarget":"5.1","homeOffsideAvg":"2.3","awayOffsideAvg":"1.9","homeYellowAvg":"1.8","awayYellowAvg":"2.1","homePossession":"58%","awayPossession":"54%","homeBTTSrate":"58%","awayBTTSrate":"62%","homeOver25rate":"61%","awayOver25rate":"65%"},"absentees":"Joueurs absents connus","tactique":"Systèmes tactiques des deux équipes","bookmakerSignal":"Signal mouvement cotes","confidence":"high","bestBet":"BTTS Oui","bestBetOdds":"1.75","bestBetReason":"Justification solide basée sur stats réelles","recommendation":"BTTS Oui @ 1.75","cote":"1.75","isValueBet":true,"analysis":"Analyse experte complète 3-4 phrases","factors":[{"label":"stat clé positive","type":"pos"},{"label":"stat clé négative","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.85","confidence":"medium"}]}`;
+  var format_example = `{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers matchs avec nb corners : Arsenal 12,8,11,9,13","awayFormDetails":"5 derniers matchs avec nb corners : Chelsea 7,10,9,11,8","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"over95corners":"1.82","under95corners":"1.93","over105corners":"2.10","over115corners":"2.80","cornersHandicap":"Arsenal -1.5 @ 1.90","bttsOui":"1.75","over25":"1.85","handicap":"-0.5 dom @ 2.10"},"stats":{"homeCornersAvg":"6.8","awayCornersAvg":"5.2","homeCornersLastH":"6,8,7,9,11","awayCornersLastH":"4,6,5,7,8","homeCornersFor":"6.8","homeCornersAgainst":"4.2","awayCornersFor":"5.2","awayCornersAgainst":"5.8","cornersH2H":"Arsenal vs Chelsea 5 dernières: 10,12,8,11,9","homeXG":"1.82","awayXG":"1.45","homePossession":"58%","awayPossession":"42%","homeShotsAvg":"15.2","awayShotsAvg":"11.3","homeYellowAvg":"1.8","awayYellowAvg":"2.1"},"absentees":"Absents connus pouvant impacter le style de jeu","tactique":"Arsenal 4-3-3 haut pressing · Chelsea 4-4-2 compact — profils favorables aux corners","bookmakerSignal":"Mouvement de cote : Over 9.5 de 1.90 → 1.78 (action sur Over)","confidence":"high","bestBet":"Over 9.5 Corners","bestBetOdds":"1.82","bestBetReason":"Moyenne combinée 12.0 corners/match sur les 5 derniers matchs. Arsenal produit 6.8 corners/match + Chelsea 5.2. H2H : 4/5 matchs Over 9.5. Arbitre connu pour laisser jouer → style offensif = plus de dégagements en corner.","cornersProba":{"over95":"67%","under95":"33%","expectedCorners":"11.8"},"recommendation":"Over 9.5 Corners @ 1.82","cote":"1.82","isValueBet":true,"analysis":"Analyse experte CENTRÉE CORNERS : Arsenal produit en moyenne 6.8 corners par match à domicile, Chelsea 5.2 en déplacement, soit une moyenne combinée de 12 corners attendus. Sur les 5 derniers matchs, Arsenal a généré 10+ corners dans 4 rencontres. Chelsea sous le pressing d'Arsenal concède habituellement beaucoup de corners défensifs. Le H2H confirme : 4/5 dernières rencontres Over 9.5. L'arbitre désigné accorde en moyenne 11.3 corners par match cette saison.","factors":[{"label":"Moyenne combinée 12.0 corners/match","type":"pos"},{"label":"Arsenal haut pressing = nombreux corners offensifs","type":"pos"},{"label":"H2H : 4/5 Over 9.5 confirmé","type":"pos"},{"label":"Météo ventée peut réduire les corners longs","type":"neg"}],"secondaryBets":[{"label":"Over 10.5 Corners","odds":"2.10","confidence":"medium"},{"label":"Arsenal Over 5.5 Corners","odds":"1.88","confidence":"medium"}]}`;
 
-  return `Aujourd'hui c'est le ${dateFR} (${dateStr}). Tu dois trouver et analyser 20 vrais matchs de football du jour.
+  return `Aujourd'hui c'est le ${dateFR} (${dateStr}). Tu dois trouver et analyser 15 matchs de football du jour AVEC LE PLUS FORT POTENTIEL CORNERS (Over ou Under 9.5).
 
-ÉTAPE 1 — Effectue CES 5 recherches web dans l'ordre pour collecter 20 matchs:
-1. "football matches today ${dateStr} Premier League Championship"
-2. "Ligue 1 Liga Serie A Bundesliga matches ${dateStr} today"
-3. "Champions League Europa League Conference League ${dateStr} matches"
-4. "football flashscore ${dateStr} today schedule results"
-5. "MLS Eredivisie Primeira Liga Süper Lig matches ${dateStr}"
+ÉTAPE 1 — Effectue CES 5 recherches web pour collecter les matchs:
+1. "football matches today ${dateStr} Premier League Ligue 1"
+2. "Liga Serie A Bundesliga matches ${dateStr} today corners"
+3. "Champions League Europa League ${dateStr} matches corners stats"
+4. "football flashscore ${dateStr} today schedule high scoring"
+5. "football corners statistics ${dateStr} over under 9.5"
 
-ÉTAPE 2 — Après les recherches, sélectionne exactement 20 matchs réels trouvés (mix de toutes les compétitions) et génère une analyse complète pour chacun.
+ÉTAPE 2 — Sélectionne les 15 matchs avec le plus fort signal corners et génère une ANALYSE EXPERTE CENTRÉE UNIQUEMENT SUR LES CORNERS pour chacun.
 
-RÈGLES:
+RÈGLES CRITIQUES:
 - N'invente JAMAIS un match — utilise UNIQUEMENT les matchs trouvés sur le web.
-- Objectif: EXACTEMENT 20 matchs. Si tu en trouves plus, prends les 20 plus importants.
-- Stats réalistes basées sur la connaissance des équipes + résultats trouvés.
-- Inclus des matchs de plusieurs compétitions (PL, L1, Liga, Serie A, BL, UCL, etc.)
+- Le champ "bestBet" DOIT être "Over 9.5 Corners" OU "Under 9.5 Corners" UNIQUEMENT.
+- L'analyse doit parler UNIQUEMENT des corners : moyennes, tendances, H2H corners, style de jeu, arbitre.
+- NE PAS analyser le résultat du match, les buts ou le BTTS sauf si impact sur les corners.
+- Remplir "cornersProba" avec probabilité Over 9.5, Under 9.5 et total attendu.
+- "homeFormDetails" et "awayFormDetails" = nb de corners dans les 5 derniers matchs (pas les résultats).
 
-FORMAT DE RÉPONSE — commence par { et finis par }, RIEN d'autre, PAS de backticks:
-{"stats":{"winRate":"74%","roi":"+18%","valueBets":"5","totalMarchés":"20"},"matches":[${format_example}, ...19 autres matchs...]}`;
+FORMAT — commence par { et finis par }, RIEN d'autre, PAS de backticks:
+{"stats":{"winRate":"—","roi":"—","valueBets":"3","totalMarchés":"15"},"matches":[${format_example}, ...14 autres matchs...]}`;
 }
 
 /* ══════════════════════════════════════════════
@@ -670,12 +687,12 @@ async function agentCall(sysPrompt, userPrompt, tools, maxLoops){
 
 var ANIM_CFG={
   football:[
-    '🌐 Recherche FlashScore · Premier League · Ligue 1...',
-    '⚽ Scan Liga · Serie A · Bundesliga · UCL...',
-    '🔍 Collecte 20 matchs du jour en cours...',
-    '📊 Analyse xG · stats · forme · absents...',
-    '💰 Calcul cotes · value bets · marchés...',
-    '✨ Rédaction analyses expertes...'
+    '📐 Recherche matchs football du jour...',
+    '⚽ Analyse moyennes corners par équipe...',
+    '🔍 Collecte stats corners historiques...',
+    '📊 Calcul Over/Under 9.5 probabilités...',
+    '💰 Évaluation cotes bookmakers corners...',
+    '✨ Rédaction analyses expertes corners...'
   ]
 };
 
@@ -746,9 +763,16 @@ async function go(){
     }
 
     var s=p.stats||{};
-    document.getElementById('sw').textContent=s.winRate||'—';
+    // Compter Over/Under 9.5
+    var overCount=0, underCount=0;
+    (p.matches||[]).forEach(function(m){
+      var b=(m.bestBet||'').toLowerCase();
+      if(b.indexOf('over')>=0) overCount++;
+      else if(b.indexOf('under')>=0) underCount++;
+    });
+    document.getElementById('sw').textContent=overCount||s.winRate||'—';
     document.getElementById('st').textContent=p.matches.length;
-    document.getElementById('sr').textContent=s.roi||'—';
+    document.getElementById('sr').textContent=underCount||s.roi||'—';
     document.getElementById('sv').textContent=s.valueBets||'—';
 
     all=p.matches;
@@ -852,41 +876,56 @@ function renderFootball(m,i){
   var c=document.createElement('div');
   c.className='card';c.style.animationDelay=(i*.07)+'s';
 
-  var oddsHtml='<div class="odds-section"><div class="odds-title">📊 Marchés & Cotes</div><div class="odds-grid">'+
-    '<div class="odds-col"><div class="odds-col-title">Résultat</div>'+
-      oddsRow('1 Dom.',m.bookmakerOdds?(m.bookmakerOdds.split('/')[0]||'').trim():'')+
-      oddsRow('X Nul',m.bookmakerOdds?(m.bookmakerOdds.split('/')[1]||'').trim():'')+
-      oddsRow('2 Ext.',m.bookmakerOdds?(m.bookmakerOdds.split('/')[2]||'').trim():'')+
-      oddsRow('Handicap',od.handicap)+
+  var isOver = (m.bestBet||'').toLowerCase().indexOf('over') >= 0;
+  var cornerSignalColor = isOver ? 'var(--accent)' : 'var(--a2)';
+  var cornerSignalBg = isOver ? 'rgba(0,255,136,.12)' : 'rgba(255,107,53,.12)';
+  var cornerSignalBorder = isOver ? 'rgba(0,255,136,.35)' : 'rgba(255,107,53,.35)';
+  var cp = m.cornersProba || {};
+  var cornersSignalHtml = '<div style="background:'+cornerSignalBg+';border:2px solid '+cornerSignalBorder+';border-radius:14px;padding:1rem 1.2rem;margin-bottom:1rem;text-align:center">'+
+    '<div style="font-size:.6rem;letter-spacing:2px;text-transform:uppercase;color:'+cornerSignalColor+';font-weight:700;margin-bottom:.4rem">📐 SIGNAL CORNERS</div>'+
+    '<div style="font-family:\'Bebas Neue\',sans-serif;font-size:2rem;color:'+cornerSignalColor+';letter-spacing:2px;line-height:1">'+x(m.bestBet||'—')+'</div>'+
+    '<div style="font-family:\'Space Mono\',monospace;font-size:1.1rem;color:var(--gold);font-weight:700;margin-top:.3rem">Cote : '+x(String(m.bestBetOdds||m.cote||'—'))+'</div>'+
+    (cp.expectedCorners?'<div style="font-size:.72rem;color:var(--muted);margin-top:.5rem">⚽ Total corners attendu : <strong style="color:'+cornerSignalColor+'">'+x(cp.expectedCorners)+'</strong></div>':'')+
+    '<div style="display:flex;justify-content:center;gap:1.5rem;margin-top:.6rem">'+
+      (cp.over95?'<div style="text-align:center"><div style="font-size:.55rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Over 9.5</div><div style="font-family:\'Space Mono\',monospace;font-size:.9rem;color:var(--accent);font-weight:700">'+x(cp.over95)+'</div></div>':'') +
+      (cp.under95?'<div style="text-align:center"><div style="font-size:.55rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase">Under 9.5</div><div style="font-family:\'Space Mono\',monospace;font-size:.9rem;color:var(--a2);font-weight:700">'+x(cp.under95)+'</div></div>':'') +
     '</div>'+
-    '<div class="odds-col"><div class="odds-col-title">Buts</div>'+
-      oddsRow('BTTS Oui',od.bttsOui)+oddsRow('BTTS Non',od.bttsNon)+
-      oddsRow('Over 2.5',od.over25)+oddsRow('Under 2.5',od.under25)+
-      oddsRow('Over 3.5',od.over35)+oddsRow('Under 3.5',od.under35)+
+  '</div>';
+
+  var oddsHtml='<div class="odds-section"><div class="odds-title">📊 Marchés Corners & Cotes</div><div class="odds-grid">'+
+    '<div class="odds-col"><div class="odds-col-title">Corners Totaux</div>'+
+      oddsRow('Over 9.5 🎯',od.over95corners)+oddsRow('Under 9.5 🎯',od.under95corners)+
+      oddsRow('Over 10.5',od.over105corners)+oddsRow('Over 11.5',od.over115corners)+
+      oddsRow('C. Handicap',od.cornersHandicap)+
     '</div>'+
-    '<div class="odds-col"><div class="odds-col-title">Corners & Tirs</div>'+
-      oddsRow('O9.5 Corners',od.over95corners)+oddsRow('U9.5 Corners',od.under95corners)+
-      oddsRow('O10.5 Corners',od.over105corners)+
-      oddsRow('O24.5 Tirs',od.over245tirs)+oddsRow('O25.5 Tirs',od.over255tirs)+oddsRow('O27.5 Tirs',od.over275tirs)+
+    '<div class="odds-col"><div class="odds-col-title">Stats Corners</div>'+
+      oddsRow('Moy. Dom./match',st.homeCornersAvg)+oddsRow('Moy. Ext./match',st.awayCornersAvg)+
+      oddsRow('Résultat 1X2',m.bookmakerOdds?(m.bookmakerOdds.split('/')[0]||'').trim():'')+
+      oddsRow('Over 2.5 buts',od.over25)+
+    '</div>'+
+    '<div class="odds-col"><div class="odds-col-title">H2H Corners</div>'+
+      oddsRow('H2H corners',st.cornersH2H?'Voir analyse':null)+
+      oddsRow('Serie Dom.',st.homeCornersLastH)+
+      oddsRow('Serie Ext.',st.awayCornersLastH)+
+      oddsRow('Over 24.5 Tirs',od.over245tirs)+
     '</div></div></div>';
 
   var statsHtml='';
-  if(st.homeXG||st.homeCornersAvg){
-    statsHtml='<div class="stats-section"><div class="stats-title">📈 Stats Avancées <span class="stats-legend"><span class="leg-h">DOM</span><span class="leg-a">EXT</span></span></div>'+
+  if(st.homeCornersAvg||st.homeXG){
+    statsHtml='<div class="stats-section"><div class="stats-title">📈 Stats Corners & Avancées <span class="stats-legend"><span class="leg-h">DOM</span><span class="leg-a">EXT</span></span></div>'+
+      statBar('Corners/match 🔑',st.homeCornersAvg,st.awayCornersAvg)+
+      statBar('Corners concédés/match',st.homeCornersAgainst,st.awayCornersAgainst)+
       statBar('xG offensif/match',st.homeXG,st.awayXG)+
-      statBar('xG concédé/match',st.homeXGConceded,st.awayXGConceded)+
-      statBar('Corners/match',st.homeCornersAvg,st.awayCornersAvg)+
       statBar('Tirs totaux/match',st.homeShotsAvg,st.awayShotsAvg)+
-      statBar('Tirs cadrés/match',st.homeShotsOnTarget,st.awayShotsOnTarget)+
       statBar('Possession',st.homePossession?st.homePossession.replace('%',''):null,st.awayPossession?st.awayPossession.replace('%',''):null)+
-      statBar('Hors-jeu/match',st.homeOffsideAvg,st.awayOffsideAvg)+
       statBar('Cartons jaunes/match',st.homeYellowAvg,st.awayYellowAvg)+
-      '<div class="rates-row">'+
-        (st.homeBTTSrate?'<div class="rate-pill">BTTS DOM '+x(st.homeBTTSrate)+'</div>':'')+
-        (st.awayBTTSrate?'<div class="rate-pill rate-a">BTTS EXT '+x(st.awayBTTSrate)+'</div>':'')+
-        (st.homeOver25rate?'<div class="rate-pill rate-o">O2.5 DOM '+x(st.homeOver25rate)+'</div>':'')+
-        (st.awayOver25rate?'<div class="rate-pill rate-o">O2.5 EXT '+x(st.awayOver25rate)+'</div>':'')+
-      '</div></div>';
+      (st.cornersH2H?'<div class="ctx-row" style="margin-top:.5rem"><span class="ctx-icon">⚔️</span><span class="ctx-text"><strong>H2H Corners:</strong> '+x(st.cornersH2H)+'</span></div>':'')+
+      (st.homeCornersLastH||st.awayCornersLastH?
+        '<div class="rates-row">'+
+          (st.homeCornersLastH?'<div class="rate-pill">Corners DOM (5J): '+x(st.homeCornersLastH)+'</div>':'')+
+          (st.awayCornersLastH?'<div class="rate-pill rate-a">Corners EXT (5J): '+x(st.awayCornersLastH)+'</div>':'')+
+        '</div>':'')+
+    '</div>';
   }
 
   var ctxHtml=(m.absentees||m.tactique||m.bookmakerSignal)?
@@ -908,30 +947,23 @@ function renderFootball(m,i){
 
   c.innerHTML=
     '<div class="cn">'+(i+1)+'</div>'+
-    '<div class="ch"><div class="cm"><div class="sb">⚽</div><div><div class="cl">'+x(m.league||'')+'</div><div class="ct">⏰ '+x(m.time||'TBD')+'</div></div></div>'+
+    '<div class="ch"><div class="cm"><div class="sb">📐</div><div><div class="cl">'+x(m.league||'')+'</div><div class="ct">⏰ '+x(m.time||'TBD')+'</div></div></div>'+
     '<div class="pill '+pc(m.confidence)+'">'+pl(m.confidence)+'</div></div>'+
     '<div class="cb">'+
       '<div class="tr">'+
         '<div class="tm"><div class="tn">'+x(m.homeTeam||'')+'</div><div class="tf">'+formDots(m.homeForm)+'</div></div>'+
         '<div class="vs"><div class="vst">VS</div><div class="vso">'+x(m.bookmakerOdds||'')+'</div></div>'+
         '<div class="tm aw"><div class="tn">'+x(m.awayTeam||'')+'</div><div class="tf">'+formDots(m.awayForm)+'</div></div>'+
-      '</div>'+frmHtml+
-      '<div class="ps"><div class="ph2"><span class="pt">Probabilités IA</span><span class="pm2">Oracle v4</span></div>'+
-      '<div class="pb">'+
-        '<div class="pbi"><div class="pbl">Dom.</div><div class="pbt"><div class="pbf fh" data-w="'+ph+'"></div></div><div class="pp h">'+ph+'%</div></div>'+
-        '<div class="pbi"><div class="pbl">Nul</div><div class="pbt"><div class="pbf fd3" data-w="'+pd+'"></div></div><div class="pp d">'+pd+'%</div></div>'+
-        '<div class="pbi"><div class="pbl">Ext.</div><div class="pbt"><div class="pbf fa" data-w="'+pa+'"></div></div><div class="pp a">'+pa+'%</div></div>'+
-      '</div></div>'+
+      '</div>'+
+      cornersSignalHtml+
+      frmHtml+
       oddsHtml+statsHtml+ctxHtml+
       '<hr class="dv">'+
-      '<div class="ah"><span>🔬</span><span class="al">Analyse Expert IA</span></div>'+
+      '<div class="ah"><span>🔬</span><span class="al">Analyse Expert Corners IA</span></div>'+
       '<div class="ab">'+x(m.analysis||'')+'</div>'+
       (m.bestBetReason?'<div class="best-reason">💡 '+x(m.bestBetReason)+'</div>':'')+
       '<div class="ft">'+ftags(m.factors)+'</div>'+secHtml+
-      '<div class="bet">'+(m.isValueBet?'<div class="vb-banner">⭐ VALUE BET DÉTECTÉ</div>':'')+
-        '<div class="bet-inner"><div><div class="bl">Meilleur Pari</div><div class="bn">'+x(m.bestBet||m.recommendation||'—')+'</div></div>'+
-        '<div class="br"><div class="bcl">Cote</div><div class="bc">'+x(String(m.bestBetOdds||m.cote||'—'))+'</div></div></div>'+
-      '</div>'+
+      (m.isValueBet?'<div class="vb-banner" style="margin-top:.8rem">⭐ VALUE BET CORNERS DÉTECTÉ</div>':'')+
     '</div>';
   return c;
 }
