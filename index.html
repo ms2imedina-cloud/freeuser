@@ -140,13 +140,59 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 .disc strong{color:var(--danger)}
 
 @media(max-width:680px){.sstats{grid-template-columns:repeat(2,1fr)}header,main{padding-left:1rem;padding-right:1rem}.tabs{padding:.8rem 1rem 0;overflow-x:auto}.topbar{flex-direction:column;align-items:flex-start}.tn{font-size:.9rem}}
+
+/* MODAL CLÉ API */
+.modal-overlay{position:fixed;inset:0;background:rgba(6,8,16,.92);backdrop-filter:blur(12px);z-index:999;display:flex;align-items:center;justify-content:center;padding:1rem}
+.modal-box{background:var(--card);border:1px solid rgba(0,255,136,.25);border-radius:20px;padding:2rem;max-width:460px;width:100%;box-shadow:0 24px 80px rgba(0,0,0,.6),0 0 60px rgba(0,255,136,.06)}
+.modal-icon{text-align:center;font-size:3rem;margin-bottom:1rem}
+.modal-title{font-family:'Bebas Neue',sans-serif;font-size:1.9rem;letter-spacing:3px;text-align:center;background:linear-gradient(135deg,var(--accent),var(--a3));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:.4rem}
+.modal-sub{text-align:center;color:var(--muted);font-size:.82rem;line-height:1.6;margin-bottom:1.5rem}
+.modal-label{font-size:.65rem;letter-spacing:2px;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:.5rem;display:block}
+.modal-input-wrap{position:relative;margin-bottom:.8rem}
+.modal-input{width:100%;background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:.75rem 3rem .75rem 1rem;color:var(--text);font-family:'Space Mono',monospace;font-size:.78rem;outline:none;transition:border-color .2s}
+.modal-input:focus{border-color:rgba(0,255,136,.5);box-shadow:0 0 0 3px rgba(0,255,136,.08)}
+.modal-input::placeholder{color:var(--muted)}
+.modal-eye{position:absolute;right:.75rem;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--muted);font-size:1rem;padding:2px;transition:color .2s}
+.modal-eye:hover{color:var(--text)}
+.modal-hint{font-size:.68rem;color:rgba(0,255,136,.5);font-family:'Space Mono',monospace;margin-bottom:1.4rem;display:flex;align-items:center;gap:5px}
+.modal-err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.6rem .9rem;font-size:.73rem;color:var(--danger);margin-bottom:1rem;display:none}
+.modal-err.on{display:block}
+.modal-btn{width:100%;background:linear-gradient(135deg,var(--accent),#00cc6a);color:#000;border:none;cursor:pointer;padding:13px;border-radius:10px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:.9rem;letter-spacing:1px;text-transform:uppercase;transition:all .2s;box-shadow:0 4px 20px rgba(0,255,136,.3)}
+.modal-btn:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(0,255,136,.45)}
+.modal-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.modal-footer{text-align:center;margin-top:1rem;font-size:.68rem;color:var(--muted)}
+.modal-footer a{color:rgba(0,255,136,.6);text-decoration:none}
+.modal-footer a:hover{color:var(--accent)}
+.key-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(0,255,136,.08);border:1px solid rgba(0,255,136,.2);border-radius:20px;padding:3px 12px;font-size:.63rem;color:rgba(0,255,136,.7);font-family:'Space Mono',monospace;cursor:pointer;transition:all .2s;margin-left:.5rem}
+.key-badge:hover{background:rgba(0,255,136,.15);border-color:rgba(0,255,136,.4)}
 </style>
 </head>
 <body>
 
+<!-- MODAL CLÉ API -->
+<div class="modal-overlay" id="apiModal">
+  <div class="modal-box">
+    <div class="modal-icon">🔑</div>
+    <div class="modal-title">Clé API Requise</div>
+    <div class="modal-sub">Entrez votre clé API Anthropic pour activer l'analyse IA des matchs.</div>
+    <label class="modal-label">Votre clé API Anthropic</label>
+    <div class="modal-input-wrap">
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveKey()">
+      <button class="modal-eye" id="eyeBtn" onclick="toggleVis()" title="Afficher/masquer">👁</button>
+    </div>
+    <div class="modal-hint">🔒 Sauvegardée localement sur votre appareil uniquement</div>
+    <div class="modal-err" id="modalErr"></div>
+    <button class="modal-btn" id="modalBtn" onclick="saveKey()">⚡ Activer Oracle Sport</button>
+    <div class="modal-footer">Obtenez votre clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+  </div>
+</div>
+
 <header>
   <div class="logo">ORACLE<span class="logo-s">⚡</span>SPORT</div>
-  <div class="live"><div class="dot"></div>IA Active</div>
+  <div style="display:flex;align-items:center;gap:.6rem">
+    <span id="keyIndicator" style="display:none" class="key-badge" onclick="changeKey()" title="Changer la clé">🔑 <span id="keyPreview"></span> ✎</span>
+    <div class="live"><div class="dot"></div>IA Active</div>
+  </div>
 </header>
 
 <nav class="tabs">
@@ -212,6 +258,58 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 var all=[], sport='all';
 var slp=function(ms){return new Promise(function(r){setTimeout(r,ms)})};
 
+/* ── GESTION CLÉ API ── */
+var API_KEY='';
+
+function initKey(){
+  var saved=localStorage.getItem('oracle_api_key')||'';
+  if(saved&&saved.startsWith('sk-ant-')){
+    API_KEY=saved;
+    document.getElementById('apiModal').style.display='none';
+    showKeyBadge(saved);
+  } else {
+    document.getElementById('apiModal').style.display='flex';
+    setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
+  }
+}
+
+function saveKey(){
+  var v=(document.getElementById('apiKeyInput').value||'').trim();
+  if(!v){showModalErr('Veuillez entrer votre clé API.');return;}
+  if(!v.startsWith('sk-ant-')){showModalErr('Clé invalide — elle doit commencer par sk-ant-');return;}
+  if(v.length<40){showModalErr('Clé trop courte, vérifiez qu\'elle est complète.');return;}
+  API_KEY=v;
+  localStorage.setItem('oracle_api_key',v);
+  document.getElementById('apiModal').style.display='none';
+  showKeyBadge(v);
+  document.getElementById('apiKeyInput').value='';
+}
+
+function changeKey(){
+  API_KEY='';
+  localStorage.removeItem('oracle_api_key');
+  document.getElementById('keyIndicator').style.display='none';
+  document.getElementById('apiModal').style.display='flex';
+  setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
+}
+
+function showKeyBadge(k){
+  document.getElementById('keyPreview').textContent=k.slice(0,10)+'...'+k.slice(-4);
+  document.getElementById('keyIndicator').style.display='inline-flex';
+}
+
+function showModalErr(m){var e=document.getElementById('modalErr');e.textContent=m;e.classList.add('on');}
+function clearModalErr(){document.getElementById('modalErr').classList.remove('on');}
+
+function toggleVis(){
+  var inp=document.getElementById('apiKeyInput');
+  var btn=document.getElementById('eyeBtn');
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+window.addEventListener('load',initKey);
+
 function setSport(s,el){
   sport=s;
   document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('on')});
@@ -251,6 +349,7 @@ var SYS='Tu es ORACLE SPORT, expert paris sportifs (xG, forme, bookmakers). Rép
 var USR='Analyse ces 8 matchs réels du 4 avril 2026 et génère des pronostics.\n\nMATCHS:\n1. Ligue1 J28: RC Strasbourg vs OGC Nice 17h\n2. Ligue1 J28: Stade Brestois vs Stade Rennais 19h\n3. Ligue1 J28: LOSC Lille vs RC Lens 21h05 (derby du Nord, Lens 2e à 1pt du PSG)\n4. Bundesliga J28: Bayer Leverkusen vs Wolfsburg\n5. Bundesliga J28: Fribourg vs Bayern Munich\n6. Bundesliga J28: VfB Stuttgart vs Borussia Dortmund\n7. NBA: Miami Heat vs Washington Wizards\n8. NBA: Denver Nuggets vs San Antonio Spurs (Wembanyama 41pts match précédent)\n\nFormat JSON requis (remplis TOUS les champs):\n{"stats":{"winRate":"71%","roi":"+15%","valueBets":"3"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"3.20 / 3.10 / 2.30","confidence":"medium","recommendation":"Victoire Nice","cote":"2.30","isValueBet":false,"analysis":"Analyse experte ici en 2-3 phrases avec données statistiques.","factors":[{"label":"facteur","type":"pos"}]}]}\n\nRègles: analyses en français 2-3 phrases avec stats, cotes entre 1.45-3.40, 3 valueBets max, confidence high/medium/low. Pour NBA probDraw=0.';
 
 async function go(){
+  if(!API_KEY){document.getElementById('apiModal').style.display='flex';return;}
   clearErr();
   all=[];
   ui(true);
@@ -262,7 +361,7 @@ async function go(){
   try{
     var r=await fetch('https://api.anthropic.com/v1/messages',{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':'VOTRE_CLE_API_ICI','anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
         max_tokens:4096,
