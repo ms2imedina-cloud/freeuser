@@ -467,7 +467,7 @@ async function go(){
       headers:{'Content-Type':'application/json','x-api-key':API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',
-        max_tokens:8000,
+        max_tokens:16000,
         system:SYS,
         messages:[{role:'user',content:USR}]
       })
@@ -484,8 +484,13 @@ async function go(){
     if(!raw)throw new Error('Réponse vide');
     var p=parseJ(raw);
     if(!p||!Array.isArray(p.matches)||!p.matches.length){
-      var preview=raw.slice(0,300);
-      throw new Error('JSON invalide. Début de la réponse: '+preview);
+      // Try to recover truncated JSON by closing open structures
+      var fixed=tryFixTruncated(raw);
+      if(fixed&&Array.isArray(fixed.matches)&&fixed.matches.length){p=fixed;}
+      else{
+        var preview=raw.slice(0,300);
+        throw new Error('JSON invalide. Début de la réponse: '+preview);
+      }
     }
     var s=p.stats||{};
     document.getElementById('sw').textContent=s.winRate||'—';
@@ -504,6 +509,32 @@ async function go(){
     showErr(e.message);
     console.error(e);
   }
+}
+
+function tryFixTruncated(s){
+  // Remove markdown fences
+  s=s.replace(/^```[a-z]*\s*/i,'').replace(/```\s*$/,'').trim();
+  var a=s.indexOf('{');
+  if(a<0)return null;
+  s=s.slice(a);
+  // Count open braces/brackets and close them
+  var i,ch,opens=[],result=s;
+  for(i=0;i<s.length;i++){
+    ch=s[i];
+    if(ch==='{')opens.push('}');
+    else if(ch==='[')opens.push(']');
+    else if(ch==='}'||ch===']')opens.pop();
+  }
+  // Close any unclosed structures
+  var closing=opens.reverse().join('');
+  // Remove trailing incomplete key/value
+  var trimmed=s.replace(/,\s*"[^"]*"\s*:\s*[^,}\]]*$/,'')
+               .replace(/,\s*"[^"]*"\s*:\s*"[^"]*$/,'')
+               .replace(/,\s*"[^"]*"\s*$/,'');
+  try{return JSON.parse(trimmed+closing);}catch(e){}
+  try{return JSON.parse(trimmed+'}}]}');}catch(e){}
+  try{return JSON.parse(s+closing);}catch(e){}
+  return null;
 }
 
 function parseJ(s){
