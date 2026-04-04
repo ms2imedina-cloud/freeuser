@@ -402,7 +402,9 @@ function showErr(m){var e=document.getElementById('err');e.classList.add('on');d
 function clearErr(){document.getElementById('err').classList.remove('on')}
 
 /* ── PROMPTS ORACLE v4 ULTRA ── */
-var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises : xG, statistiques avancées, lecture des marchés bookmakers (Bet365, Unibet, Winamax, Pinnacle), détection de value bets, analyse des corners, tirs, hors-jeu, cartons, possession, BTTS, over/under buts/corners/tirs. Tu connais parfaitement les cotes réelles du marché. Tu réponds UNIQUEMENT en JSON valide strict, sans markdown, sans texte avant ou après le JSON.`;
+var SYS=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé paris sportifs. Tu maîtrises : xG, statistiques avancées, lecture des marchés bookmakers (Bet365, Unibet, Winamax, Pinnacle), détection de value bets, analyse des corners, tirs, hors-jeu, cartons, possession, BTTS, over/under buts/corners/tirs.
+
+RÈGLE ABSOLUE: Ta réponse doit commencer DIRECTEMENT par { et se terminer par }. JAMAIS de \`\`\`json, JAMAIS de \`\`\`, JAMAIS de texte avant ou après. UNIQUEMENT le JSON brut valide.`;
 
 var USR=`Date: 4 avril 2026. Analyse experte ultra-complète de ces 8 matchs réels avec cotes réelles de marché.
 
@@ -446,7 +448,9 @@ Pour NBA: points/rebonds/passes moyens, pace, efficacité offensive/défensive, 
 FORMAT JSON STRICT (UNIQUEMENT le JSON, rien d'autre):
 {"stats":{"winRate":"74%","roi":"+18%","valueBets":"4","totalMarchés":"47"},"matches":[{"id":1,"sport":"football","league":"Ligue 1 J28","homeTeam":"RC Strasbourg","awayTeam":"OGC Nice","time":"17:00","homeForm":["W","D","L","W","D"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"StrasbG 5 derniers: W 2-1, D 1-1, L 0-2, W 3-1, D 1-1","awayFormDetails":"Nice 5 derniers: W 2-0, W 1-0, D 0-0, L 1-2, W 3-1","probHome":32,"probDraw":28,"probAway":40,"bookmakerOdds":"2.90 / 3.10 / 2.55","oddsDetails":{"bttsOui":"1.72","bttsNon":"2.05","over25":"1.88","under25":"1.88","over35":"2.90","under35":"1.40","over95corners":"1.80","under95corners":"1.95","over245tirs":"1.85","under245tirs":"1.90","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.42","awayXG":"1.18","homeXGConceded":"1.35","awayXGConceded":"0.92","homeCornersAvg":"5.2","awayCornersAvg":"4.8","homeShotsAvg":"13.1","awayShotsAvg":"11.8","homeShotsOnTarget":"4.8","awayShotsOnTarget":"4.1","homeOffsideAvg":"2.1","awayOffsideAvg":"1.8","homeYellowAvg":"1.9","awayYellowAvg":"1.6","homePossession":"48%","awayPossession":"54%","homeBTTSrate":"52%","awayBTTSrate":"58%","homeOver25rate":"55%","awayOver25rate":"62%"},"absentees":"Strasbourg: Joueur1 (blessé) | Nice: Joueur2 (suspendu)","tactique":"Strasbourg 4-3-3 pressant vs Nice 4-2-3-1 compact","bookmakerSignal":"Nice raccourci de 2.80 à 2.55 — argent sur victoire extérieure. BTTS stable.","confidence":"medium","bestBet":"BTTS Oui","bestBetOdds":"1.72","bestBetReason":"52% BTTS Strasbourg + 58% BTTS Nice cette saison. Valeur claire à 1.72.","recommendation":"BTTS Oui @ 1.72","cote":"1.72","isValueBet":true,"analysis":"Analyse détaillée 4-5 phrases avec stats clés, contexte tactique, mouvements de cotes et justification.","factors":[{"label":"xG dom 1.42/match","type":"pos"},{"label":"Nice forme 4V/5","type":"neg"},{"label":"BTTS 55% historique","type":"pos"},{"label":"Absent clé","type":"neg"},{"label":"Cotes bougées vers Nice","type":"neu"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.88","confidence":"medium"},{"label":"Nice HC -0.5","odds":"1.62","confidence":"medium"}]}]}
 
-Génère les 8 matchs COMPLETS avec toutes les stats réelles. Utilise les vraies cotes fournies. Identifie LE MEILLEUR événement pour chaque match parmi tous les marchés. UNIQUEMENT le JSON.`;
+Génère les 8 matchs COMPLETS avec toutes les stats réelles. Utilise les vraies cotes fournies. Identifie LE MEILLEUR événement pour chaque match parmi tous les marchés.
+
+IMPORATNT: Commence ta réponse par { et termine par }. Pas de backticks. Pas de markdown. JSON brut uniquement.`;
 async function go(){
   if(!API_KEY){document.getElementById('apiModal').style.display='flex';return;}
   clearErr();
@@ -479,7 +483,10 @@ async function go(){
     var raw=(d.content||[]).filter(function(b){return b.type==='text'}).map(function(b){return b.text}).join('');
     if(!raw)throw new Error('Réponse vide');
     var p=parseJ(raw);
-    if(!p||!Array.isArray(p.matches)||!p.matches.length)throw new Error('JSON invalide: '+raw.slice(0,150));
+    if(!p||!Array.isArray(p.matches)||!p.matches.length){
+      var preview=raw.slice(0,300);
+      throw new Error('JSON invalide. Début de la réponse: '+preview);
+    }
     var s=p.stats||{};
     document.getElementById('sw').textContent=s.winRate||'—';
     document.getElementById('st').textContent=p.matches.length;
@@ -500,11 +507,28 @@ async function go(){
 }
 
 function parseJ(s){
+  if(!s)return null;
+  // Try raw first
   try{return JSON.parse(s)}catch(e){}
-  var c=s.replace(/```json\s*/gi,'').replace(/```\s*/g,'').trim();
+  // Strip ALL markdown fences aggressively
+  var c=s.replace(/^```[a-z]*\s*/i,'').replace(/```\s*$/,'').trim();
   try{return JSON.parse(c)}catch(e){}
+  // Strip any leading/trailing non-JSON text
+  c=c.replace(/^[^{]*/,'').replace(/[^}]*$/,'');
+  try{return JSON.parse(c)}catch(e){}
+  // Find outermost { }
   var a=s.indexOf('{'),b=s.lastIndexOf('}');
-  if(a>=0&&b>a)try{return JSON.parse(s.slice(a,b+1))}catch(e){}
+  if(a>=0&&b>a){
+    var slice=s.slice(a,b+1);
+    try{return JSON.parse(slice)}catch(e){}
+    // Try fixing truncated JSON by counting braces
+    var open=0,last=0;
+    for(var i=0;i<slice.length;i++){
+      if(slice[i]==='{')open++;
+      else if(slice[i]==='}'){open--;if(open===0){last=i;break;}}
+    }
+    if(last>0)try{return JSON.parse(slice.slice(0,last+1))}catch(e){}
+  }
   return null;
 }
 
