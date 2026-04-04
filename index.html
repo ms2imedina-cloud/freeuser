@@ -258,15 +258,17 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
     </div>
     <div class="modal-footer" style="text-align:left;margin:-.3rem 0 1.2rem">Obtenez votre clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
 
-    <label class="modal-label">🏟️ Clé API-Sports — Matchs en temps réel</label>
+    <label class="modal-label">🏟️ Clé API-Sports — Matchs temps réel <span style="color:var(--a3);font-size:.58rem;letter-spacing:1px">(OPTIONNEL)</span></label>
     <div class="modal-input-wrap">
-      <input class="modal-input" type="password" id="sportsKeyInput" placeholder="Votre clé API-Sports..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveBothKeys()">
+      <input class="modal-input" type="password" id="sportsKeyInput" placeholder="Optionnel — laissez vide pour mode IA pur" autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveBothKeys()">
       <button class="modal-eye" onclick="toggleVisSports()">👁</button>
     </div>
-    <div class="modal-footer" style="text-align:left;margin:-.3rem 0 1.4rem">Plan gratuit 100 req/jour — <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a> → onglet <strong>API Key</strong></div>
+    <div class="modal-footer" style="text-align:left;margin:-.3rem 0 .5rem">Plan gratuit 100 req/jour — <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a></div>
+    <div class="modal2-note" style="margin-bottom:1rem">💡 <strong>Sans clé API-Sports</strong> : l'IA génère les pronostics depuis sa connaissance des calendriers officiels. <strong>Avec la clé</strong> : matchs récupérés en temps réel.</div>
 
     <div class="modal-err" id="modalErr"></div>
     <button class="modal-btn" onclick="saveBothKeys()">✅ Sauvegarder et lancer</button>
+    <button class="skip-btn" onclick="saveApiKeyOnly()">⚡ Continuer sans API-Sports (mode IA)</button>
   </div>
 </div>
 
@@ -360,14 +362,13 @@ var SPORTS_KEY='';
 function initKey(){
   var savedApi=localStorage.getItem('oracle_api_key')||'';
   var savedSports=localStorage.getItem('oracle_sports_key')||'';
-  if(savedApi&&savedApi.startsWith('sk-ant-')&&savedSports){
+  if(savedApi&&savedApi.startsWith('sk-ant-')){
     API_KEY=savedApi;
-    SPORTS_KEY=savedSports;
+    SPORTS_KEY=savedSports||'';
     document.getElementById('setupModal').style.display='none';
     showKeyBadge(savedApi);
-    updateLiveBadge(true);
+    updateLiveBadge(!!savedSports);
   } else {
-    // Pre-fill what we have
     if(savedApi) document.getElementById('apiKeyInput').value=savedApi;
     if(savedSports) document.getElementById('sportsKeyInput').value=savedSports;
     document.getElementById('setupModal').style.display='flex';
@@ -388,14 +389,29 @@ function saveBothKeys(){
   if(!vApi){showModalErr('Veuillez entrer votre clé API Anthropic.');return;}
   if(!vApi.startsWith('sk-ant-')){showModalErr('Clé Anthropic invalide — doit commencer par sk-ant-');return;}
   if(vApi.length<40){showModalErr('Clé Anthropic trop courte.');return;}
-  if(!vSports){showModalErr('Veuillez entrer votre clé API-Sports.');return;}
   API_KEY=vApi;
   SPORTS_KEY=vSports;
   localStorage.setItem('oracle_api_key',vApi);
-  localStorage.setItem('oracle_sports_key',vSports);
+  if(vSports) localStorage.setItem('oracle_sports_key',vSports);
+  else localStorage.removeItem('oracle_sports_key');
   document.getElementById('setupModal').style.display='none';
   showKeyBadge(vApi);
-  updateLiveBadge(true);
+  updateLiveBadge(!!vSports);
+  updateSportUI();
+}
+
+function saveApiKeyOnly(){
+  var vApi=(document.getElementById('apiKeyInput').value||'').trim();
+  if(!vApi){showModalErr('Veuillez entrer votre clé API Anthropic.');return;}
+  if(!vApi.startsWith('sk-ant-')){showModalErr('Clé Anthropic invalide — doit commencer par sk-ant-');return;}
+  if(vApi.length<40){showModalErr('Clé Anthropic trop courte.');return;}
+  API_KEY=vApi;
+  SPORTS_KEY='';
+  localStorage.setItem('oracle_api_key',vApi);
+  localStorage.removeItem('oracle_sports_key');
+  document.getElementById('setupModal').style.display='none';
+  showKeyBadge(vApi);
+  updateLiveBadge(false);
   updateSportUI();
 }
 
@@ -423,7 +439,7 @@ function changeKey(){
   var savedApi=localStorage.getItem('oracle_api_key')||'';
   var savedSports=localStorage.getItem('oracle_sports_key')||'';
   if(savedApi) document.getElementById('apiKeyInput').value=savedApi;
-  if(savedSports) document.getElementById('sportsKeyInput').value=savedSports;
+  document.getElementById('sportsKeyInput').value=savedSports;
   document.getElementById('setupModal').style.display='flex';
   setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
 }
@@ -779,7 +795,7 @@ function showErr(m){var e=document.getElementById('err');e.classList.add('on');d
 function clearErr(){document.getElementById('err').classList.remove('on')}
 
 async function go(){
-  if(!API_KEY||!SPORTS_KEY){document.getElementById('setupModal').style.display='flex';return;}
+  if(!API_KEY){document.getElementById('setupModal').style.display='flex';return;}
   
   clearErr();
   all=[];
@@ -792,28 +808,46 @@ async function go(){
   var dateStr=formatDateISO(d);
   var dateFR=formatDateFR(d);
 
-  // Step 1: Fetch real matches from API-Sports (obligatoire)
+  // Step 1: Fetch real matches from API-Sports (optionnel)
   var rawMatches=[];
   var realMatchesList='';
-  document.getElementById('lmsg').textContent='🔍 Récupération des vrais matchs API-Sports...';
-  try{
-    if(sport==='football') rawMatches=await fetchFootballMatches(dateStr);
-    else if(sport==='tennis') rawMatches=await fetchTennisMatches(dateStr);
-    else if(sport==='basketball') rawMatches=await fetchBasketMatches(dateStr);
-    if(rawMatches&&rawMatches.length){
-      realMatchesList=formatMatchListForPrompt(rawMatches,sport);
-      updateLiveBadge(true);
-    } else {
-      throw new Error('Aucun match trouvé pour cette date via API-Sports. Vérifiez votre clé ou essayez une autre date.');
+  var usingLiveData=false;
+
+  if(SPORTS_KEY){
+    document.getElementById('lmsg').textContent='🔍 Récupération des vrais matchs API-Sports...';
+    try{
+      if(sport==='football') rawMatches=await fetchFootballMatches(dateStr);
+      else if(sport==='tennis') rawMatches=await fetchTennisMatches(dateStr);
+      else if(sport==='basketball') rawMatches=await fetchBasketMatches(dateStr);
+      if(rawMatches&&rawMatches.length){
+        realMatchesList=formatMatchListForPrompt(rawMatches,sport);
+        updateLiveBadge(true);
+        usingLiveData=true;
+      } else {
+        // Fallback silencieux: API-Sports ne retourne rien pour cette date
+        console.warn('API-Sports: aucun match trouvé — bascule en mode IA');
+        updateLiveBadge(false);
+        realMatchesList='';
+      }
+    }catch(err){
+      // Fallback silencieux en cas d'erreur API-Sports
+      console.warn('API-Sports erreur:', err.message);
+      var msg=err.message||'';
+      if(msg.includes('401')||msg.includes('403')){
+        // Clé invalide — afficher un warning mais continuer
+        showErr('⚠️ Clé API-Sports invalide — bascule en mode IA pure (matchs générés par l\'IA)');
+      }
+      updateLiveBadge(false);
+      realMatchesList='';
     }
-  }catch(err){
-    ui(false);
-    document.getElementById('emp').style.display='flex';
-    var msg=err.message||'Erreur inconnue';
-    if(msg.includes('401')||msg.includes('403'))msg='Clé API-Sports invalide. Vérifiez votre clé dans Configuration.';
-    if(msg.includes('429'))msg='Quota API-Sports dépassé (100 req/jour). Réessayez demain.';
-    showErr('❌ API-Sports: '+msg);
-    return;
+  } else {
+    updateLiveBadge(false);
+  }
+
+  // Si pas de matchs en temps réel: mode IA pure avec indication
+  if(!usingLiveData){
+    realMatchesList='MODE IA PURE — Génère les vrais matchs probables du '+dateFR+' depuis ta connaissance des calendriers officiels ('+sport.toUpperCase()+').';
+    document.getElementById('srcBadge').innerHTML='🧠 Mode IA Pure — Calendriers officiels';
   }
 
   var USR=buildPrompt(sport,dateStr,dateFR,realMatchesList);
