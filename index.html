@@ -290,8 +290,6 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 
 <nav class="tabs">
   <button class="tab on" id="tab-football" onclick="setSport('football',this)">⚽ Football</button>
-  <button class="tab" id="tab-tennis" onclick="setSport('tennis',this)">🎾 Tennis</button>
-  <button class="tab" id="tab-basketball" onclick="setSport('basketball',this)">🏀 Basket</button>
 </nav>
 
 <main>
@@ -508,21 +506,13 @@ function shiftDate(delta){
 
 /* ── SPORT CONFIG ── */
 var SPORT_CFG={
-  football:{label:'Analyser Football',orb:'⚽',title:'Football — Prêt'},
-  tennis:{label:'Analyser Tennis',orb:'🎾',title:'Tennis — Prêt'},
-  basketball:{label:'Analyser Basket',orb:'🏀',title:'NBA — Prêt'}
+  football:{label:'Analyser Football',orb:'⚽',title:'Football — Prêt'}
 };
 
 function updateSportHints(d){
   var dateFR=formatDateFR(d);
-  var hints={
-    football:['🌐 Recherche FlashScore · matchs football du '+dateFR,'⚽ Premier League · Ligue 1 · Liga · Serie A · Bundesliga · UCL'],
-    tennis:['🌐 Recherche FlashScore · matchs ATP/WTA du '+dateFR,'🎾 Grand Chelem · Masters · ATP 500 · WTA Premier'],
-    basketball:['🌐 Recherche FlashScore · matchs NBA du '+dateFR,'🏀 Regular Season · Play-In · Playoffs · Finals']
-  };
   var h=document.getElementById('empHints');
-  var cfg=hints[sport]||hints.football;
-  h.innerHTML=cfg.map(function(t){return'<div class="ehint">'+t+'</div>';}).join('');
+  h.innerHTML='<div class="ehint">🌐 Recherche FlashScore · matchs football du '+dateFR+'</div><div class="ehint">⚽ Premier League · Ligue 1 · Liga · Serie A · Bundesliga · UCL · Europa League</div>';
 }
 
 function updateSportUI(){
@@ -560,57 +550,40 @@ var TOOLS_SEARCH=[{type:"web_search_20250305",name:"web_search"}];
    Claude utilise web_search puis génère le JSON
 ══════════════════════════════════════════════ */
 
-var SYS_ORACLE=`Tu es ORACLE SPORT, analyste quantitatif élite. Tu as accès à web_search.
+var SYS_ORACLE=`Tu es ORACLE SPORT, analyste quantitatif élite spécialisé football. Tu as accès à web_search.
 
-MISSION EN 2 ÉTAPES DANS UN SEUL APPEL:
-1. Utilise web_search pour chercher les VRAIS matchs du jour (FlashScore, ESPN, sources officielles).
-   - Fais 2-3 recherches pour avoir assez de matchs (au moins 6).
-   - Lis les résultats et retiens les matchs RÉELS trouvés.
-2. Génère une analyse complète de chaque match trouvé.
+MISSION EN 2 ÉTAPES:
+1. Effectue les recherches web demandées pour trouver exactement 20 vrais matchs football du jour.
+2. Génère une analyse complète et professionnelle pour chacun des 20 matchs.
 
 RÈGLES ABSOLUES:
-- N'invente JAMAIS un match si tu ne l'as pas trouvé sur le web.
-- Si tu trouves peu de matchs, analyse-les tous soigneusement.
-- Ta réponse finale commence DIRECTEMENT par { et se termine par }. PAS de backticks, PAS de markdown.`;
+- N'invente JAMAIS un match — uniquement des matchs trouvés sur le web.
+- Exactement 20 matchs dans ta réponse (ou le maximum trouvé si < 20 ce jour-là).
+- Ta réponse finale commence DIRECTEMENT par { et se termine par }. JAMAIS de backticks ni markdown.
+- Les stats (xG, corners, BTTS rate, etc.) doivent être réalistes et cohérentes avec les équipes.`;
 
 function buildOraclePrompt(sportType, dateStr, dateFR){
-  var queries='';
-  if(sportType==='football'){
-    queries=`Recherches à effectuer dans l'ordre:
-1. "football matches ${dateStr} flashscore"
-2. "matchs football ${dateFR} aujourd'hui ligue 1 premier league"
-3. "football today ${dateStr} results schedule"`;
-  } else if(sportType==='tennis'){
-    queries=`Recherches à effectuer dans l'ordre:
-1. "tennis matches ${dateStr} flashscore ATP WTA"
-2. "tennis schedule ${dateFR} today results"
-3. "ATP WTA ${dateStr} matches today"`;
-  } else {
-    queries=`Recherches à effectuer dans l'ordre:
-1. "NBA schedule ${dateStr} games today"
-2. "NBA matches ${dateStr} flashscore basketball"
-3. "NBA ${dateFR} results today"`;
-  }
+  var format_example = `{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers matchs réels avec scores","awayFormDetails":"5 derniers matchs réels avec scores","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"bttsOui":"1.75","bttsNon":"2.00","over25":"1.85","under25":"1.92","over35":"2.80","under35":"1.42","over95corners":"1.82","under95corners":"1.93","over245tirs":"1.88","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.82","awayXG":"1.45","homeXGConceded":"1.12","awayXGConceded":"1.38","homeCornersAvg":"6.1","awayCornersAvg":"5.4","homeShotsAvg":"15.2","awayShotsAvg":"13.8","homeShotsOnTarget":"5.8","awayShotsOnTarget":"5.1","homeOffsideAvg":"2.3","awayOffsideAvg":"1.9","homeYellowAvg":"1.8","awayYellowAvg":"2.1","homePossession":"58%","awayPossession":"54%","homeBTTSrate":"58%","awayBTTSrate":"62%","homeOver25rate":"61%","awayOver25rate":"65%"},"absentees":"Joueurs absents connus","tactique":"Systèmes tactiques des deux équipes","bookmakerSignal":"Signal mouvement cotes","confidence":"high","bestBet":"BTTS Oui","bestBetOdds":"1.75","bestBetReason":"Justification solide basée sur stats réelles","recommendation":"BTTS Oui @ 1.75","cote":"1.75","isValueBet":true,"analysis":"Analyse experte complète 3-4 phrases","factors":[{"label":"stat clé positive","type":"pos"},{"label":"stat clé négative","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.85","confidence":"medium"}]}`;
 
-  var sport_label = sportType==='football'?'football':sportType==='tennis'?'tennis':'NBA basketball';
-  var format_example = sportType==='football'
-    ? `{"id":1,"sport":"football","league":"Premier League","homeTeam":"Arsenal","awayTeam":"Chelsea","time":"17:30","homeForm":["W","D","L","W","W"],"awayForm":["W","W","D","L","W"],"homeFormDetails":"5 derniers matchs réels avec scores","awayFormDetails":"5 derniers matchs réels avec scores","probHome":42,"probDraw":26,"probAway":32,"bookmakerOdds":"1.95 / 3.40 / 3.80","oddsDetails":{"bttsOui":"1.75","bttsNon":"2.00","over25":"1.85","under25":"1.92","over35":"2.80","under35":"1.42","over95corners":"1.82","under95corners":"1.93","over245tirs":"1.88","handicap":"-0.5 dom @ 2.10"},"stats":{"homeXG":"1.82","awayXG":"1.45","homeXGConceded":"1.12","awayXGConceded":"1.38","homeCornersAvg":"6.1","awayCornersAvg":"5.4","homeShotsAvg":"15.2","awayShotsAvg":"13.8","homeShotsOnTarget":"5.8","awayShotsOnTarget":"5.1","homeOffsideAvg":"2.3","awayOffsideAvg":"1.9","homeYellowAvg":"1.8","awayYellowAvg":"2.1","homePossession":"58%","awayPossession":"54%","homeBTTSrate":"58%","awayBTTSrate":"62%","homeOver25rate":"61%","awayOver25rate":"65%"},"absentees":"Joueurs absents connus","tactique":"Systèmes tactiques des deux équipes","bookmakerSignal":"Signal mouvement cotes","confidence":"high","bestBet":"BTTS Oui","bestBetOdds":"1.75","bestBetReason":"Justification solide basée sur stats réelles","recommendation":"BTTS Oui @ 1.75","cote":"1.75","isValueBet":true,"analysis":"Analyse experte complète 3-4 phrases","factors":[{"label":"stat clé positive","type":"pos"},{"label":"stat clé négative","type":"neg"}],"secondaryBets":[{"label":"Over 2.5 buts","odds":"1.85","confidence":"medium"}]}`
-    : sportType==='tennis'
-    ? `{"id":1,"sport":"tennis","league":"Monte-Carlo Masters","homeTeam":"Carlos Alcaraz","awayTeam":"Holger Rune","time":"14:00","homeForm":["W","W","L","W","W"],"awayForm":["W","L","W","W","L"],"homeFormDetails":"5 derniers matchs réels","awayFormDetails":"5 derniers matchs réels","probHome":68,"probDraw":0,"probAway":32,"bookmakerOdds":"1.45 / — / 2.90","oddsDetails":{"over215jeux":"1.88","under215jeux":"1.88","over225jeux":"1.75","under225jeux":"2.00","over25sets":"2.20","under25sets":"1.65","handicap":"-3.5 jeux @ 2.10","acesJ1over":"1.90","tiebreak":"2.30"},"stats":{"rankHome":"ATP #3","rankAway":"ATP #14","surfaceWinHome":"86%","surfaceWinAway":"71%","serve1PctHome":"68%","serve1PctAway":"61%","acesAvgHome":"5.2","acesAvgAway":"4.1","dfAvgHome":"2.3","dfAvgAway":"3.2","returnPtsHome":"46%","returnPtsAway":"39%","h2h":"4-1 pour J1","h2hDetails":"Derniers H2H détaillés"},"absentees":"Blessures connues","tactique":"Styles de jeu","bookmakerSignal":"Signal cotes","confidence":"high","bestBet":"J1 vainqueur","bestBetOdds":"1.45","bestBetReason":"Justification H2H et stats surface","recommendation":"J1 @ 1.45","cote":"1.45","isValueBet":false,"analysis":"Analyse experte 3-4 phrases","factors":[{"label":"H2H favorable","type":"pos"}],"secondaryBets":[{"label":"Over 21.5 jeux","odds":"1.88","confidence":"medium"}]}`
-    : `{"id":1,"sport":"basketball","league":"NBA","homeTeam":"Boston Celtics","awayTeam":"Miami Heat","time":"01:30","homeForm":["W","W","L","W","W"],"awayForm":["L","L","W","L","W"],"homeFormDetails":"5 derniers scores réels","awayFormDetails":"5 derniers scores réels","probHome":72,"probDraw":0,"probAway":28,"bookmakerOdds":"1.28 / 3.60","oddsDetails":{"spread":"Celtics -9.5 @ 1.90","over2205":"1.90","under2205":"1.90","over2295":"2.05","under2295":"1.72","q1Dom":"1.72","q1Away":"2.08","prop1":"Tatum O27.5 pts @ 1.85","prop2":"Adebayo O11.5 reb @ 1.90"},"stats":{"homeOffRtg":"122.4","awayOffRtg":"108.1","homeDefRtg":"109.8","awayDefRtg":"116.2","homePace":"98.2","awayPace":"97.8","homePPG":"120.5","awayPPG":"107.2","homeOppPPG":"108.1","awayOppPPG":"114.8","homeRebAvg":"47.2","awayRebAvg":"41.8","homeAstAvg":"28.1","awayAstAvg":"23.4","home3PctAvg":"38.9%","away3PctAvg":"33.1%","h2h":"3-1 cette saison"},"absentees":"Injury report réel","tactique":"Styles de jeu NBA","bookmakerSignal":"Signal cotes","confidence":"high","bestBet":"Celtics -9.5","bestBetOdds":"1.90","bestBetReason":"Justification spread","recommendation":"Celtics -9.5 @ 1.90","cote":"1.90","isValueBet":true,"analysis":"Analyse experte 3-4 phrases","factors":[{"label":"OffRtg #1 NBA","type":"pos"}],"secondaryBets":[{"label":"Over 220.5 pts","odds":"1.90","confidence":"medium"}]}`;
+  return `Aujourd'hui c'est le ${dateFR} (${dateStr}). Tu dois trouver et analyser 20 vrais matchs de football du jour.
 
-  return `Aujourd'hui c'est le ${dateFR} (${dateStr}). Trouve et analyse les vrais matchs ${sport_label}.
+ÉTAPE 1 — Effectue CES 5 recherches web dans l'ordre pour collecter 20 matchs:
+1. "football matches today ${dateStr} Premier League Championship"
+2. "Ligue 1 Liga Serie A Bundesliga matches ${dateStr} today"
+3. "Champions League Europa League Conference League ${dateStr} matches"
+4. "football flashscore ${dateStr} today schedule results"
+5. "MLS Eredivisie Primeira Liga Süper Lig matches ${dateStr}"
 
-${queries}
+ÉTAPE 2 — Après les recherches, sélectionne exactement 20 matchs réels trouvés (mix de toutes les compétitions) et génère une analyse complète pour chacun.
 
-INSTRUCTIONS:
-- Utilise web_search pour chaque requête ci-dessus.
-- Lis les résultats et identifie les matchs RÉELS (équipes, heure, compétition).
-- N'analyse QUE les matchs trouvés sur le web. Minimum 4, maximum 12.
-- Pour chaque match, génère une analyse complète avec stats estimées réalistes.
+RÈGLES:
+- N'invente JAMAIS un match — utilise UNIQUEMENT les matchs trouvés sur le web.
+- Objectif: EXACTEMENT 20 matchs. Si tu en trouves plus, prends les 20 plus importants.
+- Stats réalistes basées sur la connaissance des équipes + résultats trouvés.
+- Inclus des matchs de plusieurs compétitions (PL, L1, Liga, Serie A, BL, UCL, etc.)
 
-FORMAT DE RÉPONSE — commence par { et finis par }, rien d'autre:
-{"stats":{"winRate":"72%","roi":"+15%","valueBets":"3","totalMarchés":"48"},"matches":[${format_example}]}`;
+FORMAT DE RÉPONSE — commence par { et finis par }, RIEN d'autre, PAS de backticks:
+{"stats":{"winRate":"74%","roi":"+18%","valueBets":"5","totalMarchés":"20"},"matches":[${format_example}, ...19 autres matchs...]}`;
 }
 
 /* ══════════════════════════════════════════════
@@ -626,7 +599,7 @@ async function agentCall(sysPrompt, userPrompt, tools, maxLoops){
   for(var i=0; i<loops; i++){
     var body={
       model:'claude-sonnet-4-20250514',
-      max_tokens:5000,
+      max_tokens:8000,
       system:sysPrompt,
       messages:messages
     };
@@ -697,27 +670,11 @@ async function agentCall(sysPrompt, userPrompt, tools, maxLoops){
 
 var ANIM_CFG={
   football:[
-    '🌐 Connexion FlashScore · football...',
-    '⚽ Récupération matchs du jour...',
-    '📊 Analyse xG · stats · forme...',
-    '💰 Lecture cotes Bet365 · Winamax...',
-    '🎯 Calcul value bets Oracle v5...',
-    '✨ Rédaction analyses expertes...'
-  ],
-  tennis:[
-    '🌐 Connexion FlashScore · tennis...',
-    '🎾 Récupération programme ATP/WTA...',
-    '📊 Analyse surface · service · retour...',
-    '💰 Lecture cotes bookmakers...',
-    '🎯 Calcul H2H · forme · Oracle v5...',
-    '✨ Rédaction analyses expertes...'
-  ],
-  basketball:[
-    '🌐 Connexion FlashScore · NBA...',
-    '🏀 Récupération matchs NBA du jour...',
-    '📊 Analyse OffRtg · DefRtg · Pace...',
-    '💰 Lecture cotes · injury report...',
-    '🎯 Calcul matchups · Oracle v5...',
+    '🌐 Recherche FlashScore · Premier League · Ligue 1...',
+    '⚽ Scan Liga · Serie A · Bundesliga · UCL...',
+    '🔍 Collecte 20 matchs du jour en cours...',
+    '📊 Analyse xG · stats · forme · absents...',
+    '💰 Calcul cotes · value bets · marchés...',
     '✨ Rédaction analyses expertes...'
   ]
 };
