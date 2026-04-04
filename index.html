@@ -253,7 +253,7 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 
     <label class="modal-label">🔑 Clé API Anthropic</label>
     <div class="modal-input-wrap">
-      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveBothKeys()">
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="Votre clé API Anthropic..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveBothKeys()">
       <button class="modal-eye" id="eyeBtn" onclick="toggleVis()" title="Afficher/masquer">👁</button>
     </div>
     <div class="modal-footer" style="text-align:left;margin:-.3rem 0 1rem">Obtenez votre clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
@@ -369,7 +369,7 @@ var SPORTS_KEY='';
 function initKey(){
   var savedApi=localStorage.getItem('oracle_api_key')||'';
   var savedSports=localStorage.getItem('oracle_sports_key')||'';
-  if(savedApi&&savedApi.startsWith('sk-ant-')){
+  if(savedApi && savedApi.length > 20){
     API_KEY=savedApi;
     SPORTS_KEY=savedSports||'';
     document.getElementById('setupModal').style.display='none';
@@ -390,9 +390,7 @@ function initKey(){
 function saveBothKeys(){
   var vApi=(document.getElementById('apiKeyInput').value||'').trim();
   var vSports=(document.getElementById('sportsKeyInput').value||'').trim();
-  if(!vApi){showModalErr('Veuillez entrer votre clé API Anthropic.');return;}
-  if(!vApi.startsWith('sk-ant-')){showModalErr('Clé invalide — doit commencer par sk-ant-');return;}
-  if(vApi.length<40){showModalErr('Clé Anthropic trop courte.');return;}
+  if(!vApi || vApi.length < 20){showModalErr('Veuillez entrer une clé API Anthropic valide.');return;}
   API_KEY=vApi;
   SPORTS_KEY=vSports;
   localStorage.setItem('oracle_api_key',vApi);
@@ -406,9 +404,7 @@ function saveBothKeys(){
 
 function saveApiKeyOnly(){
   var vApi=(document.getElementById('apiKeyInput').value||'').trim();
-  if(!vApi){showModalErr('Veuillez entrer votre clé API Anthropic.');return;}
-  if(!vApi.startsWith('sk-ant-')){showModalErr('Clé invalide — doit commencer par sk-ant-');return;}
-  if(vApi.length<40){showModalErr('Clé Anthropic trop courte.');return;}
+  if(!vApi || vApi.length < 20){showModalErr('Veuillez entrer une clé API Anthropic valide.');return;}
   API_KEY=vApi; SPORTS_KEY='';
   localStorage.setItem('oracle_api_key',vApi);
   localStorage.removeItem('oracle_sports_key');
