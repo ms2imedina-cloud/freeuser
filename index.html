@@ -244,46 +244,36 @@ main{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem}
 </head>
 <body>
 
-<!-- MODAL CLÉ API SPORTS -->
-<div class="modal-overlay" id="sportsModal" style="display:none">
+<!-- MODAL CONFIGURATION UNIQUE -->
+<div class="modal-overlay" id="setupModal">
   <div class="modal-box">
-    <div class="modal-icon">🏟️</div>
-    <div class="modal-title">Clé API-Sports</div>
-    <div class="modal-sub">Pour afficher les <strong style="color:var(--accent)">vrais matchs du jour</strong>, entrez votre clé API-Sports (gratuite).</div>
-    <div class="modal2-note">
-      🆓 <strong>Plan gratuit :</strong> 100 requêtes/jour — suffisant.<br>
-      📌 Inscription sur <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a><br>
-      🔑 Copiez votre clé depuis l'onglet <strong>API Key</strong> du dashboard.
-    </div>
-    <label class="modal-label">Votre clé API-Sports.io</label>
+    <div class="modal-icon">⚡</div>
+    <div class="modal-title">Configuration</div>
+    <div class="modal-sub">Entrez vos 2 clés API pour activer Oracle Sport. Elles sont <strong style="color:var(--accent)">sauvegardées localement</strong> sur votre appareil.</div>
+
+    <label class="modal-label">🔑 Clé API Anthropic — Analyse IA</label>
     <div class="modal-input-wrap">
-      <input class="modal-input" type="password" id="sportsKeyInput" placeholder="Votre clé API-Sports..." autocomplete="off" oninput="clearSportsErr()" onkeydown="if(event.key==='Enter')saveSportsKey()">
+      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="clearModalErr()">
+      <button class="modal-eye" id="eyeBtn" onclick="toggleVis()" title="Afficher/masquer">👁</button>
+    </div>
+    <div class="modal-footer" style="text-align:left;margin:-.3rem 0 1.2rem">Obtenez votre clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
+
+    <label class="modal-label">🏟️ Clé API-Sports — Matchs en temps réel</label>
+    <div class="modal-input-wrap">
+      <input class="modal-input" type="password" id="sportsKeyInput" placeholder="Votre clé API-Sports..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveBothKeys()">
       <button class="modal-eye" onclick="toggleVisSports()">👁</button>
     </div>
-    <div class="modal-err" id="sportsErr"></div>
-    <button class="modal-btn" onclick="saveSportsKey()">✅ Activer Matchs Réels</button>
-    <button class="skip-btn" onclick="skipSportsKey()">✖ Annuler (clé requise pour les vrais matchs)</button>
-    <div class="modal-footer">Les clés sont stockées localement sur votre appareil</div>
+    <div class="modal-footer" style="text-align:left;margin:-.3rem 0 1.4rem">Plan gratuit 100 req/jour — <a href="https://dashboard.api-sports.io/register" target="_blank">dashboard.api-sports.io</a> → onglet <strong>API Key</strong></div>
+
+    <div class="modal-err" id="modalErr"></div>
+    <button class="modal-btn" onclick="saveBothKeys()">✅ Sauvegarder et lancer</button>
   </div>
 </div>
 
-<!-- MODAL CLÉ API -->
-<div class="modal-overlay" id="apiModal">
-  <div class="modal-box">
-    <div class="modal-icon">🔑</div>
-    <div class="modal-title">Clé API Requise</div>
-    <div class="modal-sub">Entrez votre clé API Anthropic pour activer l'analyse IA des matchs.</div>
-    <label class="modal-label">Votre clé API Anthropic</label>
-    <div class="modal-input-wrap">
-      <input class="modal-input" type="password" id="apiKeyInput" placeholder="sk-ant-api03-..." autocomplete="off" oninput="clearModalErr()" onkeydown="if(event.key==='Enter')saveKey()">
-      <button class="modal-eye" id="eyeBtn" onclick="toggleVis()" title="Afficher/masquer">👁</button>
-    </div>
-    <div class="modal-hint">🔒 Sauvegardée localement sur votre appareil uniquement</div>
-    <div class="modal-err" id="modalErr"></div>
-    <button class="modal-btn" id="modalBtn" onclick="saveKey()">⚡ Activer Oracle Sport</button>
-    <div class="modal-footer">Obtenez votre clé sur <a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a></div>
-  </div>
-</div>
+<!-- Éléments legacy vides (compatibilité JS) -->
+<div id="apiModal" style="display:none"></div>
+<div id="sportsModal" style="display:none"></div>
+<div id="sportsErr" style="display:none"></div>
 
 <header>
   <div class="logo">ORACLE<span class="logo-s">⚡</span>SPORT</div>
@@ -368,18 +358,23 @@ var API_KEY='';
 var SPORTS_KEY='';
 
 function initKey(){
-  var saved=localStorage.getItem('oracle_api_key')||'';
-  if(saved&&saved.startsWith('sk-ant-')){
-    API_KEY=saved;
-    document.getElementById('apiModal').style.display='none';
-    showKeyBadge(saved);
-    // Check if sports key exists
-    var sk=localStorage.getItem('oracle_sports_key')||'';
-    if(sk){ SPORTS_KEY=sk; updateLiveBadge(true); }
-    else { document.getElementById('sportsModal').style.display='flex'; }
+  var savedApi=localStorage.getItem('oracle_api_key')||'';
+  var savedSports=localStorage.getItem('oracle_sports_key')||'';
+  if(savedApi&&savedApi.startsWith('sk-ant-')&&savedSports){
+    API_KEY=savedApi;
+    SPORTS_KEY=savedSports;
+    document.getElementById('setupModal').style.display='none';
+    showKeyBadge(savedApi);
+    updateLiveBadge(true);
   } else {
-    document.getElementById('apiModal').style.display='flex';
-    setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
+    // Pre-fill what we have
+    if(savedApi) document.getElementById('apiKeyInput').value=savedApi;
+    if(savedSports) document.getElementById('sportsKeyInput').value=savedSports;
+    document.getElementById('setupModal').style.display='flex';
+    setTimeout(function(){
+      if(!savedApi) document.getElementById('apiKeyInput').focus();
+      else document.getElementById('sportsKeyInput').focus();
+    },200);
   }
   var today=new Date();
   document.getElementById('dateInput').value=formatDateISO(today);
@@ -387,38 +382,26 @@ function initKey(){
   updateSportUI();
 }
 
-function saveKey(){
-  var v=(document.getElementById('apiKeyInput').value||'').trim();
-  if(!v){showModalErr('Veuillez entrer votre clé API.');return;}
-  if(!v.startsWith('sk-ant-')){showModalErr('Clé invalide — doit commencer par sk-ant-');return;}
-  if(v.length<40){showModalErr("Clé trop courte.");return;}
-  API_KEY=v;
-  localStorage.setItem('oracle_api_key',v);
-  document.getElementById('apiModal').style.display='none';
-  showKeyBadge(v);
-  var sk=localStorage.getItem('oracle_sports_key')||'';
-  if(sk){ SPORTS_KEY=sk; updateLiveBadge(true); }
-  else { document.getElementById('sportsModal').style.display='flex'; }
-  document.getElementById('apiKeyInput').value='';
-}
-
-function saveSportsKey(){
-  var v=(document.getElementById('sportsKeyInput').value||'').trim();
-  if(!v){showSportsErr('Veuillez entrer votre clé API-Sports.');return;}
-  SPORTS_KEY=v;
-  localStorage.setItem('oracle_sports_key',v);
-  document.getElementById('sportsModal').style.display='none';
-  document.getElementById('sportsKeyInput').value='';
+function saveBothKeys(){
+  var vApi=(document.getElementById('apiKeyInput').value||'').trim();
+  var vSports=(document.getElementById('sportsKeyInput').value||'').trim();
+  if(!vApi){showModalErr('Veuillez entrer votre clé API Anthropic.');return;}
+  if(!vApi.startsWith('sk-ant-')){showModalErr('Clé Anthropic invalide — doit commencer par sk-ant-');return;}
+  if(vApi.length<40){showModalErr('Clé Anthropic trop courte.');return;}
+  if(!vSports){showModalErr('Veuillez entrer votre clé API-Sports.');return;}
+  API_KEY=vApi;
+  SPORTS_KEY=vSports;
+  localStorage.setItem('oracle_api_key',vApi);
+  localStorage.setItem('oracle_sports_key',vSports);
+  document.getElementById('setupModal').style.display='none';
+  showKeyBadge(vApi);
   updateLiveBadge(true);
   updateSportUI();
 }
 
-function skipSportsKey(){
-  document.getElementById('sportsModal').style.display='none';
-  updateLiveBadge(false);
-  updateSportUI();
-  showErr('⚠️ Clé API-Sports requise. Cliquez sur Analyser pour la saisir.');
-}
+function saveKey(){ saveBothKeys(); }
+function saveSportsKey(){ saveBothKeys(); }
+function skipSportsKey(){ document.getElementById('setupModal').style.display='none'; }
 
 function updateLiveBadge(hasLive){
   var badge=document.getElementById('srcBadge');
@@ -437,10 +420,11 @@ function updateLiveBadge(hasLive){
 }
 
 function changeKey(){
-  API_KEY='';
-  localStorage.removeItem('oracle_api_key');
-  document.getElementById('keyIndicator').style.display='none';
-  document.getElementById('apiModal').style.display='flex';
+  var savedApi=localStorage.getItem('oracle_api_key')||'';
+  var savedSports=localStorage.getItem('oracle_sports_key')||'';
+  if(savedApi) document.getElementById('apiKeyInput').value=savedApi;
+  if(savedSports) document.getElementById('sportsKeyInput').value=savedSports;
+  document.getElementById('setupModal').style.display='flex';
   setTimeout(function(){document.getElementById('apiKeyInput').focus()},200);
 }
 
@@ -451,8 +435,8 @@ function showKeyBadge(k){
 
 function showModalErr(m){var e=document.getElementById('modalErr');e.textContent=m;e.classList.add('on');}
 function clearModalErr(){document.getElementById('modalErr').classList.remove('on');}
-function showSportsErr(m){var e=document.getElementById('sportsErr');e.textContent=m;e.classList.add('on');}
-function clearSportsErr(){document.getElementById('sportsErr').classList.remove('on');}
+function showSportsErr(m){showModalErr(m);}
+function clearSportsErr(){clearModalErr();}
 
 function toggleVis(){
   var inp=document.getElementById('apiKeyInput'),btn=document.getElementById('eyeBtn');
@@ -772,8 +756,8 @@ function showErr(m){var e=document.getElementById('err');e.classList.add('on');d
 function clearErr(){document.getElementById('err').classList.remove('on')}
 
 async function go(){
-  if(!API_KEY){document.getElementById('apiModal').style.display='flex';return;}
-  if(!SPORTS_KEY){document.getElementById('sportsModal').style.display='flex';return;}
+  if(!API_KEY||!SPORTS_KEY){document.getElementById('setupModal').style.display='flex';return;}
+  
   clearErr();
   all=[];
   ui(true);
