@@ -561,7 +561,7 @@ async function agentLoop(sysPrompt, userPrompt, useWebSearch) {
   for(var turn = 0; turn < MAX_TURNS; turn++) {
     var body = {
       model: 'claude-sonnet-4-20250514',
-      max_tokens: 16000,
+      max_tokens: 32000,
       system: sysPrompt,
       messages: messages
     };
@@ -637,43 +637,38 @@ Si aucun match trouvé pour le ${dateFR}, retourne [].`;
    PASSE 2 — Génère l'analyse corners
 ══════════════════════════════════════════════ */
 function buildAnalysisPrompt(dateStr, dateFR, matchList) {
-  var matchLines = matchList.map(function(m, i){
+  /* Limiter a 10 matchs max pour eviter la troncature */
+  var tops = matchList.slice(0, 10);
+  var n = tops.length;
+  var lines = tops.map(function(m,i){
     return (i+1)+'. '+m.home+' vs '+m.away+' — '+m.league+' — '+(m.time||'TBD');
   }).join('\n');
 
-  return `Date : ${dateFR} (${dateStr})
-
-MATCHS DU ${dateFR} À ANALYSER :
-${matchLines}
-
-Pour chaque match, génère une analyse Over/Under 9.5 corners.
-• bestBet = "Over 9.5 Corners" OU "Under 9.5 Corners" uniquement
-• homeFormDetails = "Corners 5J: X,X,X,X,X moy:X.X"
-• analysis = centrée sur les corners (style, moyennes, H2H)
-
-Réponds UNIQUEMENT avec ce JSON complet (commence par { sans rien avant) :
-{"stats":{"winRate":"—","roi":"—","valueBets":"?","totalMarchés":"${matchList.length}"},"matches":[
-{
-  "id":1,"sport":"football","league":"LIGUE","homeTeam":"DOM","awayTeam":"EXT","time":"HH:MM",
-  "homeForm":["W","D","L","W","W"],"awayForm":["W","L","W","W","D"],
-  "homeFormDetails":"Corners 5J: 6,7,5,8,6 moy:6.4","awayFormDetails":"Corners 5J: 5,4,6,5,7 moy:5.4",
-  "probHome":45,"probDraw":27,"probAway":28,"bookmakerOdds":"2.10/3.30/3.40",
-  "oddsDetails":{"over95corners":"1.85","under95corners":"1.90"},
-  "stats":{"homeCornersAvg":"6.2","awayCornersAvg":"5.1","homeCornersAgainst":"4.8","awayCornersAgainst":"5.3",
-    "homeCornersLastH":"6,7,5,8,6","awayCornersLastH":"5,4,6,5,7","cornersH2H":"moy:10.0",
-    "homeXG":"1.65","awayXG":"1.40","homePossession":"52%","awayPossession":"48%",
-    "homeShotsAvg":"13.0","awayShotsAvg":"11.5"},
-  "absentees":"","tactique":"","bookmakerSignal":"","confidence":"medium",
-  "bestBet":"Over 9.5 Corners","bestBetOdds":"1.85",
-  "bestBetReason":"Moy. combinée 11.3 C/match.",
-  "cornersProba":{"over95":"60%","under95":"40%","expectedCorners":"11.3"},
-  "recommendation":"Over 9.5 Corners @ 1.85","cote":"1.85","isValueBet":false,
-  "analysis":"Analyse corners détaillée.",
-  "factors":[{"label":"Stat positive","type":"pos"},{"label":"Risque","type":"neg"}],
-  "secondaryBets":[{"label":"Over 10.5 Corners","odds":"2.10","confidence":"low"}]
-},
-... INSERE TOUS LES AUTRES MATCHS ...
-]}`;
+  return 'Date : '+dateFR+' ('+dateStr+')\n\n'+
+    'MATCHS A ANALYSER ('+n+') :\n'+lines+'\n\n'+
+    'Analyse Over/Under 9.5 corners pour chacun. '+
+    'bestBet="Over 9.5 Corners" ou "Under 9.5 Corners" uniquement.\n'+
+    'homeFormDetails="Corners 5J: X,X,X,X,X moy:X.X"\n\n'+
+    'Reponds UNIQUEMENT avec ce JSON compact (commence par { sans rien avant) :\n'+
+    '{"stats":{"winRate":"--","roi":"--","valueBets":"?","totalMarches":"'+n+'"},"matches":[\n'+
+    '{"id":1,"sport":"football","league":"L","homeTeam":"A","awayTeam":"B","time":"HH:MM",'+
+    '"homeForm":["W","D","L","W","W"],"awayForm":["L","W","W","D","W"],'+
+    '"homeFormDetails":"Corners 5J: 6,7,5,8,6 moy:6.4","awayFormDetails":"Corners 5J: 5,4,6,5,7 moy:5.4",'+
+    '"probHome":45,"probDraw":27,"probAway":28,"bookmakerOdds":"2.10/3.30/3.40",'+
+    '"oddsDetails":{"over95corners":"1.85","under95corners":"1.90"},'+
+    '"stats":{"homeCornersAvg":"6.2","awayCornersAvg":"5.1","homeCornersAgainst":"4.8","awayCornersAgainst":"5.3",'+
+    '"homeCornersLastH":"6,7,5,8,6","awayCornersLastH":"5,4,6,5,7","cornersH2H":"moy:10.0",'+
+    '"homeXG":"1.65","awayXG":"1.40","homePossession":"52%","awayPossession":"48%",'+
+    '"homeShotsAvg":"13.0","awayShotsAvg":"11.5"},'+
+    '"absentees":"","tactique":"","bookmakerSignal":"","confidence":"medium",'+
+    '"bestBet":"Over 9.5 Corners","bestBetOdds":"1.85","bestBetReason":"Raison.",'+
+    '"cornersProba":{"over95":"60%","under95":"40%","expectedCorners":"11.3"},'+
+    '"recommendation":"Over 9.5 Corners @ 1.85","cote":"1.85","isValueBet":false,'+
+    '"analysis":"Analyse corners.","factors":[{"label":"Positif","type":"pos"},{"label":"Risque","type":"neg"}],'+
+    '"secondaryBets":[{"label":"Over 10.5","odds":"2.10","confidence":"low"}]},\n'+
+    'INSERE_LES_'+(n-1)+'_AUTRES_MATCHS\n'+
+    ']}';
+}
 }
 
 async function agentCallJSON(sysPrompt, userPrompt) {
@@ -752,6 +747,8 @@ async function go(){
     if(!matchList || matchList.length === 0) {
       throw new Error('Aucun match trouve pour le '+dateFR+'. Verifiez la date ou reessayez.');
     }
+    /* Limiter a 10 pour l'affichage coherent avec buildAnalysisPrompt */
+    matchList = matchList.slice(0, 10);
     /* Passe 2 : analyse corners */
     document.getElementById('lmsg').textContent='Analyse Over/Under 9.5 en cours ('+matchList.length+' matchs)...';
     var prompt = buildAnalysisPrompt(dateStr, dateFR, matchList);
