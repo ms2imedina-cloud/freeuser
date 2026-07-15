@@ -1,0 +1,1672 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>AviKaolack — Gestion de poulailler</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#FBF7EE; --paper:#FFFDF9; --barn:#2E2015; --barn-light:#4A3324;
+    --barn-2:#231A11;
+    --straw:#F0B24A; --straw-deep:#C7862A; --sage:#6B8F71; --sage-deep:#3F5A44;
+    --yolk:#E2871E; --rust:#B84632; --ink:#241B10; --muted:#8A7A63; --line:#EAE0CB;
+    --line-soft:#F1E9D8;
+    --gold:#D9A441;
+    --shadow-xs: 0 1px 2px rgba(43,32,19,0.06);
+    --shadow-sm: 0 2px 8px rgba(43,32,19,0.07), 0 1px 2px rgba(43,32,19,0.05);
+    --shadow-md: 0 8px 24px rgba(43,32,19,0.10), 0 2px 6px rgba(43,32,19,0.06);
+    --shadow-lg: 0 20px 48px rgba(43,32,19,0.16), 0 6px 16px rgba(43,32,19,0.08);
+    --ease: cubic-bezier(.4,0,.2,1);
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0; color:var(--ink); font-family:'Inter',sans-serif; -webkit-font-smoothing:antialiased;
+    background:
+      radial-gradient(circle at 10% 0%, #FFFCF3 0%, transparent 45%),
+      radial-gradient(circle at 90% 10%, #FCF3E2 0%, transparent 40%),
+      var(--cream);
+    background-attachment:fixed;
+  }
+  .serif{font-family:'Fraunces',serif; letter-spacing:-0.01em;}
+  #app{min-height:100vh;}
+  button{font-family:inherit; cursor:pointer; transition:transform .15s var(--ease), background-color .15s var(--ease), color .15s var(--ease), box-shadow .15s var(--ease), border-color .15s var(--ease), opacity .15s var(--ease);}
+  button:active{transform:scale(0.97);}
+  input,select{font-family:inherit; transition:border-color .15s var(--ease), box-shadow .15s var(--ease), background-color .15s var(--ease);}
+  ::placeholder{color:#B7A98D;}
+  ::selection{background:var(--straw); color:var(--barn);}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-track{background:transparent;}
+  ::-webkit-scrollbar-thumb{background:#DDCFAF; border-radius:999px; border:2px solid var(--cream);}
+  ::-webkit-scrollbar-thumb:hover{background:#CBB988;}
+
+  h1,h2,h3{letter-spacing:-0.01em;}
+
+  /* layout */
+  .layout{display:flex; min-height:100vh;}
+  .sidebar{
+    width:236px; flex-shrink:0; display:none; flex-direction:column;
+    background:linear-gradient(185deg, var(--barn) 0%, var(--barn-2) 100%);
+    box-shadow:4px 0 24px rgba(0,0,0,0.18);
+    position:relative; z-index:5;
+  }
+  .sidebar-header{padding:26px 22px 20px; display:flex; align-items:center; gap:11px; border-bottom:1px solid rgba(255,255,255,0.07);}
+  .logo-badge{
+    width:38px; height:38px; border-radius:50%; flex-shrink:0;
+    background:radial-gradient(circle at 32% 28%, #FCDA9A, var(--straw) 55%, var(--straw-deep) 100%);
+    display:flex; align-items:center; justify-content:center; font-size:18px;
+    box-shadow:0 3px 10px rgba(199,134,42,0.45), inset 0 1px 1px rgba(255,255,255,0.5);
+  }
+  .sidebar-header .serif{color:#F6EEDD; font-weight:600;}
+  .sidebar-nav{flex:1; padding:16px 12px; display:flex; flex-direction:column; gap:3px;}
+  .nav-item{
+    display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:11px;
+    background:transparent; border:none; color:#C9B99E; font-size:14px; font-weight:500; text-align:left;
+    position:relative;
+  }
+  .nav-item .icon-badge{width:22px; text-align:center; font-size:15px;}
+  .nav-item:hover{background:rgba(255,255,255,0.05); color:#EFE2C7;}
+  .nav-item.active{
+    background:linear-gradient(180deg, rgba(240,178,74,0.16), rgba(240,178,74,0.08));
+    color:var(--straw); box-shadow:inset 0 0 0 1px rgba(240,178,74,0.22);
+  }
+  .nav-item.active::before{
+    content:""; position:absolute; left:-12px; top:50%; transform:translateY(-50%);
+    width:3px; height:18px; border-radius:0 4px 4px 0; background:var(--straw);
+  }
+  .nav-item .chev{margin-left:auto; opacity:0.7;}
+  .sidebar-footer{padding:16px 22px; font-size:11px; color:#7C6C57; border-top:1px solid rgba(255,255,255,0.07);}
+  .main{flex:1; min-width:0;}
+
+  .mobile-header{display:flex; align-items:center; gap:8px; padding:20px 20px 4px;}
+  .mobile-tabs{display:flex; gap:8px; overflow-x:auto; padding:10px 20px 16px; scrollbar-width:none;}
+  .mobile-tabs::-webkit-scrollbar{display:none;}
+  .mobile-tab{
+    flex-shrink:0; display:flex; align-items:center; gap:6px; padding:7px 13px; border-radius:999px;
+    font-size:12px; font-weight:600; border:1px solid var(--line); background:var(--paper); color:var(--muted);
+    white-space:nowrap; box-shadow:var(--shadow-xs);
+  }
+  .mobile-tab.active{background:var(--barn); color:var(--straw); border-color:var(--barn); box-shadow:var(--shadow-sm);}
+
+  .desktop-header{display:none; align-items:center; justify-content:space-between; padding:30px 32px 12px;}
+  .desktop-header p{color:var(--muted); font-size:13px; margin:3px 0 0;}
+  .add-btn{
+    display:flex; align-items:center; gap:6px;
+    background:linear-gradient(180deg, var(--barn-light), var(--barn));
+    color:#fff; font-size:13px; font-weight:600; border:none; padding:11px 20px; border-radius:999px;
+    box-shadow:0 4px 14px rgba(46,32,21,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .add-btn:hover{box-shadow:0 6px 18px rgba(46,32,21,0.36), inset 0 1px 0 rgba(255,255,255,0.1); transform:translateY(-1px);}
+  .add-btn-header{display:none;}
+  .ghost-btn{
+    display:flex; align-items:center; gap:6px; background:var(--paper); color:var(--barn); font-size:13px;
+    font-weight:600; border:1px solid var(--line); padding:9px 17px; border-radius:999px; box-shadow:var(--shadow-xs);
+  }
+  .ghost-btn:hover{border-color:#D8C9A5; box-shadow:var(--shadow-sm);}
+
+  main.content{padding:8px 20px 90px;}
+  @media(min-width:768px){
+    .sidebar{display:flex; position:fixed; top:0; left:0; bottom:0;}
+    .main{margin-left:236px;}
+    .mobile-header, .mobile-tabs{display:none;}
+    .desktop-header{display:flex;}
+    main.content{padding:8px 32px 60px;}
+  }
+
+  /* cards */
+  .card{
+    background:linear-gradient(180deg, #FFFFFF, var(--paper));
+    border:1px solid var(--line); border-radius:18px; padding:20px;
+    box-shadow:var(--shadow-sm);
+    transition:box-shadow .2s var(--ease), transform .2s var(--ease);
+  }
+  .empty{margin-top:22px; text-align:center; padding:60px 24px; background:var(--paper); border:1px dashed #D9CAA5; border-radius:20px;}
+  .empty .glyph{font-size:32px; margin-bottom:10px; filter:drop-shadow(0 4px 8px rgba(199,134,42,0.25));}
+  .empty h2{margin:0 0 6px;}
+  .empty p{color:var(--muted); font-size:14px; margin:0 0 20px; max-width:360px; margin-left:auto; margin-right:auto; line-height:1.55;}
+
+  .stat-grid{display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:20px;}
+  @media(min-width:1024px){ .stat-grid{grid-template-columns:repeat(3,1fr);} }
+  .stat-card{
+    background:linear-gradient(180deg, #FFFFFF, var(--paper));
+    border:1px solid var(--line); border-radius:18px; padding:17px;
+    box-shadow:var(--shadow-sm); transition:transform .2s var(--ease), box-shadow .2s var(--ease);
+  }
+  .stat-card:hover{transform:translateY(-2px); box-shadow:var(--shadow-md);}
+  .stat-top{display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;}
+  .stat-label{color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em;}
+  .stat-icon{width:30px; height:30px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:14px; box-shadow:var(--shadow-xs);}
+  .stat-value{font-size:25px; font-weight:700; line-height:1.1; letter-spacing:-0.01em;}
+  .stat-sub{color:var(--muted); font-size:12px; margin-top:5px;}
+
+  .grid-2{display:grid; grid-template-columns:1fr; gap:14px; margin-top:14px;}
+  @media(min-width:1024px){ .grid-2{grid-template-columns:1fr 1fr;} }
+
+  .row-item{display:flex; align-items:center; justify-content:space-between; font-size:14px; padding:10px 0; border-bottom:1px solid var(--line-soft);}
+  .row-item:last-child{border-bottom:none;}
+
+  .list-row{
+    display:flex; align-items:center; gap:12px; background:var(--paper); border:1px solid var(--line);
+    border-radius:14px; padding:13px 14px; margin-bottom:9px; box-shadow:var(--shadow-xs);
+    transition:box-shadow .18s var(--ease), transform .18s var(--ease), border-color .18s var(--ease);
+  }
+  .list-row:hover{box-shadow:var(--shadow-sm); transform:translateY(-1px); border-color:#DECBA0;}
+  .row-badge{width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0; box-shadow:var(--shadow-xs);}
+  .row-body{flex:1; min-width:0;}
+  .row-title{font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .row-sub{color:var(--muted); font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+  .row-trace{color:var(--muted); font-size:11px; opacity:0.75; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:1px;}
+  .row-meta{color:var(--muted); font-size:12px; font-weight:600; flex-shrink:0; display:none;}
+  @media(min-width:640px){ .row-meta{display:block;} }
+  .row-del{flex-shrink:0; border:none; background:none; padding:7px; border-radius:999px; display:flex; color:var(--muted);}
+  .row-del:hover{background:#B8463214; color:var(--rust);}
+
+  .badge{display:inline-block; font-size:10.5px; font-weight:700; padding:3.5px 9px; border-radius:999px; text-transform:uppercase; letter-spacing:0.04em;}
+  .badge-late{background:linear-gradient(180deg,#F0DAD4,#EBCAC2); color:var(--rust);}
+  .badge-soon{background:linear-gradient(180deg,#FBE9CB,#F7DEB2); color:var(--straw-deep);}
+  .badge-ok{background:linear-gradient(180deg,#DCEADF,#CCE0D0); color:var(--sage-deep);}
+  .alert-banner{
+    display:flex; align-items:flex-start; gap:10px; background:linear-gradient(180deg,#FBEFEC,#F8E5E0);
+    border:1px solid #EAC3B9; color:var(--rust); border-radius:14px; padding:13px 15px; font-size:13px; margin-bottom:14px;
+    box-shadow:var(--shadow-xs);
+  }
+
+  /* modal */
+  .overlay{
+    position:fixed; inset:0; background:rgba(35,26,17,0.55); backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px);
+    display:flex; align-items:flex-end; justify-content:center; z-index:40; animation:fadeIn .18s var(--ease);
+  }
+  @media(min-width:640px){ .overlay{align-items:center;} }
+  @keyframes fadeIn{ from{opacity:0;} to{opacity:1;} }
+  @keyframes slideUp{ from{opacity:0; transform:translateY(24px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes popIn{ from{opacity:0; transform:scale(.96) translateY(8px);} to{opacity:1; transform:scale(1) translateY(0);} }
+  .modal{
+    background:var(--paper); width:100%; max-width:440px; border-radius:26px 26px 0 0; padding:26px;
+    max-height:88vh; overflow-y:auto; box-shadow:var(--shadow-lg); animation:slideUp .22s var(--ease);
+  }
+  @media(min-width:640px){ .modal{border-radius:22px; animation:popIn .2s var(--ease);} }
+  .modal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:20px;}
+  .modal-close{border:none; background:var(--cream); padding:6px; border-radius:999px; color:var(--muted);}
+  .modal-close:hover{background:var(--line); color:var(--barn);}
+  .field{margin-bottom:15px;}
+  .field label{display:block; color:var(--muted); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; margin-bottom:6px;}
+  .field input, .field select{
+    width:100%; padding:11px 13px; border-radius:11px; border:1px solid var(--line); background:var(--cream);
+    font-size:14px; color:var(--ink); outline:none;
+  }
+  .field input:focus, .field select:focus{border-color:var(--straw-deep); box-shadow:0 0 0 3px rgba(199,134,42,0.14); background:#fff;}
+  .submit-btn{
+    width:100%; background:linear-gradient(180deg, var(--barn-light), var(--barn)); color:#fff; border:none;
+    padding:14px; border-radius:999px; font-size:14px; font-weight:600; margin-top:8px;
+    box-shadow:0 6px 16px rgba(46,32,21,0.28), inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+  .submit-btn:hover{box-shadow:0 8px 20px rgba(46,32,21,0.34), inset 0 1px 0 rgba(255,255,255,0.1); transform:translateY(-1px);}
+  .confirm-box{background:var(--paper); border-radius:22px; padding:26px; width:100%; max-width:360px; box-shadow:var(--shadow-lg); animation:popIn .2s var(--ease);}
+  .confirm-actions{display:flex; gap:10px; margin-top:20px;}
+  .btn-secondary{flex:1; padding:12px; border-radius:999px; border:1px solid var(--line); background:var(--paper); font-size:14px; font-weight:600; color:var(--ink);}
+  .btn-secondary:hover{background:var(--cream);}
+  .btn-danger{flex:1; padding:12px; border-radius:999px; border:none; background:linear-gradient(180deg,#C65642,var(--rust)); color:#fff; font-size:14px; font-weight:600; box-shadow:0 6px 14px rgba(184,70,50,0.3);}
+  .btn-danger:hover{box-shadow:0 8px 18px rgba(184,70,50,0.38);}
+
+  .settings-tabs{display:flex; gap:6px; margin-bottom:18px; background:var(--cream); border-radius:13px; padding:4px; box-shadow:inset 0 1px 3px rgba(43,32,19,0.06);}
+  .settings-tab{flex:1; border:none; background:none; padding:9px 8px; border-radius:10px; font-size:12.5px; font-weight:700; color:var(--muted);}
+  .settings-tab.active{background:var(--paper); color:var(--barn); box-shadow:var(--shadow-xs);}
+  .cat-block{margin-bottom:22px; padding-bottom:20px; border-bottom:1px solid var(--line-soft);}
+  .cat-block:last-child{border-bottom:none; margin-bottom:4px; padding-bottom:0;}
+  .cat-block > label{display:block; color:var(--ink); font-size:13px; font-weight:700; margin-bottom:9px;}
+  .cat-chips{display:flex; flex-wrap:wrap; gap:6px; margin-bottom:10px;}
+  .chip{display:inline-flex; align-items:center; gap:4px; background:var(--cream); border:1px solid var(--line); color:var(--ink); font-size:12px; font-weight:600; padding:5px 6px 5px 11px; border-radius:999px;}
+  .chip-default{color:var(--muted); padding:5px 11px;}
+  .chip-x{border:none; background:var(--line); color:var(--barn); width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center; padding:0; flex-shrink:0;}
+  .chip-x:hover{background:var(--rust); color:#fff;}
+  .chip-x svg{width:9px; height:9px;}
+  .cat-add-row{display:flex; gap:6px;}
+  .cat-add-row input{flex:1; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--cream); font-size:13px; color:var(--ink); outline:none;}
+  .cat-add-row input:focus{border-color:var(--straw-deep); box-shadow:0 0 0 3px rgba(199,134,42,0.14); background:#fff;}
+  .cat-add-row .ghost-btn{white-space:nowrap; padding:8px 13px; font-size:12.5px;}
+
+  .setup-wrap{max-width:640px; margin:0 auto; padding:60px 24px;}
+  .setup-wrap h1{margin-bottom:6px;}
+  .setup-wrap ol{padding-left:20px; line-height:1.9; font-size:14px;}
+  .setup-wrap code{background:#EFE7D6; padding:2px 6px; border-radius:5px; font-size:12.5px;}
+  .setup-wrap pre{background:linear-gradient(180deg,var(--barn-light),var(--barn)); color:#F1E7D3; padding:18px; border-radius:14px; font-size:12.5px; overflow-x:auto; line-height:1.6; box-shadow:var(--shadow-md);}
+  .loading-wrap{min-height:100vh; display:flex; align-items:center; justify-content:center; color:var(--muted); font-size:14px;}
+
+  .chart-box{width:100%; height:190px;}
+  .mobile-only-add{display:flex; justify-content:flex-end; margin-bottom:6px; gap:8px;}
+  @media(min-width:768px){ .mobile-only-add{display:none;} }
+
+  .offline-pill{
+    display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; color:var(--straw);
+    background:rgba(255,255,255,0.06); padding:6px 11px; border-radius:999px; margin:0 22px 14px;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,0.08);
+  }
+  .offline-dot{width:7px; height:7px; border-radius:50%; background:var(--rust); box-shadow:0 0 0 3px rgba(184,70,50,0.18);}
+  .offline-pill.online .offline-dot{background:var(--sage); box-shadow:0 0 0 3px rgba(107,143,113,0.2);}
+
+  @media print{
+    .sidebar, .mobile-header, .mobile-tabs, .desktop-header .add-btn, .no-print{display:none !important;}
+    .main{margin-left:0 !important;}
+    body{background:#fff;}
+    main.content{padding:0 10px;}
+  }
+</style>
+</head>
+<body>
+<div id="app"><div class="loading-wrap">Chargement d'AviKaolack…</div></div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import {
+  getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, enableIndexedDbPersistence, setDoc, getDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import {
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, browserLocalPersistence, setPersistence
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+/* =========================================================
+   1) COLLEZ ICI LA CONFIGURATION DE VOTRE PROJET FIREBASE
+   (Console Firebase > Paramètres du projet > Vos applications)
+   ========================================================= */
+const firebaseConfig = {
+  apiKey: "AIzaSyDuS8jQ6SaM30joYsxSdWr7CFviD9TU6Mo",
+  authDomain: "poulailler-cisse.firebaseapp.com",
+  projectId: "poulailler-cisse",
+  storageBucket: "poulailler-cisse.firebasestorage.app",
+  messagingSenderId: "443215714983",
+  appId: "1:443215714983:web:3f597fe8ae60d7bbda1982"
+};
+
+/* ---------- Ferme partagée ----------
+   Toutes les données (gestionnaire, gérant, vétérinaire) sont stockées sous ce même
+   identifiant, pour que tout le monde voie les mêmes informations, même depuis des
+   téléphones différents. Vous pouvez changer cette valeur si vous gérez plusieurs
+   poulaillers séparés (un identifiant différent = des données différentes). */
+const FARM_ID = "kaolack-ferme-1";
+
+/* ---------- Rôles et codes d'accès (4 chiffres) ----------
+   Ces codes sont un simple filtre d'usage pour que chacun choisisse son rôle
+   facilement une fois déjà connecté avec le compte e-mail/mot de passe de la
+   ferme — ce n'est PAS un système de sécurité en soi. La vraie protection des
+   données se fait maintenant au niveau de Firebase Authentication (voir
+   l'écran de connexion et les règles Firestore) : seules les personnes ayant
+   un compte e-mail/mot de passe créé par le Gestionnaire peuvent accéder aux
+   données. Changez les codes régulièrement depuis les Paramètres (rôle
+   Gestionnaire) pour limiter les erreurs de manipulation entre rôles. */
+const ROLE_LABELS = { gestionnaire:"Gestionnaire", gerant:"Gérant", veterinaire:"Vétérinaire" };
+const DEFAULT_PINS = { gestionnaire:"1234", gerant:"2345", veterinaire:"3456" };
+
+/* ---------- Catégories fixes (adaptées à l'élevage à Kaolack) ---------- */
+const CAT_DEPENSES = ["Aliment","Poussins","Vaccins","Médicaments","Eau","Électricité","Transport","Main-d'œuvre","Autres"];
+const CAT_VENTES = ["Poulets","Œufs","Fumier"];
+/* ---------- Quels types de vente réduisent le nombre de poulets en élevage ----------
+   Remplace l'ancienne détection par mot-clé (bug : un type personnalisé sans le mot
+   "poulet" dans son nom, ex. "Volaille" ou "Sur pied", n'était jamais déduit de
+   l'effectif). Chaque type de vente a maintenant un réglage explicite, vrai ou faux,
+   modifiable dans Paramètres > Produits & catégories. Les valeurs par défaut couvrent
+   les 3 catégories de base ; tout nouveau type personnalisé doit être configuré au
+   moment de sa création (case à cocher dans le formulaire d'ajout). */
+const DEFAULT_VENTE_REDUIT_EFFECTIF = { "Poulets": true, "Œufs": false, "Fumier": false };
+const CAT_STOCK = ["Aliment","Vaccin","Médicament"];
+const UNITES_STOCK = ["sac","kg","litre","dose","unité"];
+const TYPES_CALENDRIER = ["Vaccin","Traitement","Pesée","Vente prévue"];
+const RACES_POULETS = ["Chair","Pondeuses"];
+
+/* ---------- Produits & catégories personnalisables ----------
+   Le Gestionnaire et le Gérant peuvent ajouter de nouveaux produits/catégories
+   depuis les Paramètres (ex : une nouvelle variété de poulet, un nouvel article
+   de stock, un nouveau type de vente...). Les listes ci-dessus restent les
+   valeurs par défaut ; les ajouts sont stockés dans Firestore et viennent
+   s'ajouter automatiquement dans tous les formulaires concernés, pour tout le
+   monde. Seuls les codes d'accès restent réservés au Gestionnaire. */
+const CATEGORY_DEFS = {
+  ventes:   { label:"Produits vendus (types de vente)", glyph:"💵", defaults: CAT_VENTES,     placeholder:"Ex : Poulet fermier" },
+  stock:    { label:"Catégories de stock",               glyph:"📦", defaults: CAT_STOCK,      placeholder:"Ex : Complément alimentaire" },
+  depenses: { label:"Catégories de dépenses",            glyph:"💸", defaults: CAT_DEPENSES,   placeholder:"Ex : Emballage" },
+  race:     { label:"Races / variétés de poulets",       glyph:"🐤", defaults: RACES_POULETS,  placeholder:"Ex : Poulet local" },
+};
+function getCatOptions(key){
+  const def = CATEGORY_DEFS[key];
+  const custom = (state.customCats && state.customCats[key]) || [];
+  return [...def.defaults, ...custom];
+}
+/* Liste les articles de stock existants, pour permettre de lier un achat
+   (dépense) à un article et ainsi augmenter automatiquement son stock. */
+function getBandeOptions(){
+  const opts = [{value:"", label:"Toute la ferme (non spécifique)"}];
+  [...state.data.poulets].sort((a,b)=>(a.nom||"").localeCompare(b.nom||"")).forEach(b=>{
+    opts.push({value:b.id, label:b.nom});
+  });
+  return opts;
+}
+function bandeNom(id){
+  if(!id) return null;
+  const b = state.data.poulets.find(p=>p.id===id);
+  return b ? b.nom : null;
+}
+function getStockOptionsForDepense(){
+  const opts = [{value:"", label:"— Non, dépense simple —"}];
+  [...state.data.stock].sort((a,b)=>(a.nom||"").localeCompare(b.nom||"")).forEach(s=>{
+    opts.push({value:s.id, label:`${s.nom} (${s.quantite} ${s.unite} en stock)`});
+  });
+  return opts;
+}
+/* Renvoie true/false/undefined : undefined = type de vente jamais configuré
+   (ne devrait normalement pas arriver, la case étant obligatoire à l'ajout,
+   mais peut survenir pour des types créés avant ce correctif). */
+function venteReduitEffectifConfig(type){
+  const overrides = state.venteReduitEffectif || {};
+  if(Object.prototype.hasOwnProperty.call(overrides, type)) return !!overrides[type];
+  if(Object.prototype.hasOwnProperty.call(DEFAULT_VENTE_REDUIT_EFFECTIF, type)) return DEFAULT_VENTE_REDUIT_EFFECTIF[type];
+  return undefined;
+}
+function venteReduitEffectif(type){ return venteReduitEffectifConfig(type) === true; }
+function typesVenteNonConfigures(){
+  return getCatOptions('ventes').filter(t => venteReduitEffectifConfig(t) === undefined);
+}
+
+/* ---------- Config des sections (modules à saisie) ---------- */
+const SECTIONS = {
+  poulets: { label:"Mes poulets", singular:"une bande de poulets", glyph:"🐤", color:"var(--barn-light)",
+    fields:[
+      {name:"nom", label:"Nom de la bande", type:"text", placeholder:"Ex : Bande 1", required:true},
+      {name:"dateArrivee", label:"Date d'arrivée", type:"date", required:true},
+      {name:"nombrePoussins", label:"Nombre de poussins", type:"number", required:true},
+      {name:"race", label:"Race", type:"select", options:()=>getCatOptions('race'), required:true},
+      {name:"prixAchat", label:"Prix d'achat total (FCFA)", type:"number", required:true},
+    ]},
+  depenses: { label:"Dépenses", singular:"une dépense", glyph:"💸", color:"var(--rust)",
+    fields:[
+      {name:"date", label:"Date", type:"date", required:true},
+      {name:"categorie", label:"Catégorie", type:"select", options:()=>getCatOptions('depenses'), required:true},
+      {name:"montant", label:"Montant (FCFA)", type:"number", required:true},
+      {name:"bandeId", label:"Bande concernée", type:"select", options:()=>getBandeOptions(), required:false},
+      {name:"note", label:"Note", type:"text", placeholder:"Optionnel", required:false},
+      {name:"stockArticleId", label:"Ajouter au stock ?", type:"select", options:()=>getStockOptionsForDepense(), required:false},
+      {name:"stockQuantite", label:"Quantité reçue (si ajout au stock)", type:"number", required:false},
+    ]},
+  ventes: { label:"Ventes", singular:"une vente", glyph:"💵", color:"var(--sage-deep)",
+    fields:[
+      {name:"date", label:"Date", type:"date", required:true},
+      {name:"type", label:"Type de vente", type:"select", options:()=>getCatOptions('ventes'), required:true},
+      {name:"quantite", label:"Quantité vendue", type:"number", required:true},
+      {name:"montantRecu", label:"Montant reçu (FCFA)", type:"number", required:true},
+      {name:"bandeId", label:"Bande concernée", type:"select", options:()=>getBandeOptions(), required:false},
+      {name:"client", label:"Client", type:"text", placeholder:"Optionnel", required:false},
+    ]},
+  stock: { label:"Stock", singular:"un article de stock", glyph:"📦", color:"var(--straw-deep)",
+    fields:[
+      {name:"nom", label:"Nom de l'article", type:"text", placeholder:"Ex : Aliment ponte", required:true},
+      {name:"categorie", label:"Catégorie", type:"select", options:()=>getCatOptions('stock'), required:true},
+      {name:"quantite", label:"Quantité actuelle", type:"number", required:true},
+      {name:"unite", label:"Unité", type:"select", options:UNITES_STOCK, required:true},
+      {name:"seuilAlerte", label:"Alerte si stock sous", type:"number", required:true},
+    ]},
+  calendrier: { label:"Calendrier", singular:"un rappel", glyph:"📅", color:"var(--sage)",
+    fields:[
+      {name:"date", label:"Date prévue", type:"date", required:true},
+      {name:"type", label:"Type de rappel", type:"select", options:TYPES_CALENDRIER, required:true},
+      {name:"description", label:"Détails", type:"text", placeholder:"Optionnel", required:false},
+    ]},
+  mortalite: { label:"Pertes", singular:"une perte de poulets", glyph:"💀", color:"var(--rust)",
+    fields:[
+      {name:"date", label:"Date", type:"date", required:true},
+      {name:"bandeId", label:"Bande concernée", type:"select", options:()=>getBandeOptions(), required:false},
+      {name:"race", label:"Race / variété", type:"select", options:()=>getCatOptions('race'), required:true},
+      {name:"nombre", label:"Nombre de poulets morts", type:"number", required:true},
+      {name:"cause", label:"Cause probable", type:"text", placeholder:"Optionnel", required:false},
+    ]},
+};
+const NAV = [
+  {key:"dashboard", label:"Tableau de bord", glyph:"📋", color:"var(--barn)"},
+  {key:"poulets", label:"Mes poulets", glyph:"🐤", color:"var(--barn-light)"},
+  {key:"mortalite", label:"Pertes", glyph:"💀", color:"var(--rust)"},
+  {key:"depenses", label:"Dépenses", glyph:"💸", color:"var(--rust)"},
+  {key:"ventes", label:"Ventes", glyph:"💵", color:"var(--sage-deep)"},
+  {key:"stock", label:"Stock", glyph:"📦", color:"var(--straw-deep)"},
+  {key:"calendrier", label:"Calendrier", glyph:"📅", color:"var(--sage)"},
+  {key:"rapports", label:"Rapports", glyph:"📊", color:"var(--yolk)"},
+];
+
+/* ---------- Etat ---------- */
+const state = {
+  tab: "dashboard",
+  data: { poulets:[], depenses:[], ventes:[], stock:[], calendrier:[], mortalite:[] },
+  loaded: { poulets:false, depenses:false, ventes:false, stock:false, calendrier:false, mortalite:false },
+  rapportBandeId: "", // "" = vue globale (toutes les bandes), sinon id d'une bande précise
+  modal: null,       // { section, item|null }
+  consumeModal: null, // id de l'article de stock en cours de consommation
+  confirmDelete: null,
+  uid: null,
+  online: navigator.onLine,
+  role: localStorage.getItem("avikaolack_role") || null,
+  pins: null,               // { gestionnaire, gerant, veterinaire } chargé depuis Firestore
+  pinsLoaded: false,
+  roleGateStep: "select",   // "select" | "pin"
+  roleGateChoice: null,
+  pinInput: "",
+  pinError: false,
+  settingsOpen: false,
+  settingsDraft: null,
+  customCats: { ventes:[], stock:[], depenses:[], race:[] }, // produits/catégories ajoutés par le gestionnaire
+  venteReduitEffectif: {},  // { [typeDeVente]: true|false } — chargé depuis Firestore
+  catsLoaded: false,
+  settingsTab: "codes", // "codes" | "produits"
+  authUser: null,       // utilisateur Firebase connecté (email/mot de passe) — null tant que non connecté
+  authChecked: false,   // true dès que Firebase a confirmé l'état de connexion (évite un flash de l'écran de login)
+  authError: null,
+  authLoading: false,
+};
+
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayISO = () => new Date().toISOString().slice(0,10);
+const monthKey = (d) => (d||"").slice(0,7);
+const fmtDate = (d) => { if(!d) return "—"; const dt=new Date(d+"T00:00:00"); return dt.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}); };
+const fmtMoney = (n) => (Number(n)||0).toLocaleString("fr-FR") + " FCFA";
+/* Convertit un Timestamp Firestore (ou une chaîne ISO) en date+heure lisible.
+   Renvoie null tant que le serveur n'a pas encore confirmé l'horodatage
+   (juste après un ajout local, le temps que serverTimestamp() se résolve). */
+const fmtDateTime = (ts) => {
+  if(!ts) return null;
+  const d = typeof ts.toDate === "function" ? ts.toDate() : new Date(ts);
+  if(isNaN(d.getTime())) return null;
+  return d.toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) + " à " +
+         d.toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"});
+};
+const roleLabelSafe = (role) => ROLE_LABELS[role] || "Rôle inconnu";
+const moisLabel = (mk) => { if(!mk) return "—"; const [y,m]=mk.split("-"); return new Date(Number(y),Number(m)-1,1).toLocaleDateString("fr-FR",{month:"long",year:"numeric"}); };
+const ageJours = (dateArrivee) => { if(!dateArrivee) return 0; const d = new Date(dateArrivee+"T00:00:00"); return Math.max(0, Math.floor((Date.now()-d.getTime())/86400000)); };
+const daysUntil = (dateStr) => { const d = new Date(dateStr+"T00:00:00"); return Math.round((d.getTime()-new Date(todayISO()+"T00:00:00").getTime())/86400000); };
+
+window.addEventListener("online", ()=>{ state.online = true; render(); });
+window.addEventListener("offline", ()=>{ state.online = false; render(); });
+
+/* ---------- Firebase init ---------- */
+const isConfigured = firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith("VOTRE_");
+
+if (!isConfigured) {
+  renderSetupScreen();
+} else {
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+
+  enableIndexedDbPersistence(db).catch((err)=>{
+    console.warn("Persistance hors-ligne non activée :", err.code);
+  });
+
+  setPersistence(auth, browserLocalPersistence).catch(console.error);
+
+  onAuthStateChanged(auth, (user) => {
+    state.authChecked = true;
+    if (user) {
+      state.uid = user.uid;
+      state.authUser = user;
+      state.authError = null;
+      attachListeners(db);
+      attachPinsListener(db);
+      attachCategoriesListener(db);
+    } else {
+      state.uid = null;
+      state.authUser = null;
+    }
+    render();
+  });
+
+  window.__farmLogin = (email, password) => {
+    state.authError = null; state.authLoading = true; render();
+    return signInWithEmailAndPassword(auth, String(email||"").trim(), password)
+      .catch((err) => {
+        state.authLoading = false;
+        state.authError = err.code==="auth/invalid-credential" || err.code==="auth/wrong-password" || err.code==="auth/user-not-found"
+          ? "Identifiants incorrects." : "Connexion impossible : " + err.message;
+        render();
+      });
+  };
+  window.__farmLogout = () => {
+    localStorage.removeItem("avikaolack_role");
+    signOut(auth).then(()=>{
+      state.role = null; state.roleGateStep="select"; state.roleGateChoice=null; state.pinInput="";
+      render();
+    });
+  };
+
+  window.__addItem = (section, values) => {
+    const trace = {
+      creePar: state.role || null,
+      creeParEmail: (state.authUser && state.authUser.email) || null,
+      creeLe: serverTimestamp(),
+    };
+    addDoc(collection(db, `fermes/${FARM_ID}/${section}`), { ...values, ...trace }).catch(console.error);
+  };
+  window.__updateItem = (section, id, values) => {
+    const trace = {
+      modifiePar: state.role || null,
+      modifieParEmail: (state.authUser && state.authUser.email) || null,
+      modifieLe: serverTimestamp(),
+    };
+    updateDoc(doc(db, `fermes/${FARM_ID}/${section}/${id}`), { ...values, ...trace }).catch(console.error);
+  };
+  window.__deleteItem = (section, id) => {
+    deleteDoc(doc(db, `fermes/${FARM_ID}/${section}/${id}`)).catch(console.error);
+  };
+  // Ajoute (achat) ou retire (consommation) une quantité au stock d'un article.
+  window.__ajusterStock = (stockId, delta) => {
+    const item = state.data.stock.find(s=>s.id===stockId);
+    if(!item) return;
+    const nouvelleQte = Math.max(0, Number(item.quantite||0) + Number(delta||0));
+    const trace = {
+      modifiePar: state.role || null,
+      modifieParEmail: (state.authUser && state.authUser.email) || null,
+      modifieLe: serverTimestamp(),
+    };
+    updateDoc(doc(db, `fermes/${FARM_ID}/stock/${stockId}`), { quantite: nouvelleQte, ...trace }).catch(console.error);
+  };
+  window.__savePins = (pins) => {
+    return setDoc(doc(db, `fermes/${FARM_ID}/config/acces`), pins, { merge:true });
+  };
+  window.__addCategoryItem = (catKey, value, extra) => {
+    const clean = String(value||"").trim();
+    if(!clean) return Promise.resolve();
+    const def = CATEGORY_DEFS[catKey];
+    const current = (state.customCats && state.customCats[catKey]) || [];
+    const already = def.defaults.some(v=>v.toLowerCase()===clean.toLowerCase())
+      || current.some(v=>v.toLowerCase()===clean.toLowerCase());
+    if(already) return Promise.resolve();
+    const updated = [...current, clean];
+    const payload = { [catKey]: updated };
+    if(catKey==="ventes"){
+      const reduit = !!(extra && extra.reduitEffectif);
+      payload.venteReduitEffectif = { ...(state.venteReduitEffectif||{}), [clean]: reduit };
+    }
+    return setDoc(doc(db, `fermes/${FARM_ID}/config/categories`), payload, { merge:true });
+  };
+  window.__setVenteReduitEffectif = (type, reduit) => {
+    const updated = { ...(state.venteReduitEffectif||{}), [type]: !!reduit };
+    return setDoc(doc(db, `fermes/${FARM_ID}/config/categories`), { venteReduitEffectif: updated }, { merge:true });
+  };
+  window.__removeCategoryItem = (catKey, value) => {
+    const current = (state.customCats && state.customCats[catKey]) || [];
+    const updated = current.filter(v=>v!==value);
+    // Note : si catKey==="ventes", une entrée orpheline peut rester dans
+    // venteReduitEffectif ; elle est inoffensive car ignorée dès que le type
+    // n'apparaît plus dans getCatOptions('ventes').
+    return setDoc(doc(db, `fermes/${FARM_ID}/config/categories`), { [catKey]: updated }, { merge:true });
+  };
+}
+
+function attachListeners(db){
+  Object.keys(SECTIONS).forEach((key) => {
+    onSnapshot(collection(db, `fermes/${FARM_ID}/${key}`), (snap) => {
+      state.data[key] = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      state.loaded[key] = true;
+      render();
+    }, (err) => console.error(key, err));
+  });
+}
+
+function attachPinsListener(db){
+  const ref = doc(db, `fermes/${FARM_ID}/config/acces`);
+  onSnapshot(ref, (snap) => {
+    if(snap.exists()){
+      state.pins = { ...DEFAULT_PINS, ...snap.data() };
+    } else {
+      state.pins = { ...DEFAULT_PINS };
+      setDoc(ref, DEFAULT_PINS).catch(console.error);
+    }
+    state.pinsLoaded = true;
+    render();
+  }, (err) => { console.error(err); state.pins = { ...DEFAULT_PINS }; state.pinsLoaded = true; render(); });
+}
+
+function attachCategoriesListener(db){
+  const ref = doc(db, `fermes/${FARM_ID}/config/categories`);
+  onSnapshot(ref, (snap) => {
+    const data = snap.exists() ? snap.data() : {};
+    state.customCats = {
+      ventes: data.ventes || [],
+      stock: data.stock || [],
+      depenses: data.depenses || [],
+      race: data.race || [],
+    };
+    state.venteReduitEffectif = data.venteReduitEffectif || {};
+    state.catsLoaded = true;
+    render();
+  }, (err) => { console.error(err); state.catsLoaded = true; render(); });
+}
+
+/* ---------- Helpers métier ---------- */
+function totalPoussins(){ return state.data.poulets.reduce((s,b)=>s+Number(b.nombrePoussins||0),0); }
+function totalPertes(){ return state.data.mortalite.reduce((s,m)=>s+Number(m.nombre||0),0); }
+/* Une vente compte comme une sortie de poulets vivants si son type de vente est
+   explicitement configuré comme tel (Paramètres > Produits & catégories), et non
+   plus par simple présence du mot "poulet" dans le nom du type — cette ancienne
+   méthode laissait passer les types personnalisés nommés autrement (ex : "Volaille",
+   "Sur pied") sans jamais les déduire de l'effectif. */
+function estVenteDePoulets(type){ return venteReduitEffectif(type); }
+function poulesVendues(items){ return (items||state.data.ventes).filter(v=>estVenteDePoulets(v.type)).reduce((s,v)=>s+Number(v.quantite||0),0); }
+function effectifActuel(){ return Math.max(0, totalPoussins() - totalPertes() - poulesVendues()); }
+function pertesRecentes(jours=7){
+  const seuil = new Date(); seuil.setDate(seuil.getDate()-jours);
+  return [...state.data.mortalite]
+    .filter(m=>m.date && new Date(m.date+"T00:00:00") >= seuil)
+    .sort((a,b)=> a.date<b.date?1:-1);
+}
+function totalDepenses(items){ return (items||state.data.depenses).reduce((s,d)=>s+Number(d.montant||0),0); }
+function totalVentes(items){ return (items||state.data.ventes).reduce((s,v)=>s+Number(v.montantRecu||0),0); }
+function totalAchatPoussins(){ return state.data.poulets.reduce((s,b)=>s+Number(b.prixAchat||0),0); }
+function coutAliment(items){ return (items||state.data.depenses).filter(d=>d.categorie==="Aliment").reduce((s,d)=>s+Number(d.montant||0),0); }
+function stockAlimentRestant(){
+  const items = state.data.stock.filter(s=>s.categorie==="Aliment");
+  const total = items.reduce((s,i)=>s+Number(i.quantite||0),0);
+  const unites = [...new Set(items.map(i=>i.unite).filter(Boolean))];
+  return { total, unite: unites.length===1 ? unites[0] : "unité" };
+}
+function stockBas(){ return state.data.stock.filter(s=>Number(s.quantite||0) <= Number(s.seuilAlerte||0)); }
+function prochainRappel(type){
+  const today = todayISO();
+  return state.data.calendrier.filter(c=>(!type||c.type===type) && c.date>=today).sort((a,b)=>a.date<b.date?-1:1)[0];
+}
+function tauxMortalite(){ const tp = totalPoussins(); return tp>0 ? (totalPertes()/tp*100) : 0; }
+/* ---------- Helpers métier : rapports par bande ---------- */
+function pourBande(section, bandeId){
+  return state.data[section].filter(i => (i.bandeId||"") === bandeId);
+}
+function statsBande(bande){
+  const dep = pourBande("depenses", bande.id);
+  const ven = pourBande("ventes", bande.id);
+  const mort = pourBande("mortalite", bande.id);
+  const poussins = Number(bande.nombrePoussins||0);
+  const pertes = mort.reduce((s,m)=>s+Number(m.nombre||0),0);
+  const vendus = poulesVendues(ven);
+  const effectif = Math.max(0, poussins - pertes - vendus);
+  const depensesTotal = totalDepenses(dep);
+  const ventesTotal = totalVentes(ven);
+  const benefice = ventesTotal - depensesTotal - Number(bande.prixAchat||0);
+  const mortalitePct = poussins>0 ? (pertes/poussins*100) : 0;
+  const sorties = pertes + vendus;
+  const coutProdParPoulet = sorties>0 ? Math.round((depensesTotal + Number(bande.prixAchat||0))/sorties) : 0;
+  return { bande, poussins, pertes, vendus, effectif, depensesTotal, ventesTotal, benefice, mortalitePct, coutProdParPoulet, dep, ven, mort };
+}
+function toutesLesStatsBandes(){
+  return state.data.poulets.map(statsBande);
+}
+/* Entrées (dépenses/ventes/pertes) non liées à une bande précise ("Toute la ferme") */
+function statsNonAttribuees(){
+  const dep = pourBande("depenses", "");
+  const ven = pourBande("ventes", "");
+  const mort = pourBande("mortalite", "");
+  return { depensesTotal: totalDepenses(dep), ventesTotal: totalVentes(ven), pertes: mort.reduce((s,m)=>s+Number(m.nombre||0),0), aDesEntrees: dep.length+ven.length+mort.length>0 };
+}
+function last6Months(){
+  const out = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()-i);
+    out.push(d.toISOString().slice(0,7));
+  }
+  return out;
+}
+
+/* ---------- Icônes UI (SVG inline) ---------- */
+const svgPlus = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>`;
+const svgTrash = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m3 0-1 14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2L4 6"/></svg>`;
+const svgX = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>`;
+const svgChev = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>`;
+const svgAlert = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4M12 17h.01M10.3 3.9 2 18a1.5 1.5 0 0 0 1.3 2.3h17.4A1.5 1.5 0 0 0 22 18L13.7 3.9a1.5 1.5 0 0 0-2.6 0Z"/></svg>`;
+const svgDownload = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>`;
+const svgMinus = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14"/></svg>`;
+
+/* ---------- Rendu ---------- */
+function navForRole(role){
+  if(role==="gerant") return NAV.filter(n=>n.key!=="rapports");
+  return NAV;
+}
+function canEdit(role){ return role==="gestionnaire" || role==="gerant"; }
+
+function render(){
+  const app = document.getElementById("app");
+
+  if(!state.authChecked){
+    app.innerHTML = `<div class="loading-wrap">Chargement d'AviKaolack…</div>`;
+    return;
+  }
+  if(!state.authUser){
+    renderFarmLogin();
+    return;
+  }
+  if(!state.pinsLoaded){
+    app.innerHTML = `<div class="loading-wrap">Chargement d'AviKaolack…</div>`;
+    return;
+  }
+  if(!state.role){
+    renderRoleGate();
+    return;
+  }
+
+  const role = state.role;
+  const nav = navForRole(role);
+  if(!nav.find(n=>n.key===state.tab)) state.tab = "dashboard";
+  const readOnly = role==="veterinaire";
+  const effectif = effectifActuel();
+
+  app.innerHTML = `
+    <div class="layout">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <div class="logo-badge">🐔</div>
+          <div>
+            <div class="serif" style="color:#fff; font-size:17px; font-weight:600; line-height:1.2;">AviKaolack</div>
+            <div style="color:var(--straw); font-size:10.5px; text-transform:uppercase; letter-spacing:0.05em;">Carnet d'élevage</div>
+          </div>
+        </div>
+        <div class="offline-pill ${state.online?'online':''}"><span class="offline-dot"></span>${state.online?'En ligne — synchronisé':'Hors-ligne — sera synchronisé'}</div>
+        <nav class="sidebar-nav">
+          ${nav.map(n => `
+            <button class="nav-item ${state.tab===n.key?'active':''}" data-nav="${n.key}">
+              <span class="icon-badge">${n.glyph}</span><span>${n.label}</span>
+              ${state.tab===n.key? `<span class="chev">${svgChev}</span>`:''}
+            </button>`).join("")}
+          ${(role==="gestionnaire"||role==="gerant") ? `<button class="nav-item" data-open-settings="1"><span class="icon-badge">⚙️</span><span>Paramètres</span></button>` : ""}
+        </nav>
+        <div class="sidebar-footer">
+          <div style="margin-bottom:6px;">${effectif} poulet${effectif>1?'s':''} en élevage</div>
+          <div style="display:flex; align-items:center; justify-content:space-between;">
+            <span>Rôle : <strong style="color:var(--straw);">${ROLE_LABELS[role]}</strong></span>
+            <button data-change-role="1" style="background:none; border:none; color:#D8CBB8; text-decoration:underline; font-size:11px; padding:0;">Changer</button>
+          </div>
+          <button data-farm-logout="1" style="background:none; border:none; color:#9A8977; text-decoration:underline; font-size:10.5px; padding:0; margin-top:8px;">Déconnecter le compte de la ferme</button>
+        </div>
+      </aside>
+
+      <div class="main">
+        <div class="mobile-header">
+          <div class="logo-badge" style="width:30px;height:30px;font-size:15px;">🐔</div>
+          <span class="serif" style="font-size:17px; font-weight:600;">AviKaolack</span>
+          <span class="offline-pill ${state.online?'online':''}" style="margin:0 0 0 auto;"><span class="offline-dot"></span>${state.online?'En ligne':'Hors-ligne'}</span>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 20px 6px;">
+          <nav class="mobile-tabs" style="padding:10px 0 14px;">
+            ${nav.map(n => `<button class="mobile-tab ${state.tab===n.key?'active':''}" data-nav="${n.key}">${n.glyph} ${n.label}</button>`).join("")}
+          </nav>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; padding:0 20px 10px;" class="mobile-only-add">
+          <span style="font-size:12px; color:var(--muted);">Rôle : <strong>${ROLE_LABELS[role]}</strong></span>
+          <button data-change-role="1" class="ghost-btn" style="padding:5px 12px; font-size:12px;">Changer de rôle</button>
+        </div>
+
+        <div class="desktop-header">
+          <div>
+            <h1 class="serif" style="font-size:24px; font-weight:600; margin:0;">${nav.find(n=>n.key===state.tab)?.label}</h1>
+            <p>${new Date().toLocaleDateString("fr-FR",{weekday:"long",day:"numeric",month:"long",year:"numeric"})}</p>
+          </div>
+          ${SECTIONS[state.tab] && !readOnly ? `<button class="add-btn" data-open-modal="${state.tab}">${svgPlus} Ajouter</button>` : ""}
+        </div>
+
+        <main class="content">
+          ${readOnly ? `<div class="alert-banner" style="background:#6B8F7114; border-color:#6B8F7140; color:var(--sage-deep);">👁️ Mode consultation — le rôle Vétérinaire permet de tout voir mais rien modifier.</div>` : ""}
+          ${SECTIONS[state.tab] && !readOnly ? `
+            <div class="mobile-only-add">
+              <button class="add-btn" style="display:flex;" data-open-modal="${state.tab}">${svgPlus} Ajouter</button>
+            </div>` : ""}
+          ${state.tab==="dashboard" ? renderDashboard() : state.tab==="rapports" ? renderRapports() : renderSection(state.tab)}
+        </main>
+      </div>
+    </div>
+    ${state.modal ? renderModal(state.modal.section, state.modal.item) : ""}
+    ${state.consumeModal ? renderConsumeModal(state.data.stock.find(s=>s.id===state.consumeModal)) : ""}
+    ${state.confirmDelete ? renderConfirm() : ""}
+    ${state.settingsOpen ? renderSettings() : ""}
+  `;
+  attachEvents();
+}
+
+function renderFarmLogin(){
+  const app = document.getElementById("app");
+  app.innerHTML = `
+    <div class="setup-wrap" style="text-align:center; max-width:380px;">
+      <div style="font-size:34px; margin-bottom:6px;">🐔</div>
+      <h1 class="serif">AviKaolack</h1>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:22px;">Connectez-vous avec le compte de la ferme pour accéder aux données.</p>
+      <form id="farm-login-form" style="text-align:left;">
+        <div class="field">
+          <label>Adresse e-mail</label>
+          <input type="email" id="farm-login-email" autocomplete="username" required />
+        </div>
+        <div class="field">
+          <label>Mot de passe</label>
+          <input type="password" id="farm-login-password" autocomplete="current-password" required />
+        </div>
+        ${state.authError ? `<p style="color:var(--rust); font-size:13px; margin:-4px 0 14px;">${esc(state.authError)}</p>` : ""}
+        <button type="submit" class="submit-btn" ${state.authLoading?'disabled':''}>${state.authLoading?'Connexion…':'Se connecter'}</button>
+      </form>
+      <p style="color:var(--muted); font-size:12px; margin-top:18px;">Ce compte est différent des codes PIN par rôle : il protège l'accès à la base de données. Demandez-le au Gestionnaire si vous ne l'avez pas.</p>
+    </div>`;
+  const form = document.getElementById("farm-login-form");
+  form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const email = document.getElementById("farm-login-email").value;
+    const password = document.getElementById("farm-login-password").value;
+    window.__farmLogin(email, password);
+  });
+}
+
+function renderRoleGate(){
+  const app = document.getElementById("app");
+  if(state.roleGateStep==="select"){
+    app.innerHTML = `
+      <div class="setup-wrap" style="text-align:center;">
+        <div style="font-size:34px; margin-bottom:6px;">🐔</div>
+        <h1 class="serif">AviKaolack</h1>
+        <p style="color:var(--muted); font-size:14px; margin-bottom:26px;">Qui se connecte aujourd'hui ?</p>
+        <div style="display:flex; flex-direction:column; gap:10px; max-width:320px; margin:0 auto;">
+          ${Object.keys(ROLE_LABELS).map(r=>`
+            <button data-choose-role="${r}" class="add-btn" style="justify-content:center; padding:14px;">${ROLE_LABELS[r]}</button>
+          `).join("")}
+        </div>
+      </div>`;
+    document.querySelectorAll("[data-choose-role]").forEach(el=>{
+      el.addEventListener("click", ()=>{
+        state.roleGateChoice = el.dataset.chooseRole;
+        state.roleGateStep = "pin";
+        state.pinInput = "";
+        state.pinError = false;
+        renderRoleGate();
+      });
+    });
+    return;
+  }
+
+  // step === "pin"
+  const dots = Array.from({length:4}).map((_,i)=> `<span style="width:14px; height:14px; border-radius:50%; display:inline-block; margin:0 6px; background:${i<state.pinInput.length?'var(--barn)':'var(--line)'};"></span>`).join("");
+  const keys = ["1","2","3","4","5","6","7","8","9","","0","←"];
+  app.innerHTML = `
+    <div class="setup-wrap" style="text-align:center;">
+      <p style="color:var(--muted); font-size:13px; margin-bottom:2px;">Code d'accès —</p>
+      <h1 class="serif" style="margin-bottom:16px;">${ROLE_LABELS[state.roleGateChoice]}</h1>
+      <div style="margin-bottom:10px;">${dots}</div>
+      ${state.pinError ? `<p style="color:var(--rust); font-size:13px; margin-bottom:10px;">Code incorrect, réessayez.</p>` : ""}
+      <div style="display:grid; grid-template-columns:repeat(3,64px); gap:10px; justify-content:center; margin:14px auto;">
+        ${keys.map(k=> k==="" ? `<div></div>` : `<button data-pinkey="${k}" style="height:64px; border-radius:14px; border:1px solid var(--line); background:var(--paper); font-size:20px; font-weight:600; color:var(--ink);">${k}</button>`).join("")}
+      </div>
+      <button data-pin-back="1" class="btn-secondary" style="max-width:200px; margin:10px auto 0;">Retour</button>
+    </div>`;
+  document.querySelectorAll("[data-pinkey]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const k = el.dataset.pinkey;
+      if(k==="←"){ state.pinInput = state.pinInput.slice(0,-1); state.pinError=false; renderRoleGate(); return; }
+      if(state.pinInput.length>=4) return;
+      state.pinInput += k;
+      if(state.pinInput.length===4){
+        const expected = (state.pins && state.pins[state.roleGateChoice]) || DEFAULT_PINS[state.roleGateChoice];
+        if(state.pinInput===expected){
+          state.role = state.roleGateChoice;
+          localStorage.setItem("avikaolack_role", state.role);
+          state.roleGateStep = "select"; state.roleGateChoice = null; state.pinInput = "";
+          state.tab = "dashboard";
+          render();
+        } else {
+          state.pinError = true; state.pinInput = "";
+          renderRoleGate();
+        }
+        return;
+      }
+      renderRoleGate();
+    });
+  });
+  const back = document.querySelector("[data-pin-back]");
+  if(back) back.addEventListener("click", ()=>{ state.roleGateStep="select"; state.pinError=false; renderRoleGate(); });
+}
+
+function renderSettings(){
+  if(!state.settingsDraft) state.settingsDraft = { ...(state.pins||DEFAULT_PINS) };
+  const isGestionnaire = state.role==="gestionnaire";
+  let tab = state.settingsTab || (isGestionnaire ? "codes" : "produits");
+  if(!isGestionnaire) tab = "produits"; // le Gérant ne gère que les produits, pas les codes d'accès
+  return `
+    <div class="overlay" data-overlay-close>
+      <div class="modal" style="max-width:420px;">
+        <div class="modal-head">
+          <h3 class="serif" style="margin:0; font-size:18px; font-weight:600;">Paramètres</h3>
+          <button type="button" class="modal-close" data-close-settings>${svgX}</button>
+        </div>
+        ${isGestionnaire ? `
+        <div class="settings-tabs">
+          <button type="button" class="settings-tab ${tab==='codes'?'active':''}" data-settings-tab="codes">🔑 Codes d'accès</button>
+          <button type="button" class="settings-tab ${tab==='produits'?'active':''}" data-settings-tab="produits">🧺 Produits & catégories</button>
+        </div>` : `
+        <p style="color:var(--muted); font-size:12.5px; margin:-6px 0 14px;">Vous pouvez ajouter des produits et catégories. Les codes d'accès sont réservés au Gestionnaire.</p>`}
+        ${tab==="codes" && isGestionnaire ? renderSettingsCodes() : renderSettingsProduits()}
+      </div>
+    </div>`;
+}
+
+function renderSettingsCodes(){
+  return `
+    <p style="color:var(--muted); font-size:12.5px; margin:2px 0 14px;">Ces codes sont un simple filtre d'usage entre membres de confiance, pas un système de sécurité bancaire.</p>
+    ${Object.keys(ROLE_LABELS).map(r=>`
+      <div class="field">
+        <label>${ROLE_LABELS[r]}</label>
+        <input data-pin-field="${r}" type="text" inputmode="numeric" maxlength="4" pattern="[0-9]{4}" value="${esc(state.settingsDraft[r])}" />
+      </div>`).join("")}
+    <button class="submit-btn" id="btn-save-pins">Enregistrer les codes</button>`;
+}
+
+function renderSettingsProduits(){
+  return `
+    <p style="color:var(--muted); font-size:12.5px; margin:2px 0 14px;">
+      Ajoutez ici vos propres produits et catégories (ex : une nouvelle variété de poulet, un nouvel article de stock…).
+      Ils apparaîtront automatiquement dans les listes déroulantes des formulaires.
+    </p>
+    ${Object.keys(CATEGORY_DEFS).map(key => renderCatBlock(key)).join("")}
+  `;
+}
+
+function renderCatBlock(key){
+  const def = CATEGORY_DEFS[key];
+  const custom = (state.customCats && state.customCats[key]) || [];
+  const isVentes = key === "ventes";
+
+  const chipFor = (label, isDefault) => {
+    if(!isVentes){
+      return isDefault
+        ? `<span class="chip chip-default">${esc(label)}</span>`
+        : `<span class="chip">${esc(label)} <button type="button" class="chip-x" data-remove-cat="${key}" data-remove-cat-value="${esc(label)}">${svgX}</button></span>`;
+    }
+    const reduit = venteReduitEffectif(label);
+    const notConfigured = venteReduitEffectifConfig(label) === undefined;
+    const toggleTitle = notConfigured
+      ? "Non configuré — cliquez pour choisir"
+      : (reduit ? "Réduit le nombre de poulets — cliquez pour changer" : "Ne réduit pas le nombre de poulets — cliquez pour changer");
+    const icon = notConfigured ? "❔" : (reduit ? "🐤" : "—");
+    return `<span class="chip ${isDefault?'chip-default':''}" style="${notConfigured?'border-color:var(--rust);':''}">
+        <button type="button" class="chip-x" style="width:auto; padding:2px 6px; background:${reduit?'#6B8F7133':'var(--line)'};" data-toggle-vente-reduit="${esc(label)}" data-toggle-vente-current="${reduit?'1':'0'}" title="${toggleTitle}">${icon}</button>
+        ${esc(label)}
+        ${isDefault ? "" : `<button type="button" class="chip-x" data-remove-cat="${key}" data-remove-cat-value="${esc(label)}">${svgX}</button>`}
+      </span>`;
+  };
+
+  const nonConfigures = isVentes ? typesVenteNonConfigures() : [];
+
+  return `
+    <div class="cat-block">
+      <label>${def.glyph} ${def.label}</label>
+      ${isVentes ? `<p style="color:var(--muted); font-size:11.5px; margin:-4px 0 8px;">🐤 = cette vente réduit le nombre de poulets en élevage. Cliquez sur l'icône pour changer.</p>` : ""}
+      ${nonConfigures.length ? `<div class="alert-banner" style="margin-bottom:10px;">${svgAlert} <div><strong>À configurer :</strong> ${nonConfigures.map(t=>esc(t)).join(", ")} — cliquez sur ❔ ci-dessous.</div></div>` : ""}
+      <div class="cat-chips">
+        ${def.defaults.map(d=>chipFor(d, true)).join("")}
+        ${custom.map(c=>chipFor(c, false)).join("")}
+      </div>
+      <div class="cat-add-row" style="${isVentes ? 'flex-wrap:wrap;' : ''}">
+        <input type="text" id="catinput-${key}" placeholder="${def.placeholder}" data-new-cat-input="${key}" />
+        ${isVentes ? `<label style="display:flex; align-items:center; gap:5px; font-size:12px; color:var(--muted); white-space:nowrap;">
+          <input type="checkbox" id="catreduit-${key}" checked style="width:15px; height:15px; margin:0;" />
+          Réduit le nb. de poulets
+        </label>` : ""}
+        <button type="button" class="ghost-btn" data-add-cat="${key}">${svgPlus} Ajouter</button>
+      </div>
+    </div>`;
+}
+
+function renderDashboard(){
+  if(state.data.poulets.length===0){
+    return `
+      <div class="card empty">
+        <div class="glyph">🐔</div>
+        <h2 class="serif">Bienvenue sur AviKaolack</h2>
+        <p>Commencez par enregistrer votre première bande de poulets pour activer le suivi des dépenses, ventes, stock et rapports.</p>
+        <button class="add-btn" style="display:inline-flex;" data-nav="poulets">${svgPlus} Ajouter mes poulets</button>
+      </div>`;
+  }
+  const today = todayISO(), thisMonth = monthKey(today);
+  const effectif = effectifActuel();
+  const pertesTotal = totalPertes();
+  const depMois = state.data.depenses.filter(d=>monthKey(d.date)===thisMonth);
+  const venMois = state.data.ventes.filter(v=>monthKey(v.date)===thisMonth);
+  const depensesMois = totalDepenses(depMois);
+  const revenusMois = totalVentes(venMois);
+  const beneficeMois = revenusMois - depensesMois;
+  const stockAliment = stockAlimentRestant();
+  const bas = stockBas();
+  const pertesRecent = pertesRecentes(7);
+  const rappelVaccin = prochainRappel("Vaccin");
+  const rappelTout = prochainRappel();
+  const typesNonConfigures = typesVenteNonConfigures();
+
+  return `
+    ${typesNonConfigures.length>0 ? `<div class="alert-banner">${svgAlert} <div><strong>Nombre de poulets peut-être inexact :</strong> le type de vente ${typesNonConfigures.map(t=>`« ${esc(t)} »`).join(", ")} n'est pas configuré — précisez dans Paramètres > Produits s'il réduit le nombre de poulets en élevage.</div></div>` : ""}
+    ${pertesRecent.length>0 ? `<div class="alert-banner">${svgAlert} <div><strong>Perte récente :</strong> ${pertesRecent.reduce((s,m)=>s+Number(m.nombre||0),0)} poulet${pertesRecent.reduce((s,m)=>s+Number(m.nombre||0),0)>1?'s':''} perdu${pertesRecent.reduce((s,m)=>s+Number(m.nombre||0),0)>1?'s':''} ces 7 derniers jours (${pertesRecent.map(m=>fmtDate(m.date)+(m.race?" — "+esc(m.race):"")+(m.cause?" — "+esc(m.cause):"")).join(", ")}).</div></div>` : ""}
+    ${bas.length>0 ? `<div class="alert-banner">${svgAlert} <div><strong>Stock faible :</strong> ${bas.map(b=>esc(b.nom)).join(", ")}. Pensez à réapprovisionner.</div></div>` : ""}
+    <div class="stat-grid">
+      ${statCard("Nombre de poulets", effectif, "var(--barn-light)", "🐥")}
+      ${statCard("Poulets morts", pertesTotal, "var(--rust)", "💀", "Depuis le début")}
+      ${statCard("Dépenses du mois", fmtMoney(depensesMois), "var(--rust)", "💸", null, true)}
+      ${statCard("Revenus du mois", fmtMoney(revenusMois), "var(--sage-deep)", "💵", null, true)}
+      ${statCard("Bénéfice du mois", fmtMoney(beneficeMois), beneficeMois>=0?"var(--sage-deep)":"var(--rust)", "📈", null, true)}
+      ${statCard("Stock d'aliment", `${stockAliment.total} ${stockAliment.unite}${stockAliment.total>1?'s':''}`, "var(--straw-deep)", "🌽")}
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h3 class="serif" style="margin:0 0 10px; font-weight:600;">Vos bandes</h3>
+        ${state.data.poulets.map(b=>`
+          <div class="row-item">
+            <div>
+              <div style="font-weight:600;">${esc(b.nom)}</div>
+              <div style="color:var(--muted); font-size:12px;">${esc(b.race)||"—"} · ${ageJours(b.dateArrivee)} jours</div>
+            </div>
+            <div style="color:var(--barn-light); font-weight:600;">${b.nombrePoussins} poussins</div>
+          </div>`).join("")}
+      </div>
+      <div class="card">
+        <h3 class="serif" style="margin:0 0 10px; font-weight:600; display:flex; align-items:center; gap:7px;">
+          <span style="color:var(--sage-deep); display:flex;">📅</span> Prochain rappel
+        </h3>
+        ${!rappelTout ? `<p style="color:var(--muted); font-size:14px; margin:0;">Aucun rappel programmé.</p>` : `
+          <div class="row-item">
+            <div><span style="font-weight:600;">${esc(rappelTout.type)}</span><span style="color:var(--muted);"> — ${esc(rappelTout.description||"")}</span></div>
+            <span class="badge ${daysUntil(rappelTout.date)<0?'badge-late':daysUntil(rappelTout.date)<=3?'badge-soon':'badge-ok'}">${daysUntil(rappelTout.date)<0?'En retard':daysUntil(rappelTout.date)===0?"Aujourd'hui":`dans ${daysUntil(rappelTout.date)} j`}</span>
+          </div>`}
+        ${rappelVaccin ? `<p style="color:var(--muted); font-size:12.5px; margin:10px 0 0;">⚠️ Vaccination prévue ${daysUntil(rappelVaccin.date)<=0?"aujourd'hui":`dans ${daysUntil(rappelVaccin.date)} jour${daysUntil(rappelVaccin.date)>1?'s':''}`}.</p>` : ""}
+      </div>
+    </div>
+  `;
+}
+
+function statCard(label, value, color, glyph, sub, small){
+  return `
+    <div class="stat-card">
+      <div class="stat-top">
+        <span class="stat-label">${label}</span>
+        <div class="stat-icon" style="background:${color}22;">${glyph}</div>
+      </div>
+      <div class="serif stat-value" style="color:${color}; font-size:${small?'19px':'24px'};">${value}</div>
+      ${sub ? `<div class="stat-sub">${sub}</div>` : ""}
+    </div>`;
+}
+
+function renderSection(section){
+  const cfg = SECTIONS[section];
+  let items = [...state.data[section]].sort((a,b)=> (a.date<b.date?1:-1));
+
+  if(state.data[section].length===0){
+    return `
+      <div class="card empty">
+        <div class="glyph">${cfg.glyph}</div>
+        <h2 class="serif" style="font-size:18px;">Aucune entrée pour l'instant</h2>
+        <p>Ajoutez ${cfg.singular} pour commencer le suivi.</p>
+        <button class="add-btn" style="display:inline-flex;" data-open-modal="${section}">${svgPlus} Ajouter ${cfg.singular}</button>
+      </div>`;
+  }
+
+  const readOnly = state.role==="veterinaire";
+  let extra = "";
+  if(section==="stock"){
+    const bas = stockBas();
+    if(bas.length>0) extra = `<div class="alert-banner">${svgAlert} <div><strong>Stock faible :</strong> ${bas.map(b=>esc(b.nom)).join(", ")}.</div></div>`;
+  }
+  if(section==="poulets" && !readOnly){
+    extra = `<div class="mobile-only-add" style="justify-content:flex-start; display:flex;"><button class="ghost-btn" data-open-modal="mortalite">💀 Enregistrer une perte</button></div>`;
+  }
+
+  return `${extra}${renderSummary(section, items)}
+    ${items.map(item => renderRow(section, item, readOnly)).join("")}`;
+}
+
+function renderSummary(section, items){
+  let parts = [];
+  if(section==="depenses"){
+    parts = [["Total dépenses", fmtMoney(totalDepenses(items))]];
+  } else if(section==="ventes"){
+    parts = [["Total encaissé", fmtMoney(totalVentes(items))], ["Poulets vendus", poulesVendues(items)]];
+  } else if(section==="poulets"){
+    parts = [["Poussins achetés (total)", totalPoussins()], ["Effectif actuel", effectifActuel()]];
+  } else if(section==="mortalite"){
+    const total = items.reduce((s,m)=>s+Number(m.nombre||0),0);
+    const parRace = {};
+    items.forEach(m=>{ const r = m.race || "Non précisé"; parRace[r] = (parRace[r]||0) + Number(m.nombre||0); });
+    const topRace = Object.entries(parRace).sort((a,b)=>b[1]-a[1])[0];
+    parts = [["Total pertes", total]];
+    if(topRace) parts.push(["Race la plus touchée", `${topRace[0]} (${topRace[1]})`]);
+  } else { return ""; }
+  return `<div class="card" style="display:flex; gap:22px; flex-wrap:wrap; margin-bottom:12px; padding:14px 18px;">
+    ${parts.map(([label,val])=>`
+      <div><div style="color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.03em; font-weight:600;">${label}</div>
+      <div class="serif" style="font-size:17px; font-weight:600; margin-top:2px;">${val}</div></div>`).join("")}
+  </div>`;
+}
+
+/* Construit la ligne "Ajouté par… / Modifié par…" affichée sous chaque entrée.
+   Reste discret : si l'entrée date d'avant l'ajout de cette fonctionnalité,
+   les champs sont absents et rien ne s'affiche (pas de "inconnu" partout). */
+function traceLine(item){
+  const parts = [];
+  if(item.creePar){
+    const when = fmtDateTime(item.creeLe);
+    parts.push(`Ajouté par ${roleLabelSafe(item.creePar)}${when ? " le "+when : ""}`);
+  }
+  if(item.modifiePar){
+    const when = fmtDateTime(item.modifieLe);
+    parts.push(`Modifié par ${roleLabelSafe(item.modifiePar)}${when ? " le "+when : ""}`);
+  }
+  return parts.join(" · ");
+}
+
+function renderRow(section, item, readOnly){
+  const cfg = SECTIONS[section];
+  let title, subtitle, meta, badge = "";
+  switch(section){
+    case "poulets":
+      title = esc(item.nom); subtitle = `${esc(item.race)} · ${ageJours(item.dateArrivee)} jours`;
+      meta = `${item.nombrePoussins} poussins · ${fmtMoney(item.prixAchat)}`; break;
+    case "depenses":
+      title = fmtMoney(item.montant); subtitle = esc(item.categorie) + (item.note? " — "+esc(item.note):"") + (bandeNom(item.bandeId)? " · 🐤 "+esc(bandeNom(item.bandeId)):"");
+      meta = fmtDate(item.date); break;
+    case "ventes":
+      title = `+${fmtMoney(item.montantRecu)}`; subtitle = `${esc(item.type)} (${item.quantite})${item.client? " — "+esc(item.client):""}` + (bandeNom(item.bandeId)? " · 🐤 "+esc(bandeNom(item.bandeId)):"");
+      meta = fmtDate(item.date); break;
+    case "stock":
+      const bas = Number(item.quantite||0) <= Number(item.seuilAlerte||0);
+      title = esc(item.nom); subtitle = `${item.quantite} ${esc(item.unite)} · ${esc(item.categorie)}`;
+      meta = ""; badge = bas ? `<span class="badge badge-late" style="margin-right:8px;">Stock faible</span>` : "";
+      break;
+    case "calendrier":
+      const dleft = daysUntil(item.date);
+      title = esc(item.type); subtitle = esc(item.description||"") || fmtDate(item.date);
+      meta = fmtDate(item.date);
+      badge = `<span class="badge ${dleft<0?'badge-late':dleft<=3?'badge-soon':'badge-ok'}" style="margin-right:8px;">${dleft<0?'En retard':dleft===0?"Aujourd'hui":`dans ${dleft} j`}</span>`;
+      break;
+    case "mortalite":
+      title = `${item.nombre} poulet${item.nombre>1?'s':''} perdu${item.nombre>1?'s':''}`;
+      subtitle = (item.race? esc(item.race)+" — ":"") + esc(item.cause||"") + (bandeNom(item.bandeId)? " · 🐤 "+esc(bandeNom(item.bandeId)):"");
+      meta = fmtDate(item.date); break;
+  }
+  const trace = traceLine(item);
+  return `
+    <div class="list-row">
+      <div ${readOnly?'':`data-edit-section="${section}" data-edit-id="${item.id}"`} style="${readOnly?'':'cursor:pointer;'} display:flex; align-items:center; gap:12px; flex:1; min-width:0;">
+        <div class="row-badge" style="background:${cfg.color}22;">${cfg.glyph}</div>
+        <div class="row-body">
+          <div class="row-title">${title}</div>
+          <div class="row-sub">${subtitle}</div>
+          ${trace ? `<div class="row-trace">${trace}</div>` : ""}
+        </div>
+      </div>
+      ${badge}
+      <div class="row-meta">${meta}</div>
+      ${section==="stock" && !readOnly ? `<button type="button" class="row-del" data-consume-id="${item.id}" title="Enregistrer une consommation" style="color:var(--sage-deep);">${svgMinus}</button>` : ""}
+      ${readOnly ? "" : `<span style="color:var(--muted); opacity:0.6; display:flex;">${svgChev}</span>
+      <button class="row-del" data-delete-section="${section}" data-delete-id="${item.id}" style="color:var(--rust);">${svgTrash}</button>`}
+    </div>`;
+}
+
+function renderRapports(){
+  if(state.data.poulets.length===0){
+    return `<div class="card empty"><div class="glyph">📊</div><h2 class="serif" style="font-size:18px;">Pas encore de données</h2><p>Ajoutez vos poulets, dépenses et ventes pour générer des rapports.</p></div>`;
+  }
+  const selectorHtml = `
+    <div class="card no-print" style="display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px; padding:12px 16px;">
+      <label style="color:var(--muted); font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.03em; white-space:nowrap;">Bande</label>
+      <select id="rapport-bande-select" style="flex:1; min-width:180px; padding:9px 12px; border-radius:10px; border:1px solid var(--line); background:var(--cream); font-size:14px; color:var(--ink);">
+        <option value="" ${state.rapportBandeId===""?"selected":""}>Toutes les bandes (ferme entière)</option>
+        ${[...state.data.poulets].sort((a,b)=>(a.nom||"").localeCompare(b.nom||"")).map(b=>`<option value="${b.id}" ${state.rapportBandeId===b.id?"selected":""}>${esc(b.nom)}</option>`).join("")}
+      </select>
+    </div>`;
+
+  const body = state.rapportBandeId ? renderRapportBande(state.rapportBandeId) : renderRapportGlobal();
+
+  return `${selectorHtml}<div id="rapport-print">${body}</div>
+    <button class="add-btn no-print" style="margin-top:16px;" id="btn-export-pdf">${svgDownload} Exporter en PDF</button>`;
+}
+
+function renderRapportGlobal(){
+  const months = last6Months();
+  const depParMois = months.map(mk => totalDepenses(state.data.depenses.filter(d=>monthKey(d.date)===mk)));
+  const revParMois = months.map(mk => totalVentes(state.data.ventes.filter(v=>monthKey(v.date)===mk)));
+  const beneficeTotal = totalVentes() - totalDepenses();
+  const chiffreAffaires = totalVentes();
+  const depensesTotal = totalDepenses();
+  const coutAlim = coutAliment();
+  const effectif = effectifActuel();
+  const coutProdParPoulet = effectif>0 ? Math.round((depensesTotal + totalAchatPoussins())/effectif) : 0;
+  const mortalitePct = tauxMortalite();
+
+  return `
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+        ${statCard("Poulets vendus", poulesVendues(), "var(--sage-deep)", "🐔")}
+        ${statCard("Taux de mortalité", mortalitePct.toFixed(1)+" %", mortalitePct>10?"var(--rust)":"var(--sage-deep)", "💀")}
+        ${statCard("Chiffre d'affaires", fmtMoney(chiffreAffaires), "var(--sage-deep)", "💵", null, true)}
+        ${statCard("Bénéfice net", fmtMoney(beneficeTotal), beneficeTotal>=0?"var(--sage-deep)":"var(--rust)", "📈", null, true)}
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="serif" style="margin:0 0 2px; font-weight:600;">Dépenses par mois</h3>
+          <p style="color:var(--muted); font-size:12px; margin:0 0 10px;">6 derniers mois</p>
+          <div class="chart-box">${barChart(months, depParMois, "var(--rust)")}</div>
+        </div>
+        <div class="card">
+          <h3 class="serif" style="margin:0 0 2px; font-weight:600;">Revenus par mois</h3>
+          <p style="color:var(--muted); font-size:12px; margin:0 0 10px;">6 derniers mois</p>
+          <div class="chart-box">${barChart(months, revParMois, "var(--sage-deep)")}</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 class="serif" style="margin:0 0 12px; font-weight:600;">Résumé intelligent</h3>
+        <div class="row-item"><span>Coût de production par poulet</span><strong>${fmtMoney(coutProdParPoulet)}</strong></div>
+        <div class="row-item"><span>Coût total de l'alimentation</span><strong>${fmtMoney(coutAlim)}</strong></div>
+        <div class="row-item"><span>Dépenses totales</span><strong>${fmtMoney(depensesTotal)}</strong></div>
+        <div class="row-item"><span>Chiffre d'affaires total</span><strong>${fmtMoney(chiffreAffaires)}</strong></div>
+        <div class="row-item"><span>Bénéfice net</span><strong style="color:${beneficeTotal>=0?'var(--sage-deep)':'var(--rust)'};">${fmtMoney(beneficeTotal)}</strong></div>
+      </div>
+
+      ${renderComparatifBandes()}
+  `;
+}
+
+/* Tableau comparatif : une ligne par bande, pour repérer d'un coup d'œil
+   la bande la plus rentable et la plus fragile (mortalité). */
+function renderComparatifBandes(){
+  const stats = toutesLesStatsBandes();
+  if(stats.length===0) return "";
+  const nonAttrib = statsNonAttribuees();
+  const meilleure = [...stats].sort((a,b)=>b.benefice-a.benefice)[0];
+  const plusFragile = [...stats].filter(s=>s.poussins>0).sort((a,b)=>b.mortalitePct-a.mortalitePct)[0];
+
+  return `
+    <div class="card" style="margin-top:14px;">
+      <h3 class="serif" style="margin:0 0 4px; font-weight:600;">Comparatif par bande</h3>
+      <p style="color:var(--muted); font-size:12px; margin:0 0 12px;">
+        ${meilleure ? `Bande la plus rentable : <strong style="color:var(--ink);">${esc(meilleure.bande.nom)}</strong> (${fmtMoney(meilleure.benefice)}).` : ""}
+        ${plusFragile && plusFragile.mortalitePct>0 ? ` Bande la plus fragile : <strong style="color:var(--ink);">${esc(plusFragile.bande.nom)}</strong> (${plusFragile.mortalitePct.toFixed(1)} % de mortalité).` : ""}
+      </p>
+      <div style="overflow-x:auto;">
+        <table style="width:100%; border-collapse:collapse; font-size:13px; white-space:nowrap;">
+          <thead>
+            <tr style="text-align:left; color:var(--muted); font-size:11px; text-transform:uppercase; letter-spacing:0.03em;">
+              <th style="padding:6px 10px 6px 0;">Bande</th>
+              <th style="padding:6px 10px;">Effectif</th>
+              <th style="padding:6px 10px;">Mortalité</th>
+              <th style="padding:6px 10px;">Dépenses</th>
+              <th style="padding:6px 10px;">Ventes</th>
+              <th style="padding:6px 10px;">Bénéfice</th>
+              <th style="padding:6px 0;">Coût/poulet</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${stats.map(s=>`
+              <tr style="border-top:1px solid var(--line); cursor:pointer;" data-select-rapport-bande="${s.bande.id}">
+                <td style="padding:8px 10px 8px 0; font-weight:600;">${esc(s.bande.nom)}</td>
+                <td style="padding:8px 10px;">${s.effectif} / ${s.poussins}</td>
+                <td style="padding:8px 10px; color:${s.mortalitePct>10?'var(--rust)':'var(--ink)'};">${s.mortalitePct.toFixed(1)} %</td>
+                <td style="padding:8px 10px;">${fmtMoney(s.depensesTotal)}</td>
+                <td style="padding:8px 10px;">${fmtMoney(s.ventesTotal)}</td>
+                <td style="padding:8px 10px; color:${s.benefice>=0?'var(--sage-deep)':'var(--rust)'}; font-weight:600;">${fmtMoney(s.benefice)}</td>
+                <td style="padding:8px 0;">${fmtMoney(s.coutProdParPoulet)}</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+      ${nonAttrib.aDesEntrees ? `<p style="color:var(--muted); font-size:12px; margin:12px 0 0;">Non attribuées à une bande précise : ${fmtMoney(nonAttrib.depensesTotal)} de dépenses, ${fmtMoney(nonAttrib.ventesTotal)} de ventes, ${nonAttrib.pertes} perte${nonAttrib.pertes>1?'s':''}. Précisez la bande sur ces entrées pour un comparatif complet.</p>` : ""}
+    </div>`;
+}
+
+function renderRapportBande(bandeId){
+  const bande = state.data.poulets.find(b=>b.id===bandeId);
+  if(!bande) return `<div class="card empty"><p>Bande introuvable.</p></div>`;
+  const s = statsBande(bande);
+  const months = last6Months();
+  const depParMois = months.map(mk => totalDepenses(s.dep.filter(d=>monthKey(d.date)===mk)));
+  const revParMois = months.map(mk => totalVentes(s.ven.filter(v=>monthKey(v.date)===mk)));
+
+  return `
+      <div class="card" style="margin-bottom:14px; padding:14px 18px;">
+        <h3 class="serif" style="margin:0 0 2px; font-weight:600;">${esc(bande.nom)}</h3>
+        <p style="color:var(--muted); font-size:13px; margin:0;">${esc(bande.race)||"—"} · arrivée le ${fmtDate(bande.dateArrivee)} · ${ageJours(bande.dateArrivee)} jours · ${s.poussins} poussins au départ</p>
+      </div>
+
+      <div class="stat-grid" style="grid-template-columns:1fr 1fr;">
+        ${statCard("Effectif actuel", s.effectif, "var(--barn-light)", "🐥")}
+        ${statCard("Taux de mortalité", s.mortalitePct.toFixed(1)+" %", s.mortalitePct>10?"var(--rust)":"var(--sage-deep)", "💀")}
+        ${statCard("Ventes de cette bande", fmtMoney(s.ventesTotal), "var(--sage-deep)", "💵", null, true)}
+        ${statCard("Bénéfice net", fmtMoney(s.benefice), s.benefice>=0?"var(--sage-deep)":"var(--rust)", "📈", null, true)}
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <h3 class="serif" style="margin:0 0 2px; font-weight:600;">Dépenses par mois</h3>
+          <p style="color:var(--muted); font-size:12px; margin:0 0 10px;">6 derniers mois — cette bande</p>
+          <div class="chart-box">${barChart(months, depParMois, "var(--rust)")}</div>
+        </div>
+        <div class="card">
+          <h3 class="serif" style="margin:0 0 2px; font-weight:600;">Revenus par mois</h3>
+          <p style="color:var(--muted); font-size:12px; margin:0 0 10px;">6 derniers mois — cette bande</p>
+          <div class="chart-box">${barChart(months, revParMois, "var(--sage-deep)")}</div>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:14px;">
+        <h3 class="serif" style="margin:0 0 12px; font-weight:600;">Résumé intelligent — ${esc(bande.nom)}</h3>
+        <div class="row-item"><span>Prix d'achat des poussins</span><strong>${fmtMoney(bande.prixAchat)}</strong></div>
+        <div class="row-item"><span>Coût de production par poulet</span><strong>${fmtMoney(s.coutProdParPoulet)}</strong></div>
+        <div class="row-item"><span>Dépenses de cette bande</span><strong>${fmtMoney(s.depensesTotal)}</strong></div>
+        <div class="row-item"><span>Poulets perdus</span><strong>${s.pertes}</strong></div>
+        <div class="row-item"><span>Poulets vendus</span><strong>${s.vendus}</strong></div>
+        <div class="row-item"><span>Bénéfice net</span><strong style="color:${s.benefice>=0?'var(--sage-deep)':'var(--rust)'};">${fmtMoney(s.benefice)}</strong></div>
+      </div>
+  `;
+}
+
+function barChart(months, values, color){
+  const w=560,h=170,pad=8;
+  const max = Math.max(1, ...values);
+  const barW = (w-pad*2)/months.length*0.6;
+  const gap = (w-pad*2)/months.length;
+  const bars = months.map((mk,i)=>{
+    const bh = (values[i]/max)*(h-pad*2-20);
+    const x = pad + i*gap + (gap-barW)/2;
+    const y = h-pad-bh;
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${bh.toFixed(1)}" fill="${color}" opacity="0.85" rx="3"></rect>
+      <text x="${(x+barW/2).toFixed(1)}" y="${h-2}" font-size="9" fill="var(--muted)" text-anchor="middle">${mk.slice(5)}</text>`;
+  }).join("");
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:100%;" preserveAspectRatio="xMidYMid meet">${bars}</svg>`;
+}
+
+function renderModal(section, item){
+  const cfg = SECTIONS[section];
+  const isEdit = !!item;
+  return `
+    <div class="overlay" data-overlay-close>
+      <form class="modal" id="entry-form" data-section="${section}" ${isEdit?`data-edit-id="${item.id}"`:''}>
+        <div class="modal-head">
+          <h3 class="serif" style="margin:0; font-size:18px; font-weight:600;">${isEdit?'Modifier':'Ajouter'} ${cfg.singular}</h3>
+          <button type="button" class="modal-close" data-close-modal>${svgX}</button>
+        </div>
+        ${cfg.fields.map(f=>{
+          const current = item ? item[f.name] : (f.type==='date' ? todayISO() : '');
+          if(f.type==="select"){
+            const rawOpts = typeof f.options==="function" ? f.options() : f.options;
+            const isObjOpts = rawOpts.length>0 && typeof rawOpts[0]==="object";
+            const opts = isObjOpts ? rawOpts : rawOpts.map(o=>({value:o, label:o}));
+            const currentVal = item ? item[f.name] : '';
+            return `<div class="field"><label>${f.label}</label>
+              <select name="${f.name}" ${f.required?'required':''}>
+                ${isObjOpts ? '' : '<option value="">Choisir</option>'}
+                ${opts.map(o=>`<option value="${esc(o.value)}" ${currentVal===o.value?'selected':''}>${esc(o.label)}</option>`).join("")}
+              </select></div>`;
+          }
+          return `<div class="field"><label>${f.label}</label>
+            <input name="${f.name}" type="${f.type}" ${f.type==='number'?'min="0"':''}
+              placeholder="${f.placeholder||''}" ${f.required?'required':''}
+              value="${esc(current)}" /></div>`;
+        }).join("")}
+        ${isEdit ? renderTraceDetail(item) : ""}
+        <button type="submit" class="submit-btn">${isEdit?'Enregistrer les modifications':'Enregistrer'}</button>
+      </form>
+    </div>`;
+}
+
+/* Petit formulaire pour enregistrer une consommation : déduit directement
+   la quantité du stock de l'article concerné, sans passer par une dépense. */
+function renderConsumeModal(item){
+  if(!item) return "";
+  return `
+    <div class="overlay" data-overlay-close-consume>
+      <form class="modal" id="consume-form" data-stock-id="${item.id}">
+        <div class="modal-head">
+          <h3 class="serif" style="margin:0; font-size:18px; font-weight:600;">Consommer : ${esc(item.nom)}</h3>
+          <button type="button" class="modal-close" data-close-consume>${svgX}</button>
+        </div>
+        <p style="color:var(--muted); font-size:13px; margin:-4px 0 14px;">
+          Stock actuel : <strong>${item.quantite} ${esc(item.unite)}</strong>
+        </p>
+        <div class="field"><label>Quantité consommée</label>
+          <input name="quantite" type="number" min="0" step="any" max="${item.quantite}" placeholder="Ex : 2" required />
+        </div>
+        <button type="submit" class="submit-btn">Déduire du stock</button>
+      </form>
+    </div>`;
+}
+
+/* Détail de traçabilité affiché en bas de la fiche d'édition : qui a créé
+   l'entrée et quand, puis qui l'a modifiée en dernier et quand (si distinct). */
+function renderTraceDetail(item){
+  const lines = [];
+  if(item.creePar){
+    const when = fmtDateTime(item.creeLe);
+    lines.push(`Créé par <strong>${esc(roleLabelSafe(item.creePar))}</strong>${when ? " le "+when : " — date en cours de synchronisation…"}`);
+  } else {
+    lines.push(`Créé par un rôle inconnu (entrée antérieure au suivi de traçabilité)`);
+  }
+  if(item.modifiePar){
+    const when = fmtDateTime(item.modifieLe);
+    lines.push(`Dernière modification par <strong>${esc(roleLabelSafe(item.modifiePar))}</strong>${when ? " le "+when : " — date en cours de synchronisation…"}`);
+  }
+  return `<div style="background:var(--cream); border-radius:10px; padding:10px 12px; margin:2px 0 14px; font-size:12px; color:var(--muted); line-height:1.6;">
+    ${lines.join("<br>")}
+  </div>`;
+}
+
+function renderConfirm(){
+  return `
+    <div class="overlay" data-overlay-close>
+      <div class="confirm-box">
+        <h3 class="serif" style="margin:0 0 6px; font-size:18px; font-weight:600;">Supprimer cette entrée ?</h3>
+        <p style="color:var(--muted); font-size:14px; margin:0;">Cette action est définitive.</p>
+        <div class="confirm-actions">
+          <button class="btn-secondary" data-cancel-delete>Annuler</button>
+          <button class="btn-danger" data-confirm-delete>Supprimer</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ---------- Evénements ---------- */
+function attachEvents(){
+  document.querySelectorAll("[data-nav]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.tab = el.dataset.nav; render(); });
+  });
+  document.querySelectorAll("[data-open-modal]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.modal = { section: el.dataset.openModal, item: null }; render(); });
+  });
+  document.querySelectorAll("[data-edit-section]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const section = el.dataset.editSection, id = el.dataset.editId;
+      const item = state.data[section].find(i=>i.id===id);
+      state.modal = { section, item };
+      render();
+    });
+  });
+  document.querySelectorAll("[data-close-modal]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.modal = null; render(); });
+  });
+  document.querySelectorAll("[data-overlay-close]").forEach(el=>{
+    el.addEventListener("click", (e)=>{ if(e.target===el){ state.modal=null; state.confirmDelete=null; render(); } });
+  });
+  document.querySelectorAll("[data-consume-id]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.consumeModal = el.dataset.consumeId; render(); });
+  });
+  document.querySelectorAll("[data-close-consume]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.consumeModal = null; render(); });
+  });
+  document.querySelectorAll("[data-overlay-close-consume]").forEach(el=>{
+    el.addEventListener("click", (e)=>{ if(e.target===el){ state.consumeModal = null; render(); } });
+  });
+  const consumeForm = document.getElementById("consume-form");
+  if(consumeForm) consumeForm.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const stockId = consumeForm.dataset.stockId;
+    const qte = Number(new FormData(consumeForm).get("quantite"));
+    if(qte>0) window.__ajusterStock(stockId, -qte);
+    state.consumeModal = null; render();
+  });
+  document.querySelectorAll("[data-delete-section]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.confirmDelete = { section: el.dataset.deleteSection, id: el.dataset.deleteId };
+      render();
+    });
+  });
+  const cancelBtn = document.querySelector("[data-cancel-delete]");
+  if(cancelBtn) cancelBtn.addEventListener("click", ()=>{ state.confirmDelete=null; render(); });
+  const confirmBtn = document.querySelector("[data-confirm-delete]");
+  if(confirmBtn) confirmBtn.addEventListener("click", ()=>{
+    window.__deleteItem(state.confirmDelete.section, state.confirmDelete.id);
+    state.confirmDelete = null; render();
+  });
+  const form = document.getElementById("entry-form");
+  if(form) form.addEventListener("submit", (e)=>{
+    e.preventDefault();
+    const section = form.dataset.section;
+    const editId = form.dataset.editId;
+    const values = Object.fromEntries(new FormData(form).entries());
+    if(section==="depenses" && !editId && values.stockArticleId && Number(values.stockQuantite)>0){
+      window.__ajusterStock(values.stockArticleId, Number(values.stockQuantite));
+    }
+    if(editId){ window.__updateItem(section, editId, values); }
+    else { window.__addItem(section, values); }
+    state.modal = null; render();
+  });
+  const pdfBtn = document.getElementById("btn-export-pdf");
+  if(pdfBtn) pdfBtn.addEventListener("click", ()=>{ window.print(); });
+  const rapportSelect = document.getElementById("rapport-bande-select");
+  if(rapportSelect) rapportSelect.addEventListener("change", ()=>{
+    state.rapportBandeId = rapportSelect.value;
+    render();
+  });
+  document.querySelectorAll("[data-select-rapport-bande]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.rapportBandeId = el.dataset.selectRapportBande;
+      render();
+    });
+  });
+
+  document.querySelectorAll("[data-change-role]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.role = null;
+      localStorage.removeItem("avikaolack_role");
+      state.roleGateStep = "select"; state.roleGateChoice = null; state.pinInput=""; state.pinError=false;
+      render();
+    });
+  });
+  document.querySelectorAll("[data-farm-logout]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      if(confirm("Se déconnecter du compte de la ferme sur cet appareil ?")) window.__farmLogout();
+    });
+  });
+  document.querySelectorAll("[data-open-settings]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      state.settingsDraft = { ...(state.pins||DEFAULT_PINS) };
+      state.settingsOpen = true;
+      state.settingsTab = state.role==="gestionnaire" ? "codes" : "produits";
+      render();
+    });
+  });
+  document.querySelectorAll("[data-close-settings]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.settingsOpen = false; render(); });
+  });
+  document.querySelectorAll("[data-pin-field]").forEach(el=>{
+    el.addEventListener("input", ()=>{
+      state.settingsDraft[el.dataset.pinField] = el.value.replace(/\D/g,"").slice(0,4);
+    });
+  });
+  const savePinsBtn = document.getElementById("btn-save-pins");
+  if(savePinsBtn) savePinsBtn.addEventListener("click", ()=>{
+    const draft = state.settingsDraft;
+    const valid = Object.values(draft).every(v=>/^\d{4}$/.test(v));
+    if(!valid){ alert("Chaque code doit contenir exactement 4 chiffres."); return; }
+    window.__savePins(draft).then(()=>{ state.settingsOpen=false; render(); }).catch(()=>alert("Échec de l'enregistrement, réessayez."));
+  });
+
+  document.querySelectorAll("[data-settings-tab]").forEach(el=>{
+    el.addEventListener("click", ()=>{ state.settingsTab = el.dataset.settingsTab; render(); });
+  });
+  document.querySelectorAll("[data-add-cat]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const key = el.dataset.addCat;
+      const input = document.getElementById(`catinput-${key}`);
+      const value = input ? input.value.trim() : "";
+      if(!value) return;
+      const extra = {};
+      if(key==="ventes"){
+        const chk = document.getElementById(`catreduit-${key}`);
+        extra.reduitEffectif = chk ? chk.checked : true;
+      }
+      if(input) input.value = "";
+      window.__addCategoryItem(key, value, extra).catch(()=>alert("Échec de l'ajout, réessayez."));
+    });
+  });
+  document.querySelectorAll("[data-toggle-vente-reduit]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      const type = el.dataset.toggleVenteReduit;
+      const current = el.dataset.toggleVenteCurrent === "1";
+      window.__setVenteReduitEffectif(type, !current).catch(()=>alert("Échec de l'enregistrement, réessayez."));
+    });
+  });
+  document.querySelectorAll("[data-new-cat-input]").forEach(el=>{
+    el.addEventListener("keydown", (e)=>{
+      if(e.key==="Enter"){
+        e.preventDefault();
+        document.querySelector(`[data-add-cat="${el.dataset.newCatInput}"]`)?.click();
+      }
+    });
+  });
+  document.querySelectorAll("[data-remove-cat]").forEach(el=>{
+    el.addEventListener("click", ()=>{
+      window.__removeCategoryItem(el.dataset.removeCat, el.dataset.removeCatValue).catch(()=>alert("Échec de la suppression, réessayez."));
+    });
+  });
+}
+
+/* ---------- Ecrans de configuration ---------- */
+function renderSetupScreen(){
+  document.getElementById("app").innerHTML = `
+    <div class="setup-wrap">
+      <div style="font-size:30px; margin-bottom:10px;">🐔</div>
+      <h1 class="serif">Connectez votre projet Firebase</h1>
+      <p style="color:var(--muted); font-size:14px; margin-bottom:24px;">
+        Cette application a besoin d'un projet Firebase (Firestore + Authentification) pour sauvegarder vos données.
+        Suivez ces étapes une seule fois :
+      </p>
+      <ol>
+        <li>Créez un projet sur <strong>console.firebase.google.com</strong>.</li>
+        <li>Dans <strong>Build → Firestore Database</strong>, cliquez sur « Créer une base de données » (mode production).</li>
+        <li>Dans <strong>Build → Authentication → Sign-in method</strong>, activez le fournisseur <strong>E-mail/Mot de passe</strong> (et laissez « Anonyme » désactivé — c'est important pour la sécurité).</li>
+        <li>Dans <strong>Authentication → Users</strong>, cliquez sur « Add user » et créez un compte pour la ferme (ex : <code>ferme@votredomaine.com</code> + un mot de passe solide). Vous pouvez créer un compte par personne de confiance si vous préférez.</li>
+        <li>Dans <strong>Paramètres du projet → Vos applications</strong>, ajoutez une application Web et copiez l'objet <code>firebaseConfig</code>.</li>
+        <li>Collez cet objet dans le fichier HTML, en haut du script, à la place de <code>firebaseConfig</code>.</li>
+        <li>Dans Firestore, onglet <strong>Règles</strong>, utilisez celles-ci (en remplaçant l'adresse par la/les vôtres) puis publiez :</li>
+      </ol>
+      <pre>rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /fermes/{fermeId}/{document=**} {
+      allow read, write: if request.auth != null &&
+        request.auth.token.email in [
+          'ferme@votredomaine.com'
+          // ajoutez d'autres adresses ici si besoin, séparées par des virgules
+        ];
+    }
+  }
+}</pre>
+      <p style="color:var(--muted); font-size:13px; margin-top:18px;">
+        Avec ces règles, seules les personnes qui se connectent avec un compte e-mail/mot de passe créé par vous
+        peuvent lire ou modifier les données — même si quelqu'un d'autre récupère ce fichier HTML, il ne pourra
+        rien voir ni modifier sans ces identifiants. Les codes PIN à 4 chiffres restent ensuite utilisés
+        <em>dans</em> l'application pour choisir un rôle (Gestionnaire, Gérant, Vétérinaire).
+      </p>
+    </div>`;
+}
+
+function renderAuthError(err){
+  document.getElementById("app").innerHTML = `
+    <div class="setup-wrap">
+      <h1 class="serif">Connexion à Firebase impossible</h1>
+      <p style="color:var(--muted); font-size:14px;">${esc(err.message)}</p>
+      <p style="color:var(--muted); font-size:13px;">Vérifiez que l'authentification anonyme est bien activée et que la configuration copiée est correcte.</p>
+    </div>`;
+}
+</script>
+</body>
+</html>
