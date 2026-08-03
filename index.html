@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Accès — Chez Nasir Seck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<style>
+  :root{
+    --bg:#0B1526; --panel:#131F35; --panel-2:#1A2A45;
+    --gold:#CBA135; --gold-soft:rgba(203,161,53,0.16);
+    --text:#F2ECDD; --muted:#8B95A8;
+    --success:#3FA772; --danger:#C1453D;
+    --border:rgba(203,161,53,0.22);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;min-height:100vh;padding-bottom:88px;}
+  .star-pattern{background-image:radial-gradient(circle at 20% 20%, var(--gold-soft) 0, transparent 40%),radial-gradient(circle at 80% 0%, var(--gold-soft) 0, transparent 35%);}
+  header{padding:22px 20px 18px;text-align:center;border-bottom:1px solid var(--border);}
+  header .eyebrow{font-size:11px;letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);margin-bottom:6px;}
+  header h1{font-family:'Amiri',serif;font-size:24px;font-weight:700;margin:0;}
+  main{max-width:480px;margin:0 auto;padding:20px 16px;}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;margin-bottom:16px;}
+  .view{display:none;} .view.active{display:block;}
+
+  .mode-select{display:flex;gap:12px;margin-bottom:20px;}
+  .mode-card{flex:1;background:var(--panel-2);border:2px solid var(--border);border-radius:14px;padding:18px 8px;text-align:center;cursor:pointer;transition:0.15s;}
+  .mode-card .mi{font-size:34px;display:block;margin-bottom:6px;}
+  .mode-card .ml{font-size:12px;color:var(--muted);font-weight:600;}
+  .mode-card.selected{border-color:var(--gold);background:var(--gold-soft);}
+  .mode-card.selected .ml{color:var(--gold);}
+
+  .big-btn{width:100%;background:var(--gold);color:#1a1305;border:none;border-radius:16px;padding:26px 10px;font-size:17px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .big-btn .bi{font-size:44px;}
+  .big-btn:active{transform:scale(0.97);}
+
+  .qr-frame{background:#fff;padding:18px;border-radius:14px;display:flex;justify-content:center;margin:18px auto;width:fit-content;border:4px solid var(--gold);}
+  .qr-status-icon{font-size:40px;text-align:center;margin-top:6px;}
+  .share-row{display:flex;gap:10px;margin-top:16px;}
+  .btn-share{flex:1;background:#25D366;color:#06210F;border:none;border-radius:14px;padding:16px 8px;font-size:15px;font-weight:800;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;}
+  .btn-share .si{font-size:22px;}
+  .btn-new{flex:1;background:transparent;border:2px solid var(--border);color:var(--text);border-radius:14px;padding:16px 8px;font-size:15px;font-weight:700;cursor:pointer;}
+
+  .history-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);}
+  .history-item:last-child{border-bottom:none;}
+  .hi-left{display:flex;align-items:center;gap:12px;}
+  .hi-icon{font-size:26px;width:36px;text-align:center;}
+  .hi-code{font-family:'Amiri',serif;font-size:16px;font-weight:700;letter-spacing:0.04em;}
+  .hi-time{font-size:11px;color:var(--muted);}
+  .hi-actions{display:flex;gap:6px;}
+  .icon-btn{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;width:38px;height:38px;font-size:17px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+  .empty{text-align:center;color:var(--muted);font-size:13px;padding:22px 0;}
+
+  .pin-pad{text-align:center;}
+  .pin-display{font-size:32px;letter-spacing:14px;text-align:center;margin:20px 0;font-weight:800;color:var(--gold);min-height:40px;}
+  .keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-width:260px;margin:0 auto;}
+  .keypad button{background:var(--panel-2);border:1px solid var(--border);color:var(--text);font-size:22px;font-weight:700;border-radius:12px;padding:16px 0;cursor:pointer;}
+  #reader{border-radius:14px;overflow:hidden;border:1px solid var(--border);}
+  .scan-result{margin-top:16px;padding:28px 16px;border-radius:16px;text-align:center;display:none;}
+  .scan-result.show{display:block;}
+  .scan-result.valid{background:rgba(63,167,114,0.12);border:2px solid var(--success);}
+  .scan-result.invalid{background:rgba(193,69,61,0.12);border:2px solid var(--danger);}
+  .scan-result.used{background:rgba(203,161,53,0.12);border:2px solid var(--gold);}
+  .result-badge{
+    width:96px;height:96px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    margin:0 auto;font-size:56px;font-weight:900;color:#fff;
+    line-height:1;
+  }
+  .result-badge.valid{background:var(--success);}
+  .result-badge.invalid{background:var(--danger);}
+  .result-badge.used{background:var(--gold);color:#1a1305;}
+  .result-badge{position:relative;}
+  .permanent-tag{
+    position:absolute;top:-6px;right:-6px;
+    background:var(--gold);color:#1a1305;
+    width:32px;height:32px;border-radius:50%;
+    display:flex;align-items:center;justify-content:center;
+    font-size:16px;border:3px solid var(--bg);
+  }
+  .scan-result .rt{font-weight:800;font-size:16px;margin-top:14px;}
+  .scan-result .rs{font-size:12px;color:var(--gold);margin-top:4px;font-weight:700;}
+
+  nav.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--panel);border-top:1px solid var(--border);display:flex;padding:10px 12px calc(10px + env(safe-area-inset-bottom));}
+  nav.tabbar button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;font-weight:700;padding:8px 4px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
+  nav.tabbar button.active{color:var(--gold);background:var(--gold-soft);}
+  nav.tabbar button .icon{font-size:24px;}
+
+  #visitor-view{display:none;min-height:100vh;padding:40px 20px;text-align:center;}
+  #visitor-view.active{display:block;}
+
+  #print-area{display:none;}
+  .badge-card{
+    display:inline-block;width:31%;margin:1%;padding:10px;border:1px dashed #999;
+    text-align:center;vertical-align:top;
+  }
+  .badge-card img, .badge-card canvas{width:100%;height:auto;}
+  .badge-code{font-family:'Amiri',serif;font-size:12px;margin-top:4px;letter-spacing:1px;}
+  .badge-title{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin-bottom:6px;}
+
+  @media print{
+    body *{visibility:hidden;}
+    #print-area, #print-area *{visibility:visible;}
+    #print-area{display:block;position:absolute;top:0;left:0;width:100%;}
+  }
+</style>
+</head>
+<body>
+
+<div id="visitor-view" class="star-pattern">
+  <div class="eyebrow" style="color:var(--gold);font-size:12px;letter-spacing:0.18em;">CHEZ NASIR SECK</div>
+  <div class="qr-frame" style="margin-top:20px;"><div id="visitor-qr"></div></div>
+  <div id="visitor-status" style="margin-top:16px;font-size:15px;color:var(--muted);"></div>
+</div>
+
+<div id="app-view">
+  <header class="star-pattern">
+    <div class="eyebrow">Gamou Médina Baye</div>
+    <h1>🔑 Accès chez Nasir</h1>
+  </header>
+
+  <main>
+    <section id="view-generate" class="view active">
+      <div class="card" id="generate-card">
+        <div class="mode-select">
+          <div class="mode-card selected" id="mode-once" onclick="selectMode(false)">
+            <span class="mi">1️⃣</span><span class="ml">Une fois</span>
+          </div>
+          <div class="mode-card" id="mode-permanent" onclick="selectMode(true)">
+            <span class="mi">♾️</span><span class="ml">Permanent</span>
+          </div>
+        </div>
+        <button class="big-btn" onclick="generateCode()"><span class="bi">🔑</span> Nouveau code</button>
+      </div>
+
+      <div class="card" id="result-card" style="display:none;">
+        <div class="qr-frame"><div id="gen-qr"></div></div>
+        <div class="qr-status-icon" id="gen-mode-icon">1️⃣</div>
+        <div class="share-row">
+          <button class="btn-share" onclick="shareLastCode()"><span class="si">📤</span> Envoyer</button>
+          <button class="btn-new" onclick="resetGenerate()">➕ Nouveau</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-family:'Amiri',serif;color:var(--gold);margin:0 0 12px;font-size:17px;">🎉 Mode Gamou — plusieurs codes</h2>
+        <div style="display:flex;align-items:center;justify-content:center;gap:18px;margin-bottom:16px;">
+          <button class="icon-btn" style="width:52px;height:52px;font-size:26px;" onclick="bulkQtyChange(-5)">－</button>
+          <div style="font-size:34px;font-weight:800;color:var(--gold);min-width:70px;text-align:center;" id="bulk-qty">20</div>
+          <button class="icon-btn" style="width:52px;height:52px;font-size:26px;" onclick="bulkQtyChange(5)">＋</button>
+        </div>
+        <button class="big-btn" style="padding:18px 10px;" onclick="generateBulk()">
+          <span class="bi" style="font-size:32px;">🖨️</span> Générer et imprimer
+        </button>
+        <div id="bulk-msg" style="text-align:center;font-size:13px;margin-top:10px;color:var(--muted);"></div>
+      </div>
+
+      <div class="card">
+        <h2 style="font-family:'Amiri',serif;color:var(--gold);margin:0 0 12px;font-size:17px;">👮 Sécurité</h2>
+        <div id="guards-list" style="margin-bottom:14px;"></div>
+        <button class="big-btn" style="padding:18px 10px;" onclick="addGuard()">
+          <span class="bi" style="font-size:32px;">➕</span> Nouvel agent
+        </button>
+      </div>
+
+      <div class="card">
+        <h2 style="font-family:'Amiri',serif;color:var(--gold);margin:0 0 12px;font-size:17px;">🕓 Historique</h2>
+        <div id="history-list"></div>
+      </div>
+    </section>
+
+    <section id="view-scan" class="view">
+      <div class="card">
+        <div id="scan-pin-gate" class="pin-pad">
+          <div style="font-size:15px;color:var(--muted);margin-bottom:4px;">🔒 Code sécurité</div>
+          <div class="pin-display" id="pin-display">••••</div>
+          <div class="keypad">
+            <button onclick="pinPress('1')">1</button><button onclick="pinPress('2')">2</button><button onclick="pinPress('3')">3</button>
+            <button onclick="pinPress('4')">4</button><button onclick="pinPress('5')">5</button><button onclick="pinPress('6')">6</button>
+            <button onclick="pinPress('7')">7</button><button onclick="pinPress('8')">8</button><button onclick="pinPress('9')">9</button>
+            <button onclick="pinClear()">⌫</button><button onclick="pinPress('0')">0</button><button onclick="pinSubmit()">✓</button>
+          </div>
+          <div id="pin-msg" style="color:#e0847d;font-size:13px;margin-top:10px;"></div>
+        </div>
+        <div id="scan-active" style="display:none;">
+          <div id="reader"></div>
+          <div class="scan-result" id="scan-result">
+            <div class="result-badge" id="scan-badge"></div>
+            <div class="rt" id="scan-rt"></div>
+            <div class="rs" id="scan-rs" style="display:none;">♾️ Accès permanent</div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <nav class="tabbar">
+    <button id="tab-generate" class="active" onclick="switchView('generate')"><span class="icon">🔑</span>Générer</button>
+    <button id="tab-scan" onclick="switchView('scan')"><span class="icon">🚪</span>Portail</button>
+  </nav>
+</div>
+
+<div id="print-area"></div>
+
+<script>
+const AGENT_PIN_DEFAULT = "2026";
+let scanner = null;
+let scannerRunning = false;
+let currentMode = false;
+let lastToken = null;
+let pinBuffer = '';
+let activeGuardCodes = new Set();
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBE2LWgYNJhS9ViWcD-ZiBhfwfOzXL6FMo",
+  authDomain: "acces-nasir.firebaseapp.com",
+  projectId: "acces-nasir",
+  storageBucket: "acces-nasir.firebasestorage.app",
+  messagingSenderId: "945652249720",
+  appId: "1:945652249720:web:27df416488dada002f298d"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+const codesRef = db.collection('codes');
+const guardsRef = db.collection('guards');
+
+function genGuardCode(){
+  return String(Math.floor(1000 + Math.random()*9000)); // code à 4 chiffres
+}
+
+// Crée un premier gardien par défaut si aucun n'existe encore
+guardsRef.limit(1).get().then(snap=>{
+  if(snap.empty){
+    guardsRef.add({ code: AGENT_PIN_DEFAULT, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  }
+});
+
+guardsRef.orderBy('createdAt','asc').onSnapshot(snap=>{
+  const guards = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  activeGuardCodes = new Set(guards.map(g=>g.code));
+  renderGuards(guards);
+}, err=>console.error('Erreur Firestore (guards) :', err));
+
+function renderGuards(guards){
+  const el = document.getElementById('guards-list');
+  if(!el) return;
+  if(guards.length===0){
+    el.innerHTML = '<div class="empty">Aucun agent de sécurité pour le moment.</div>';
+    return;
+  }
+  el.innerHTML = guards.map((g,idx)=>`
+    <div class="history-item">
+      <div class="hi-left">
+        <div class="hi-icon">👮</div>
+        <div>
+          <div class="hi-code">${g.code}</div>
+          <div class="hi-time">Sécurité ${idx+1}</div>
+        </div>
+      </div>
+      <div class="hi-actions">
+        <button class="icon-btn" onclick="revokeGuard('${g.id}')">🗑️</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+async function addGuard(){
+  try{
+    await guardsRef.add({ code: genGuardCode(), createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+  }catch(e){
+    console.error(e);
+    alert('Erreur — vérifiez la connexion Firebase.');
+  }
+}
+
+async function revokeGuard(id){
+  if(!confirm('Retirer l\'accès de cet agent de sécurité ?')) return;
+  try{ await guardsRef.doc(id).delete(); }
+  catch(e){ console.error(e); alert('Erreur, réessayez.'); }
+}
+
+function genToken(){
+  return (Math.random().toString(36).slice(2,7) + Date.now().toString(36).slice(-4)).toUpperCase();
+}
+
+(function initVisitorView(){
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if(!code) return;
+  document.getElementById('app-view').style.display = 'none';
+  const vv = document.getElementById('visitor-view');
+  vv.classList.add('active');
+  new QRCode(document.getElementById('visitor-qr'), {
+    text: code, width: 220, height: 220, colorDark: "#0B1526", colorLight: "#ffffff"
+  });
+  document.getElementById('visitor-status').textContent = 'Montrez ce code à la sécurité à votre arrivée';
+})();
+
+function switchView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+  document.getElementById('view-'+name).classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+  if(name !== 'scan' && scanner && scannerRunning){
+    scanner.stop().catch(()=>{});
+    scannerRunning = false;
+  }
+}
+
+function selectMode(permanent){
+  currentMode = permanent;
+  document.getElementById('mode-once').classList.toggle('selected', !permanent);
+  document.getElementById('mode-permanent').classList.toggle('selected', permanent);
+}
+
+async function generateCode(){
+  const token = genToken();
+  try{
+    await codesRef.doc(token).set({
+      permanent: currentMode,
+      scanned: false,
+      scannedAt: null,
+      entryCount: 0,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+  }catch(e){
+    console.error(e);
+    alert('Erreur — vérifiez la connexion Firebase.');
+    return;
+  }
+  lastToken = token;
+  document.getElementById('generate-card').style.display = 'none';
+  document.getElementById('result-card').style.display = 'block';
+  document.getElementById('gen-qr').innerHTML = '';
+  new QRCode(document.getElementById('gen-qr'), {
+    text: token, width: 200, height: 200, colorDark: "#0B1526", colorLight: "#ffffff"
+  });
+  document.getElementById('gen-mode-icon').textContent = currentMode ? '♾️' : '1️⃣';
+}
+
+function resetGenerate(){
+  document.getElementById('generate-card').style.display = 'block';
+  document.getElementById('result-card').style.display = 'none';
+  lastToken = null;
+}
+
+// ---------- Mode Gamou : génération en masse + impression ----------
+let bulkQty = 20;
+function bulkQtyChange(delta){
+  bulkQty = Math.max(5, Math.min(200, bulkQty + delta));
+  document.getElementById('bulk-qty').textContent = bulkQty;
+}
+
+async function generateBulk(){
+  const msgEl = document.getElementById('bulk-msg');
+  msgEl.textContent = `Génération de ${bulkQty} codes...`;
+  const tokens = [];
+  try{
+    const batch = db.batch();
+    for(let i=0;i<bulkQty;i++){
+      const token = genToken() + i; // suffixe pour éviter toute collision dans le même lot
+      const ref = codesRef.doc(token);
+      batch.set(ref, {
+        permanent: false, scanned: false, scannedAt: null, entryCount: 0,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp(), lot: 'gamou'
+      });
+      tokens.push(token);
+    }
+    await batch.commit();
+  }catch(e){
+    console.error(e);
+    msgEl.textContent = 'Erreur lors de la génération.';
+    return;
+  }
+  msgEl.textContent = `${bulkQty} codes générés.`;
+  buildPrintSheet(tokens);
+  setTimeout(()=>window.print(), 400);
+}
+
+function buildPrintSheet(tokens){
+  const area = document.getElementById('print-area');
+  area.innerHTML = tokens.map((t,i)=>`
+    <div class="badge-card">
+      <div class="badge-title">Gamou — Chez Nasir Seck</div>
+      <div id="badge-qr-${i}"></div>
+      <div class="badge-code">${t.slice(-6)}</div>
+    </div>
+  `).join('');
+  tokens.forEach((t,i)=>{
+    new QRCode(document.getElementById('badge-qr-'+i), {
+      text: codeLink(t), width: 130, height: 130, colorDark:'#000', colorLight:'#fff'
+    });
+  });
+}
+
+function codeLink(token){
+  return window.location.href.split('?')[0].split('#')[0] + '?code=' + token;
+}
+
+async function shareCode(token){
+  const link = codeLink(token);
+  const text = 'Voici votre accès chez Nasir 🔑';
+  if(navigator.share){
+    try{ await navigator.share({ title: 'Accès', text, url: link }); return; }
+    catch(e){ return; }
+  }
+  window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + link), '_blank');
+}
+function shareLastCode(){ if(lastToken) shareCode(lastToken); }
+
+codesRef.orderBy('createdAt','desc').limit(50).onSnapshot(snap=>{
+  const list = snap.docs.map(d=>({token:d.id, ...d.data()}));
+  renderHistory(list);
+}, err=>console.error('Erreur Firestore (vérifiez firebaseConfig) :', err));
+
+function renderHistory(list){
+  const el = document.getElementById('history-list');
+  if(list.length===0){
+    el.innerHTML = '<div class="empty">Aucun code généré pour le moment.</div>';
+    return;
+  }
+  el.innerHTML = list.map(i=>{
+    let icon = '⏳';
+    if(i.permanent) icon = '♾️';
+    else if(i.scanned) icon = '✅';
+    const time = i.createdAt && i.createdAt.toDate ? i.createdAt.toDate().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
+    return `
+      <div class="history-item">
+        <div class="hi-left">
+          <div class="hi-icon">${icon}</div>
+          <div>
+            <div class="hi-code">${i.token.slice(-6)}</div>
+            <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}</div>
+          </div>
+        </div>
+        <div class="hi-actions">
+          <button class="icon-btn" onclick="shareCode('${i.token}')">📤</button>
+          <button class="icon-btn" onclick="revokeCode('${i.token}')">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+async function revokeCode(token){
+  if(!confirm('Supprimer ce code ?')) return;
+  try{ await codesRef.doc(token).delete(); }
+  catch(e){ console.error(e); alert('Erreur, réessayez.'); }
+}
+
+function pinPress(d){
+  if(pinBuffer.length>=4) return;
+  pinBuffer += d;
+  document.getElementById('pin-display').textContent = pinBuffer.padEnd(4,'•');
+}
+function pinClear(){
+  pinBuffer = '';
+  document.getElementById('pin-display').textContent = '••••';
+  document.getElementById('pin-msg').textContent = '';
+}
+function pinSubmit(){
+  const msgEl = document.getElementById('pin-msg');
+  if(activeGuardCodes.has(pinBuffer)){
+    document.getElementById('scan-pin-gate').style.display = 'none';
+    document.getElementById('scan-active').style.display = 'block';
+    startScanner();
+  }else{
+    msgEl.textContent = 'Code incorrect';
+    pinBuffer = '';
+    document.getElementById('pin-display').textContent = '••••';
+  }
+}
+
+function startScanner(){
+  scanner = new Html5Qrcode("reader");
+  Html5Qrcode.getCameras().then(cameras=>{
+    if(cameras && cameras.length){
+      const camId = cameras.length>1 ? cameras[cameras.length-1].id : cameras[0].id;
+      scanner.start(camId, { fps: 10, qrbox: 220 }, decodedText=>{
+        if(scannerRunning) validateToken(decodedText);
+      }).then(()=>{ scannerRunning = true; });
+    }
+  }).catch(()=>{
+    document.getElementById('reader').innerHTML = '<div class="empty">📷 Caméra indisponible</div>';
+  });
+}
+
+async function validateToken(rawText){
+  let token = rawText.trim();
+  try{
+    const u = new URL(rawText);
+    const c = u.searchParams.get('code');
+    if(c) token = c;
+  }catch(e){}
+
+  const resultEl = document.getElementById('scan-result');
+  const badgeEl = document.getElementById('scan-badge');
+  const rtEl = document.getElementById('scan-rt');
+  const rsEl = document.getElementById('scan-rs');
+  const docRef = codesRef.doc(token);
+
+  let outcome;
+  try{
+    outcome = await db.runTransaction(async tx=>{
+      const doc = await tx.get(docRef);
+      if(!doc.exists) return { status:'invalid' };
+      const data = doc.data();
+      if(data.permanent){
+        tx.update(docRef, { scanned:true, scannedAt: firebase.firestore.FieldValue.serverTimestamp(), entryCount:(data.entryCount||0)+1 });
+        return { status:'valid_permanent' };
+      }
+      if(data.scanned) return { status:'used' };
+      tx.update(docRef, { scanned:true, scannedAt: firebase.firestore.FieldValue.serverTimestamp() });
+      return { status:'valid' };
+    });
+  }catch(e){
+    console.error(e);
+    outcome = { status:'invalid' };
+  }
+
+  if(outcome.status === 'invalid'){
+    resultEl.className = 'scan-result invalid show';
+    badgeEl.className = 'result-badge invalid';
+    badgeEl.innerHTML = '✗';
+    rtEl.textContent = 'Non autorisé';
+    rsEl.style.display = 'none';
+  }else if(outcome.status === 'used'){
+    resultEl.className = 'scan-result used show';
+    badgeEl.className = 'result-badge used';
+    badgeEl.innerHTML = '!';
+    rtEl.textContent = 'Déjà entré';
+    rsEl.style.display = 'none';
+  }else if(outcome.status === 'valid_permanent'){
+    resultEl.className = 'scan-result valid show';
+    badgeEl.className = 'result-badge valid';
+    badgeEl.innerHTML = '✓<span class="permanent-tag">♾️</span>';
+    rtEl.textContent = 'Entrée autorisée — code de Nasir';
+    rsEl.style.display = 'block';
+  }else{
+    resultEl.className = 'scan-result valid show';
+    badgeEl.className = 'result-badge valid';
+    badgeEl.innerHTML = '✓';
+    rtEl.textContent = 'Entrée autorisée — code de Nasir';
+    rsEl.style.display = 'none';
+  }
+  setTimeout(()=>{ resultEl.classList.remove('show'); }, 3000);
+}
+</script>
+
+</body>
+</html>
