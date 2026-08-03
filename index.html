@@ -182,6 +182,7 @@
         <button class="big-btn" style="padding:18px 10px;" onclick="addGuard()">
           <span class="bi" style="font-size:32px;">➕</span> Nouvel agent
         </button>
+        <button class="btn-new" style="width:100%;margin-top:10px;" onclick="copyAgentLink()">🔗 Copier le lien agent (scanner uniquement)</button>
       </div>
 
       <div class="card">
@@ -324,6 +325,28 @@ function genToken(){
   document.getElementById('visitor-status').textContent = 'Montrez ce code à la sécurité à votre arrivée';
 })();
 
+(function initAgentMode(){
+  const params = new URLSearchParams(window.location.search);
+  if(params.get('agent') === '1'){
+    const tabGen = document.getElementById('tab-generate');
+    if(tabGen) tabGen.style.display = 'none';
+    document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+    document.getElementById('view-scan').classList.add('active');
+    document.getElementById('tab-scan').classList.add('active');
+  }
+})();
+
+function copyAgentLink(){
+  const link = window.location.href.split('?')[0].split('#')[0] + '?agent=1';
+  const done = ()=>alert('Lien agent copié !\nEnvoyez-le à vos agents de sécurité — ils ne verront que le scanner.');
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(link).then(done).catch(()=>prompt('Copiez ce lien :', link));
+  }else{
+    prompt('Copiez ce lien :', link);
+  }
+}
+
 function switchView(name){
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
@@ -425,14 +448,60 @@ function codeLink(token){
   return window.location.href.split('?')[0].split('#')[0] + '?code=' + token;
 }
 
+function qrTokenToBlob(token){
+  return new Promise((resolve)=>{
+    const temp = document.createElement('div');
+    temp.style.position = 'fixed';
+    temp.style.left = '-9999px';
+    document.body.appendChild(temp);
+    new QRCode(temp, { text: token, width: 600, height: 600, colorDark: "#0B1526", colorLight: "#ffffff" });
+    setTimeout(()=>{
+      const canvas = temp.querySelector('canvas');
+      if(canvas){
+        canvas.toBlob(blob=>{
+          document.body.removeChild(temp);
+          resolve(blob);
+        }, 'image/png');
+      }else{
+        const img = temp.querySelector('img');
+        fetch(img.src).then(r=>r.blob()).then(blob=>{
+          document.body.removeChild(temp);
+          resolve(blob);
+        });
+      }
+    }, 150);
+  });
+}
+
 async function shareCode(token){
-  const link = codeLink(token);
-  const text = 'Voici votre accès chez Nasir 🔑';
-  if(navigator.share){
-    try{ await navigator.share({ title: 'Accès', text, url: link }); return; }
+  const existing = await codesRef.doc(token).get().catch(()=>null);
+  const currentPhone = (existing && existing.exists && existing.data().phone) ? existing.data().phone : '';
+  const phone = prompt('Numéro du visiteur (optionnel) :', currentPhone);
+  if(phone !== null && phone.trim() !== currentPhone){
+    try{ await codesRef.doc(token).update({ phone: phone.trim() }); }
+    catch(e){ console.error(e); }
+  }
+
+  const text = 'Voici votre accès chez Nasir 🔑 Montrez cette image à la sécurité.';
+  const blob = await qrTokenToBlob(token);
+  const filename = `acces-${token.slice(-6)}.png`;
+  const file = new File([blob], filename, { type: 'image/png' });
+
+  if(navigator.canShare && navigator.canShare({ files: [file] })){
+    try{ await navigator.share({ files: [file], title: 'Accès', text }); return; }
     catch(e){ return; }
   }
-  window.open('https://wa.me/?text=' + encodeURIComponent(text + ' ' + link), '_blank');
+
+  // Repli : télécharger la photo pour l'envoyer manuellement (WhatsApp, etc.)
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 4000);
+  alert('Image du code enregistrée — vous pouvez maintenant l\'envoyer en photo via WhatsApp.');
 }
 function shareLastCode(){ if(lastToken) shareCode(lastToken); }
 
@@ -459,6 +528,7 @@ function renderHistory(list){
           <div>
             <div class="hi-code">${i.token.slice(-6)}</div>
             <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}</div>
+            ${i.phone ? `<div class="hi-time" style="color:var(--gold);">📱 ${i.phone}</div>` : ''}
           </div>
         </div>
         <div class="hi-actions">
@@ -613,7 +683,7 @@ function showFullscreenResult(status){
   setTimeout(()=>{
     fsEl.classList.remove('show');
     scanLocked = false;
-  }, 1800);
+  }, 15000);
 }
 </script>
 
