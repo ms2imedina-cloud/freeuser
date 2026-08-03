@@ -86,6 +86,22 @@
   .scan-result .rt{font-weight:800;font-size:16px;margin-top:14px;}
   .scan-result .rs{font-size:12px;color:var(--gold);margin-top:4px;font-weight:700;}
 
+  .fullscreen-result{
+    position:fixed; inset:0; z-index:9999;
+    display:none; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:24px;
+  }
+  .fullscreen-result.show{display:flex;}
+  .fullscreen-result.valid{background:var(--success);}
+  .fullscreen-result.invalid{background:var(--danger);}
+  .fullscreen-result.used{background:var(--gold);}
+  .fs-icon{font-size:180px; font-weight:900; line-height:1; color:#fff;}
+  .fullscreen-result.used .fs-icon{color:#1a1305;}
+  .fs-text{font-size:26px; font-weight:800; color:#fff; margin-top:12px;}
+  .fullscreen-result.used .fs-text{color:#1a1305;}
+  .fs-sub{font-size:15px; font-weight:700; margin-top:6px; color:rgba(255,255,255,0.85);}
+  .fullscreen-result.used .fs-sub{color:rgba(26,19,5,0.75);}
+
   nav.tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:var(--panel);border-top:1px solid var(--border);display:flex;padding:10px 12px calc(10px + env(safe-area-inset-bottom));}
   nav.tabbar button{flex:1;background:none;border:none;color:var(--muted);font-size:11px;font-weight:700;padding:8px 4px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;}
   nav.tabbar button.active{color:var(--gold);background:var(--gold-soft);}
@@ -207,6 +223,12 @@
 
 <div id="print-area"></div>
 
+<div id="fullscreen-result" class="fullscreen-result">
+  <div class="fs-icon" id="fs-icon"></div>
+  <div class="fs-text" id="fs-text"></div>
+  <div class="fs-sub" id="fs-sub"></div>
+</div>
+
 <script>
 const AGENT_PIN_DEFAULT = "2026";
 let scanner = null;
@@ -215,6 +237,7 @@ let currentMode = false;
 let lastToken = null;
 let pinBuffer = '';
 let activeGuardCodes = new Set();
+let scanLocked = false;
 
 const firebaseConfig = {
   apiKey: "AIzaSyBE2LWgYNJhS9ViWcD-ZiBhfwfOzXL6FMo",
@@ -482,7 +505,7 @@ function startScanner(){
     if(cameras && cameras.length){
       const camId = cameras.length>1 ? cameras[cameras.length-1].id : cameras[0].id;
       scanner.start(camId, { fps: 10, qrbox: 220 }, decodedText=>{
-        if(scannerRunning) validateToken(decodedText);
+        if(scannerRunning && !scanLocked) validateToken(decodedText);
       }).then(()=>{ scannerRunning = true; });
     }
   }).catch(()=>{
@@ -491,6 +514,7 @@ function startScanner(){
 }
 
 async function validateToken(rawText){
+  scanLocked = true;
   let token = rawText.trim();
   try{
     const u = new URL(rawText);
@@ -549,6 +573,47 @@ async function validateToken(rawText){
     rsEl.style.display = 'none';
   }
   setTimeout(()=>{ resultEl.classList.remove('show'); }, 3000);
+
+  showFullscreenResult(outcome.status);
+}
+
+function showFullscreenResult(status){
+  const fsEl = document.getElementById('fullscreen-result');
+  const iconEl = document.getElementById('fs-icon');
+  const textEl = document.getElementById('fs-text');
+  const subEl = document.getElementById('fs-sub');
+
+  if(status === 'invalid'){
+    fsEl.className = 'fullscreen-result invalid show';
+    iconEl.textContent = '✗';
+    textEl.textContent = 'Non autorisé';
+    subEl.textContent = '';
+  }else if(status === 'used'){
+    fsEl.className = 'fullscreen-result invalid show';
+    iconEl.textContent = '✗';
+    textEl.textContent = 'Déjà entré';
+    subEl.textContent = 'Ce code a déjà été scanné';
+  }else if(status === 'valid_permanent'){
+    fsEl.className = 'fullscreen-result valid show';
+    iconEl.textContent = '✓';
+    textEl.textContent = 'Entrée autorisée';
+    subEl.textContent = '♾️ Accès permanent — code de Nasir';
+  }else{
+    fsEl.className = 'fullscreen-result valid show';
+    iconEl.textContent = '✓';
+    textEl.textContent = 'Entrée autorisée';
+    subEl.textContent = 'Code de Nasir';
+  }
+
+  // Vibration si supportée (retour tactile pour l'agent)
+  if(navigator.vibrate){
+    navigator.vibrate(status === 'valid' || status === 'valid_permanent' ? 80 : [80,60,80]);
+  }
+
+  setTimeout(()=>{
+    fsEl.classList.remove('show');
+    scanLocked = false;
+  }, 1800);
 }
 </script>
 
