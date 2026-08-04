@@ -230,7 +230,6 @@
   .scan-result.used{background:var(--gold-soft);border:2px solid var(--gold);}
   .scan-result.permanent{background:rgba(124,58,237,0.12);border:2px solid #7C3AED;}
   .scan-result.offline{background:rgba(242,169,59,0.12);border:2px solid #F2A93B;}
-  .scan-result.expired{background:rgba(107,119,140,0.12);border:2px solid #6B778C;}
   .result-badge{
     width:96px;height:96px;border-radius:50%;
     display:flex;align-items:center;justify-content:center;
@@ -242,7 +241,6 @@
   .result-badge.used{background:linear-gradient(155deg, var(--gold-light), var(--gold-deep));color:#1a1305;}
   .result-badge.permanent{background:linear-gradient(155deg, #A78BFA, #5B21B6);}
   .result-badge.offline{background:linear-gradient(155deg, #F2A93B, #C97A0E);}
-  .result-badge.expired{background:linear-gradient(155deg, #8A97AB, #566178);}
   .offline-banner{background:rgba(242,169,59,0.15);border:1px solid #F2A93B;color:#F2A93B;font-size:12px;font-weight:700;text-align:center;padding:9px 10px;border-radius:10px;margin:10px 0;}
   .result-badge{position:relative;}
   .permanent-tag{
@@ -267,7 +265,6 @@
   .fullscreen-result.used{background:linear-gradient(160deg, var(--gold-light), var(--gold-deep));}
   .fullscreen-result.permanent{background:linear-gradient(160deg, #A78BFA, #5B21B6);}
   .fullscreen-result.offline{background:linear-gradient(160deg, #F2A93B, #C97A0E);}
-  .fullscreen-result.expired{background:linear-gradient(160deg, #8A97AB, #566178);}
   .fs-icon{font-size:160px; font-weight:900; line-height:1; color:#fff;text-shadow:0 12px 30px rgba(0,0,0,0.25);animation:fsPop 0.4s var(--ease) both 0.05s;}
   @keyframes fsPop{from{opacity:0;transform:scale(0.6);}to{opacity:1;transform:scale(1);}}
   .fullscreen-result.used .fs-icon{color:#1a1305;}
@@ -855,15 +852,8 @@ function shareLastCode(){ if(lastToken) shareCode(lastToken); }
 
 codesRef.orderBy('createdAt','desc').limit(50).onSnapshot(snap=>{
   const list = snap.docs.map(d=>({token:d.id, ...d.data()}));
-let lastHistoryList = [];
-codesRef.orderBy('createdAt','desc').limit(50).onSnapshot(snap=>{
-  const list = snap.docs.map(d=>({token:d.id, ...d.data()}));
-  lastHistoryList = list;
   renderHistory(list);
 }, err=>console.error('Erreur Firestore (vérifiez firebaseConfig) :', err));
-
-// Rafraîchit l'affichage chaque minute pour faire apparaître les codes qui viennent d'expirer
-setInterval(()=>{ if(lastHistoryList.length) renderHistory(lastHistoryList); }, 60000);
 
 function renderHistory(list){
   const el = document.getElementById('history-list');
@@ -878,16 +868,14 @@ function renderHistory(list){
     let icon = '⏳';
     if(i.permanent) icon = '♾️';
     else if(i.scanned) icon = '✅';
-    else if(isCodeExpired(i)) icon = '⌛';
     const time = i.createdAt && i.createdAt.toDate ? i.createdAt.toDate().toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '';
-    const expiredLabel = (!i.permanent && !i.scanned && isCodeExpired(i)) ? ' · <span style="color:#6B778C;">expiré</span>' : '';
     return `
       <div class="history-item">
         <div class="hi-left">
           <div class="hi-icon">${icon}</div>
           <div>
             <div class="hi-code">${i.token.slice(-6)}${i.guestCount > 1 ? ' · 👥 ' + i.guestCount : ''}</div>
-            <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}${expiredLabel}</div>
+            <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}</div>
             ${i.phone ? `<div class="hi-time" style="color:var(--gold);">📱 ${i.phone}</div>` : ''}
           </div>
         </div>
@@ -1013,15 +1001,6 @@ function toggleTorch(){
   });
 }
 
-// ---------- Expiration automatique des codes "une fois" ----------
-const CODE_EXPIRY_HOURS = 3;
-function isCodeExpired(data){
-  if(!data || data.permanent || data.scanned) return false;
-  if(!data.createdAt || !data.createdAt.toDate) return false; // écriture pas encore confirmée par le serveur
-  const ageMs = Date.now() - data.createdAt.toDate().getTime();
-  return ageMs > CODE_EXPIRY_HOURS * 3600 * 1000;
-}
-
 async function validateToken(rawText){
   scanLocked = true;
   let token = rawText.trim();
@@ -1062,8 +1041,6 @@ async function validateToken(rawText){
     outcome = { status:'valid_permanent' };
   }else if(data.scanned || locallyMarkedUsed.has(token)){
     outcome = { status:'used' };
-  }else if(isCodeExpired(data)){
-    outcome = { status:'expired' };
   }else{
     locallyMarkedUsed.add(token);
     if(!online) offlineScanCount++;
@@ -1092,12 +1069,6 @@ async function validateToken(rawText){
     badgeEl.className = 'result-badge used';
     badgeEl.innerHTML = '!';
     rtEl.textContent = 'Déjà entré';
-    rsEl.style.display = 'none';
-  }else if(outcome.status === 'expired'){
-    resultEl.className = 'scan-result expired show';
-    badgeEl.className = 'result-badge expired';
-    badgeEl.innerHTML = '⌛';
-    rtEl.textContent = `Code expiré — plus de ${CODE_EXPIRY_HOURS}h`;
     rsEl.style.display = 'none';
   }else if(outcome.status === 'valid_permanent'){
     resultEl.className = 'scan-result permanent show';
@@ -1141,11 +1112,6 @@ function showFullscreenResult(status, guestCount){
     iconEl.textContent = '✗';
     textEl.textContent = 'Déjà entré';
     subEl.textContent = 'Ce code a déjà été scanné';
-  }else if(status === 'expired'){
-    fsEl.className = 'fullscreen-result expired show';
-    iconEl.textContent = '⌛';
-    textEl.textContent = 'Code expiré';
-    subEl.textContent = `Ce code n'a pas été scanné dans les ${CODE_EXPIRY_HOURS}h — demandez un nouveau code`;
   }else if(status === 'valid_permanent'){
     fsEl.className = 'fullscreen-result permanent show';
     iconEl.textContent = '✓♾️';
@@ -1160,7 +1126,7 @@ function showFullscreenResult(status, guestCount){
 
   // Vibration si supportée (retour tactile pour l'agent)
   if(navigator.vibrate){
-    const patterns = { valid:80, valid_permanent:[60,40,60,40,120], used:[80,60,80], invalid:[80,60,80], offline_unknown:[40,40,40,40,40], expired:[80,60,80] };
+    const patterns = { valid:80, valid_permanent:[60,40,60,40,120], used:[80,60,80], invalid:[80,60,80], offline_unknown:[40,40,40,40,40] };
     navigator.vibrate(patterns[status] || [80,60,80]);
   }
   playResultSound(status);
@@ -1215,10 +1181,6 @@ function playResultSound(status){
     beep(700, 0.09, 'triangle', 0, 0.18);
     beep(700, 0.09, 'triangle', 0.16, 0.18);
     beep(700, 0.09, 'triangle', 0.32, 0.18);
-  }else if(status === 'expired'){
-    // bip descendant = code périmé, distinct du refus pur
-    beep(600, 0.14, 'triangle', 0, 0.16);
-    beep(380, 0.18, 'triangle', 0.16, 0.20);
   }else{
     // bip grave et long = refus
     beep(220, 0.32, 'sawtooth', 0, 0.20);
