@@ -4,19 +4,12 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <title>Accès — Chez Nasir Seck</title>
-<script>
-  // Appliqué avant le rendu pour éviter un flash des couleurs "Nasir" côté agent
-  if(new URLSearchParams(window.location.search).get('agent') === '1'){
-    document.documentElement.classList.add('agent-theme');
-  }
-</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check-compat.js"></script>
 <style>
   :root{
     --bg:#FAF6ED; --bg-2:#F2E9D8; --panel:#FFFFFF; --panel-2:#F6F0E1;
@@ -27,16 +20,6 @@
     --shadow-sm:0 2px 10px rgba(50,36,10,0.12);
     --shadow-lg:0 18px 40px -14px rgba(50,36,10,0.20), 0 0 0 1px rgba(154,108,26,0.10);
     --ease:cubic-bezier(0.22,1,0.36,1);
-  }
-  /* ---------- Thème AGENT SÉCURITÉ : bleu acier, distinct du doré "Nasir" ---------- */
-  html.agent-theme{
-    --bg:#EAF1F8; --bg-2:#D7E5F2; --panel:#FFFFFF; --panel-2:#EAF2FA;
-    --gold:#1D5FA8; --gold-light:#4C8FD1; --gold-deep:#0D3A66; --gold-soft:rgba(29,95,168,0.14);
-    --text:#0E1A28; --muted:#4F6580; --muted-soft:#7F97B1;
-    --success:#237A4E; --success-deep:#175C39; --danger:#A83B33; --danger-deep:#7A251F;
-    --border:rgba(29,95,168,0.38); --border-soft:rgba(29,95,168,0.22);
-    --shadow-sm:0 2px 10px rgba(10,24,45,0.14);
-    --shadow-lg:0 18px 40px -14px rgba(10,24,45,0.24), 0 0 0 1px rgba(29,95,168,0.12);
   }
   *{box-sizing:border-box;}
   html{-webkit-tap-highlight-color:transparent;}
@@ -52,26 +35,11 @@
   ::-webkit-scrollbar{width:8px;}
   ::-webkit-scrollbar-thumb{background:var(--gold-deep);border-radius:8px;}
 
-  html.agent-theme body{
-    background:
-      radial-gradient(circle at 15% 0%, rgba(29,95,168,0.10) 0, transparent 42%),
-      radial-gradient(circle at 100% 30%, rgba(29,95,168,0.06) 0, transparent 40%),
-      linear-gradient(180deg, var(--bg-2) 0%, var(--bg) 100%);
-    background-attachment:fixed;
-  }
-
   .star-pattern{
     background-image:
       radial-gradient(circle at 20% 15%, var(--gold-soft) 0, transparent 42%),
       radial-gradient(circle at 85% 0%, var(--gold-soft) 0, transparent 38%),
       url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4OCIgaGVpZ2h0PSI4OCIgdmlld0JveD0iMCAwIDg4IDg4Ij48ZyBmaWxsPSJub25lIiBzdHJva2U9IiNDQkExMzUiIHN0cm9rZS13aWR0aD0iMC43IiBvcGFjaXR5PSIwLjE2Ij48cmVjdCB4PSIxOCIgeT0iMTgiIHdpZHRoPSI1MiIgaGVpZ2h0PSI1MiIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNDQgNDQpIi8+PHJlY3QgeD0iMTgiIHk9IjE4IiB3aWR0aD0iNTIiIGhlaWdodD0iNTIiLz48L2c+PC9zdmc+");
-    background-size:auto, auto, 88px 88px;
-  }
-  html.agent-theme .star-pattern{
-    background-image:
-      radial-gradient(circle at 20% 15%, var(--gold-soft) 0, transparent 42%),
-      radial-gradient(circle at 85% 0%, var(--gold-soft) 0, transparent 38%),
-      url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4OCIgaGVpZ2h0PSI4OCIgdmlld0JveD0iMCAwIDg4IDg4Ij48ZyBmaWxsPSJub25lIiBzdHJva2U9IiMxRDVGQTgiIHN0cm9rZS13aWR0aD0iMC43IiBvcGFjaXR5PSIwLjE2Ij48cmVjdCB4PSIxOCIgeT0iMTgiIHdpZHRoPSI1MiIgaGVpZ2h0PSI1MiIgdHJhbnNmb3JtPSJyb3RhdGUoNDUgNDQgNDQpIi8+PHJlY3QgeD0iMTgiIHk9IjE4IiB3aWR0aD0iNTIiIGhlaWdodD0iNTIiLz48L2c+PC9zdmc+");
     background-size:auto, auto, 88px 88px;
   }
 
@@ -81,9 +49,6 @@
     display:flex;align-items:center;justify-content:center;font-size:24px;
     background:linear-gradient(155deg, var(--gold-light), var(--gold) 55%, var(--gold-deep));
     box-shadow:0 8px 20px -6px rgba(203,161,53,0.55), inset 0 1px 1px rgba(255,255,255,0.4);
-  }
-  html.agent-theme .emblem{
-    box-shadow:0 8px 20px -6px rgba(29,95,168,0.55), inset 0 1px 1px rgba(255,255,255,0.4);
   }
   header .eyebrow{font-size:11px;letter-spacing:0.24em;text-transform:uppercase;color:var(--gold-deep);margin-bottom:8px;font-weight:600;}
   .eyebrow{display:flex;align-items:center;justify-content:center;gap:10px;}
@@ -96,10 +61,6 @@
     text-shadow:0 2px 24px rgba(203,161,53,0.25);
   }
   header .rule{width:46px;height:2px;margin:16px auto 0;border-radius:2px;background:linear-gradient(90deg, transparent, var(--gold), transparent);opacity:0.7;}
-  .agent-banner{display:none;font-family:'Amiri',serif;font-weight:800;font-size:26px;letter-spacing:0.03em;line-height:1.25;text-align:center;
-    background:linear-gradient(155deg, var(--gold-light) 10%, var(--gold) 55%, var(--gold-deep));
-    -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
-    margin:10px auto 0;padding:0 12px;}
 
   main{max-width:480px;margin:0 auto;padding:22px 16px 12px;}
   .card{
@@ -129,14 +90,6 @@
   .view{display:none;} .view.active{display:block;}
 
   .mode-select{display:flex;gap:12px;margin-bottom:22px;}
-  .guest-stepper{display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--panel-2);border:2px solid var(--border);border-radius:16px;padding:14px 18px;margin-bottom:22px;}
-  .guest-stepper .gs-label{display:flex;flex-direction:column;gap:2px;}
-  .guest-stepper .gs-title{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:0.06em;text-transform:uppercase;}
-  .guest-stepper .gs-sub{font-size:11px;color:var(--muted-soft);}
-  .guest-stepper .gs-controls{display:flex;align-items:center;gap:12px;}
-  .gs-btn{width:38px;height:38px;border-radius:11px;border:1px solid var(--border);background:var(--panel);font-size:18px;font-weight:800;color:var(--gold-deep);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:0.15s var(--ease);}
-  .gs-btn:active{transform:scale(0.92);background:var(--gold-soft);}
-  .gs-value{font-family:'Amiri',serif;font-size:24px;font-weight:700;color:var(--text);min-width:26px;text-align:center;}
   .mode-card{flex:1;background:var(--panel-2);border:2px solid var(--border);border-radius:16px;padding:20px 8px;text-align:center;cursor:pointer;transition:0.22s var(--ease);}
   .mode-card .mi{font-size:32px;display:block;margin-bottom:8px;filter:grayscale(0.15);}
   .mode-card .ml{font-size:12px;color:var(--muted);font-weight:700;letter-spacing:0.05em;text-transform:uppercase;}
@@ -310,7 +263,6 @@
     font-family:'Amiri',serif;font-size:30px;color:var(--gold-deep);opacity:0;text-align:center;padding:0 30px;
     animation:splashText 1s ease forwards 0.15s;text-shadow:0 2px 20px rgba(203,161,53,0.3);
   }
-  html.agent-theme .splash-ar{text-shadow:0 2px 20px rgba(29,95,168,0.3);}
   .splash-sub{font-size:11px;color:var(--muted);letter-spacing:0.2em;text-transform:uppercase;margin-top:14px;opacity:0;animation:splashText 1s ease forwards 0.4s;}
   @keyframes splashText{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
   @keyframes splashOut{to{opacity:0;visibility:hidden;pointer-events:none;}}
@@ -328,7 +280,6 @@
   <div class="eyebrow" style="color:var(--gold-deep);font-size:12px;letter-spacing:0.2em;font-weight:600;">CHEZ NASIR SECK</div>
   <div class="qr-frame" style="margin-top:22px;"><div id="visitor-qr"></div><div class="qr-badge">🔑</div></div>
   <div id="visitor-status" style="margin-top:18px;font-size:15px;color:var(--muted);"></div>
-  <div id="visitor-guest-count" style="margin-top:8px;font-size:14px;font-weight:700;color:var(--gold-deep);"></div>
 </div>
 
 <div id="app-view">
@@ -338,7 +289,6 @@
     <div class="eyebrow">Chez Nasir Seck</div>
     <h1>Accès</h1>
     <div class="rule"></div>
-    <div class="agent-banner" id="agent-banner">AGENT SÉCURITÉ<br>NASIR SECK</div>
   </header>
 
   <main>
@@ -387,17 +337,6 @@
           </div>
           <div class="mode-card" id="mode-permanent" onclick="selectMode(true)">
             <span class="mi">♾️</span><span class="ml">Permanent</span>
-          </div>
-        </div>
-        <div class="guest-stepper">
-          <div class="gs-label">
-            <div class="gs-title">👥 Personnes</div>
-            <div class="gs-sub">Nombre d'invités pour ce code</div>
-          </div>
-          <div class="gs-controls">
-            <button class="gs-btn" onclick="changeGuestCount(-1)">−</button>
-            <div class="gs-value" id="guest-count-value">1</div>
-            <button class="gs-btn" onclick="changeGuestCount(1)">+</button>
           </div>
         </div>
         <button class="big-btn" onclick="generateCode()"><span class="bi">🔑</span> Nouveau code</button>
@@ -481,7 +420,6 @@ const AGENT_PIN_DEFAULT = "2026";
 let scanner = null;
 let scannerRunning = false;
 let currentMode = false;
-let currentGuestCount = 1;
 let lastToken = null;
 let pinBuffer = '';
 let activeGuardCodes = new Set();
@@ -499,20 +437,6 @@ const firebaseConfig = {
   appId: "1:945652249720:web:27df416488dada002f298d"
 };
 firebase.initializeApp(firebaseConfig);
-
-// ---------- App Check : empêche les scripts externes copiant firebaseConfig ----------
-// d'écrire dans Firestore. Le site key ci-dessous vient de la console Google reCAPTCHA
-// (v3) associée à ce projet Firebase — voir Firebase Console > App Check.
-const RECAPTCHA_V3_SITE_KEY = "REMPLACER_PAR_VOTRE_CLE_RECAPTCHA_V3";
-if(RECAPTCHA_V3_SITE_KEY && RECAPTCHA_V3_SITE_KEY.indexOf('REMPLACER') === -1){
-  firebase.appCheck().activate(
-    new firebase.appCheck.ReCaptchaV3Provider(RECAPTCHA_V3_SITE_KEY),
-    true // rafraîchissement automatique du token
-  );
-}else{
-  console.warn('App Check non activé : renseignez RECAPTCHA_V3_SITE_KEY.');
-}
-
 const db = firebase.firestore();
 db.enablePersistence({ synchronizeTabs: true }).catch(err=>{
   console.warn('Persistance hors-ligne non activée :', err.code);
@@ -618,14 +542,6 @@ function genToken(){
     correctLevel: QRCode.CorrectLevel.H
   });
   document.getElementById('visitor-status').textContent = 'Montrez ce code à la sécurité à votre arrivée';
-  db.collection('codes').doc(code).get().then(snap=>{
-    if(snap.exists){
-      const d = snap.data();
-      if(d.guestCount > 1){
-        document.getElementById('visitor-guest-count').textContent = `👥 Valable pour ${d.guestCount} personnes`;
-      }
-    }
-  }).catch(()=>{});
 })();
 
 (function initAgentMode(){
@@ -633,16 +549,6 @@ function genToken(){
   if(params.get('agent') === '1'){
     const tabGen = document.getElementById('tab-generate');
     if(tabGen) tabGen.style.display = 'none';
-    const tabPrayer = document.getElementById('tab-prayer');
-    if(tabPrayer) tabPrayer.style.display = 'none';
-    const prayerCard = document.getElementById('prayer-card-top');
-    if(prayerCard) prayerCard.style.display = 'none';
-    const agentBanner = document.getElementById('agent-banner');
-    if(agentBanner) agentBanner.style.display = 'block';
-    const headerEyebrow = document.querySelector('header .eyebrow');
-    if(headerEyebrow) headerEyebrow.style.display = 'none';
-    const headerH1 = document.querySelector('header h1');
-    if(headerH1) headerH1.style.display = 'none';
     document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
     document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
     document.getElementById('view-scan').classList.add('active');
@@ -677,21 +583,14 @@ function selectMode(permanent){
   document.getElementById('mode-permanent').classList.toggle('selected', permanent);
 }
 
-function changeGuestCount(delta){
-  currentGuestCount = Math.max(1, Math.min(30, currentGuestCount + delta));
-  document.getElementById('guest-count-value').textContent = currentGuestCount;
-}
-
 async function generateCode(){
   const token = genToken();
-  const guestCount = currentGuestCount;
   try{
     await codesRef.doc(token).set({
       permanent: currentMode,
       scanned: false,
       scannedAt: null,
       entryCount: 0,
-      guestCount: guestCount,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
     });
   }catch(e){
@@ -707,7 +606,7 @@ async function generateCode(){
     text: token, width: 200, height: 200, colorDark: "#0B1526", colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
-  document.getElementById('gen-mode-icon').textContent = (currentMode ? '♾️' : '1️⃣') + (guestCount > 1 ? ` · 👥 ${guestCount}` : '');
+  document.getElementById('gen-mode-icon').textContent = currentMode ? '♾️' : '1️⃣';
   const frame = document.getElementById('gen-qr-frame');
   const badge = document.getElementById('gen-qr-badge');
   if(currentMode){
@@ -725,8 +624,6 @@ function resetGenerate(){
   document.getElementById('generate-card').style.display = 'block';
   document.getElementById('result-card').style.display = 'none';
   lastToken = null;
-  currentGuestCount = 1;
-  document.getElementById('guest-count-value').textContent = '1';
 }
 
 // ---------- Portail agent : QR image ----------
@@ -747,8 +644,7 @@ function drawModeBadge(ctx, cx, cy, r, permanent){
   ctx.fillText(permanent ? '♾️' : '🔑', cx, cy + r * 0.05);
 }
 
-function qrTokenToBlob(token, permanent, guestCount){
-  const gc = guestCount || 1;
+function qrTokenToBlob(token, permanent){
   return new Promise((resolve)=>{
     const temp = document.createElement('div');
     temp.style.position = 'fixed';
@@ -764,7 +660,7 @@ function qrTokenToBlob(token, permanent, guestCount){
         const borderColor = permanent ? '#7C3AED' : '#CBA135';
         const pad = 34;
         const bannerH = 110;
-        const footerH = gc > 1 ? 130 : 80;
+        const footerH = 80;
         const finalW = qrSize + pad * 2;
         const finalH = qrSize + pad * 2 + bannerH + footerH;
         const canvas = document.createElement('canvas');
@@ -800,14 +696,7 @@ function qrTokenToBlob(token, permanent, guestCount){
         // bandeau du bas
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(permanent ? 'Valable plusieurs fois — Nasir Seck' : 'Valable une seule fois — Nasir Seck', finalW / 2, finalH - footerH / 2 - (gc > 1 ? 25 : 0));
-
-        // bandeau nombre de personnes (si > 1)
-        if(gc > 1){
-          ctx.font = 'bold 30px sans-serif';
-          ctx.fillStyle = borderColor;
-          ctx.fillText(`👥 Valable pour ${gc} personnes`, finalW / 2, finalH - footerH / 2 + 30);
-        }
+        ctx.fillText(permanent ? 'Valable plusieurs fois — Nasir Seck' : 'Valable une seule fois — Nasir Seck', finalW / 2, finalH - footerH / 2);
 
         canvas.toBlob(blob=>{
           document.body.removeChild(temp);
@@ -823,12 +712,11 @@ async function shareCode(token){
   const existing = await codesRef.doc(token).get().catch(()=>null);
   const data = (existing && existing.exists) ? existing.data() : {};
   const permanent = !!data.permanent;
-  const guestCount = data.guestCount || 1;
 
   const text = permanent
     ? 'Voici votre accès permanent chez Nasir ♾️ Montrez cette image à la sécurité.'
     : 'Voici votre accès chez Nasir 🔑 Montrez cette image à la sécurité.';
-  const blob = await qrTokenToBlob(token, permanent, guestCount);
+  const blob = await qrTokenToBlob(token, permanent);
   const filename = `acces-${permanent ? 'permanent' : 'unefois'}-${token.slice(-6)}.png`;
   const file = new File([blob], filename, { type: 'image/png' });
 
@@ -874,7 +762,7 @@ function renderHistory(list){
         <div class="hi-left">
           <div class="hi-icon">${icon}</div>
           <div>
-            <div class="hi-code">${i.token.slice(-6)}${i.guestCount > 1 ? ' · 👥 ' + i.guestCount : ''}</div>
+            <div class="hi-code">${i.token.slice(-6)}</div>
             <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}</div>
             ${i.phone ? `<div class="hi-time" style="color:var(--gold);">📱 ${i.phone}</div>` : ''}
           </div>
@@ -1074,28 +962,25 @@ async function validateToken(rawText){
     resultEl.className = 'scan-result permanent show';
     badgeEl.className = 'result-badge permanent';
     badgeEl.innerHTML = '✓<span class="permanent-tag">♾️</span>';
-    rtEl.textContent = (data.guestCount > 1 ? `♾️ Entrée autorisée — 👥 ${data.guestCount} personnes` : '♾️ Entrée autorisée — Accès permanent');
+    rtEl.textContent = '♾️ Entrée autorisée — Accès permanent';
     rsEl.style.display = 'block';
   }else{
     resultEl.className = 'scan-result valid show';
     badgeEl.className = 'result-badge valid';
     badgeEl.innerHTML = '✓';
-    rtEl.textContent = (data.guestCount > 1 ? `Entrée autorisée — 👥 ${data.guestCount} personnes` : 'Entrée autorisée — code de Nasir');
+    rtEl.textContent = 'Entrée autorisée — code de Nasir';
     rsEl.style.display = 'none';
   }
   setTimeout(()=>{ resultEl.classList.remove('show'); }, 3000);
 
-  const guestCount = data && data.guestCount ? data.guestCount : 1;
-  showFullscreenResult(outcome.status, guestCount);
+  showFullscreenResult(outcome.status);
 }
 
-function showFullscreenResult(status, guestCount){
+function showFullscreenResult(status){
   const fsEl = document.getElementById('fullscreen-result');
   const iconEl = document.getElementById('fs-icon');
   const textEl = document.getElementById('fs-text');
   const subEl = document.getElementById('fs-sub');
-  const gc = guestCount || 1;
-  const guestLine = gc > 1 ? `👥 ${gc} personnes` : '';
 
   if(status === 'invalid'){
     fsEl.className = 'fullscreen-result invalid show';
@@ -1116,11 +1001,11 @@ function showFullscreenResult(status, guestCount){
     fsEl.className = 'fullscreen-result permanent show';
     iconEl.textContent = '✓♾️';
     textEl.textContent = 'Accès permanent';
-    subEl.textContent = guestLine ? `Entrée autorisée — code de Nasir · ${guestLine}` : 'Entrée autorisée — code de Nasir';
+    subEl.textContent = 'Entrée autorisée — code de Nasir';
   }else{
     fsEl.className = 'fullscreen-result valid show';
     iconEl.textContent = '✓';
-    textEl.textContent = guestLine ? `Entrée autorisée · ${guestLine}` : 'Entrée autorisée';
+    textEl.textContent = 'Entrée autorisée';
     subEl.textContent = 'Code de Nasir';
   }
 
@@ -1134,7 +1019,7 @@ function showFullscreenResult(status, guestCount){
   setTimeout(()=>{
     fsEl.classList.remove('show');
     scanLocked = false;
-  }, 5000);
+  }, 15000);
 }
 
 // ---------- Sons distincts par résultat (Web Audio API, fonctionne hors-ligne) ----------
