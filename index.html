@@ -339,6 +339,11 @@
             <span class="mi">♾️</span><span class="ml">Permanent</span>
           </div>
         </div>
+        <div class="guest-count-row" style="margin:14px 0;">
+          <label for="inv-guest-count" style="display:block;font-size:13px;font-weight:700;color:var(--muted);margin-bottom:6px;">👥 Nombre de personnes</label>
+          <input type="number" id="inv-guest-count" min="1" max="30" value="1" step="1"
+            style="width:100%;padding:12px 14px;border-radius:12px;border:1.5px solid var(--border);font-size:16px;font-weight:700;color:var(--text);background:var(--panel);">
+        </div>
         <button class="big-btn" onclick="generateCode()"><span class="bi">🔑</span> Nouveau code</button>
       </div>
 
@@ -585,9 +590,12 @@ function selectMode(permanent){
 
 async function generateCode(){
   const token = genToken();
+  const guestCountInput = document.getElementById('inv-guest-count');
+  const guestCount = Math.min(30, Math.max(1, parseInt(guestCountInput && guestCountInput.value) || 1));
   try{
     await codesRef.doc(token).set({
       permanent: currentMode,
+      guestCount: guestCount,
       scanned: false,
       scannedAt: null,
       entryCount: 0,
@@ -623,6 +631,8 @@ async function generateCode(){
 function resetGenerate(){
   document.getElementById('generate-card').style.display = 'block';
   document.getElementById('result-card').style.display = 'none';
+  const guestCountInput = document.getElementById('inv-guest-count');
+  if(guestCountInput) guestCountInput.value = 1;
   lastToken = null;
 }
 
@@ -644,7 +654,8 @@ function drawModeBadge(ctx, cx, cy, r, permanent){
   ctx.fillText(permanent ? '♾️' : '🔑', cx, cy + r * 0.05);
 }
 
-function qrTokenToBlob(token, permanent){
+function qrTokenToBlob(token, permanent, guestCount){
+  guestCount = guestCount || 1;
   return new Promise((resolve)=>{
     const temp = document.createElement('div');
     temp.style.position = 'fixed';
@@ -696,7 +707,10 @@ function qrTokenToBlob(token, permanent){
         // bandeau du bas
         ctx.fillStyle = '#ffffff';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText(permanent ? 'Valable plusieurs fois — Nasir Seck' : 'Valable une seule fois — Nasir Seck', finalW / 2, finalH - footerH / 2);
+        const footerLabel = permanent
+          ? 'Valable plusieurs fois — Nasir Seck'
+          : (guestCount > 1 ? `Valable une seule fois · ${guestCount} personnes — Nasir Seck` : 'Valable une seule fois — Nasir Seck');
+        ctx.fillText(footerLabel, finalW / 2, finalH - footerH / 2);
 
         canvas.toBlob(blob=>{
           document.body.removeChild(temp);
@@ -712,11 +726,14 @@ async function shareCode(token){
   const existing = await codesRef.doc(token).get().catch(()=>null);
   const data = (existing && existing.exists) ? existing.data() : {};
   const permanent = !!data.permanent;
+  const guestCount = data.guestCount || 1;
 
   const text = permanent
     ? 'Voici votre accès permanent chez Nasir ♾️ Montrez cette image à la sécurité.'
-    : 'Voici votre accès chez Nasir 🔑 Montrez cette image à la sécurité.';
-  const blob = await qrTokenToBlob(token, permanent);
+    : (guestCount > 1
+        ? `Voici votre accès chez Nasir 🔑 (valable pour ${guestCount} personnes). Montrez cette image à la sécurité.`
+        : 'Voici votre accès chez Nasir 🔑 Montrez cette image à la sécurité.');
+  const blob = await qrTokenToBlob(token, permanent, guestCount);
   const filename = `acces-${permanent ? 'permanent' : 'unefois'}-${token.slice(-6)}.png`;
   const file = new File([blob], filename, { type: 'image/png' });
 
@@ -762,7 +779,7 @@ function renderHistory(list){
         <div class="hi-left">
           <div class="hi-icon">${icon}</div>
           <div>
-            <div class="hi-code">${i.token.slice(-6)}</div>
+            <div class="hi-code">${i.token.slice(-6)}${i.guestCount > 1 ? ` · 👥 ${i.guestCount}` : ''}</div>
             <div class="hi-time">${time}${i.permanent && i.entryCount ? ' · ' + i.entryCount + '×' : ''}</div>
             ${i.phone ? `<div class="hi-time" style="color:var(--gold);">📱 ${i.phone}</div>` : ''}
           </div>
@@ -926,9 +943,9 @@ async function validateToken(rawText){
       scannedAt: firebase.firestore.FieldValue.serverTimestamp(),
       entryCount: firebase.firestore.FieldValue.increment(1)
     }).catch(e=>console.error(e));
-    outcome = { status:'valid_permanent' };
+    outcome = { status:'valid_permanent', guestCount: data.guestCount || 1 };
   }else if(data.scanned || locallyMarkedUsed.has(token)){
-    outcome = { status:'used' };
+    outcome = { status:'used', guestCount: data.guestCount || 1 };
   }else{
     locallyMarkedUsed.add(token);
     if(!online) offlineScanCount++;
@@ -936,7 +953,7 @@ async function validateToken(rawText){
       scanned:true,
       scannedAt: firebase.firestore.FieldValue.serverTimestamp()
     }).catch(e=>console.error(e));
-    outcome = { status:'valid' };
+    outcome = { status:'valid', guestCount: data.guestCount || 1 };
   }
   updateOfflineBanner();
 
@@ -968,15 +985,18 @@ async function validateToken(rawText){
     resultEl.className = 'scan-result valid show';
     badgeEl.className = 'result-badge valid';
     badgeEl.innerHTML = '✓';
-    rtEl.textContent = 'Entrée autorisée — code de Nasir';
+    rtEl.textContent = outcome.guestCount > 1
+      ? `Entrée autorisée — 👥 ${outcome.guestCount} personnes`
+      : 'Entrée autorisée — code de Nasir';
     rsEl.style.display = 'none';
   }
   setTimeout(()=>{ resultEl.classList.remove('show'); }, 3000);
 
-  showFullscreenResult(outcome.status);
+  showFullscreenResult(outcome.status, outcome.guestCount);
 }
 
-function showFullscreenResult(status){
+function showFullscreenResult(status, guestCount){
+  guestCount = guestCount || 1;
   const fsEl = document.getElementById('fullscreen-result');
   const iconEl = document.getElementById('fs-icon');
   const textEl = document.getElementById('fs-text');
@@ -996,7 +1016,7 @@ function showFullscreenResult(status){
     fsEl.className = 'fullscreen-result invalid show';
     iconEl.textContent = '✗';
     textEl.textContent = 'Déjà entré';
-    subEl.textContent = 'Ce code a déjà été scanné';
+    subEl.textContent = guestCount > 1 ? `Code déjà scanné (groupe de ${guestCount} personnes)` : 'Ce code a déjà été scanné';
   }else if(status === 'valid_permanent'){
     fsEl.className = 'fullscreen-result permanent show';
     iconEl.textContent = '✓♾️';
@@ -1005,8 +1025,8 @@ function showFullscreenResult(status){
   }else{
     fsEl.className = 'fullscreen-result valid show';
     iconEl.textContent = '✓';
-    textEl.textContent = 'Entrée autorisée';
-    subEl.textContent = 'Code de Nasir';
+    textEl.textContent = guestCount > 1 ? `👥 ${guestCount} personnes` : 'Entrée autorisée';
+    subEl.textContent = guestCount > 1 ? 'Groupe autorisé — code de Nasir' : 'Code de Nasir';
   }
 
   // Vibration si supportée (retour tactile pour l'agent)
