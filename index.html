@@ -10,6 +10,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
   :root{
     --bg:#FAF6ED; --bg-2:#F2E9D8; --panel:#FFFFFF; --panel-2:#F6F0E1;
@@ -319,6 +320,17 @@
   .ai-msg{max-width:82%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
   .ai-msg.user{align-self:flex-end;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#20160A;border-bottom-right-radius:4px;font-weight:600;}
   .ai-msg.assistant{align-self:flex-start;background:var(--panel-2);border:1px solid var(--border-soft);color:var(--text);border-bottom-left-radius:4px;}
+  .ai-msg.voice-msg{min-width:180px;}
+  .voice-row{display:flex;align-items:center;gap:9px;}
+  .voice-play-btn{width:32px;height:32px;flex-shrink:0;border-radius:50%;border:none;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;background:#20160A;color:#fff;}
+  .ai-msg.assistant .voice-play-btn{background:var(--gold-deep);}
+  .voice-wave{flex:1;min-width:0;display:flex;align-items:center;gap:2px;height:22px;overflow:hidden;}
+  .voice-wave-bar{width:3px;border-radius:2px;flex-shrink:0;background:#20160A;opacity:0.55;}
+  .ai-msg.assistant .voice-wave-bar{background:var(--gold-deep);}
+  .voice-duration{font-size:10.5px;font-weight:800;opacity:0.8;flex-shrink:0;}
+  .voice-transcript-toggle{display:block;margin-top:7px;background:none;border:none;padding:0;font-size:10.5px;font-weight:700;cursor:pointer;color:inherit;opacity:0.75;text-decoration:underline;}
+  .voice-transcript{margin-top:5px;font-size:12.5px;line-height:1.4;opacity:0.9;font-style:italic;}
+  .ai-pdf-btn{display:inline-block;margin-top:9px;border:1px solid var(--border);background:var(--panel);color:var(--gold-deep);border-radius:10px;padding:6px 12px;font-size:11px;font-weight:800;cursor:pointer;}
   .ai-msg.typing{align-self:flex-start;background:var(--panel-2);border:1px solid var(--border-soft);color:var(--muted);font-style:italic;font-size:13px;}
   .ai-input-row{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--border-soft);background:var(--panel-2);padding-bottom:env(safe-area-inset-bottom,0px);}
   .ai-input-row textarea{flex:1;min-width:0;resize:none;border:1px solid var(--border);border-radius:14px;padding:11px 14px;font-family:inherit;font-size:14px;color:var(--text);background:var(--panel);max-height:100px;}
@@ -355,6 +367,8 @@
   .mem-select{flex:1;}
   .mem-textarea{resize:vertical;}
   .mem-save-btn{border:0;border-radius:12px;padding:12px;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#fff;font-weight:800;font-size:13.5px;cursor:pointer;}
+  .tool-result{margin-top:10px;background:var(--panel);border:1px solid var(--border-soft);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5;}
+  .tool-result b{color:var(--gold-deep);}
   .mem-alert-dot{display:inline-block;background:var(--danger-deep);color:#fff;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:800;margin-left:6px;}
 
   /* ===== NASIR AI — Alertes proactives ===== */
@@ -533,6 +547,7 @@
             <div class="ah-sub">Assistant personnel • Direction • BTP • Immobilier • Golfe</div>
           </div>
           <button class="ai-settings-btn" type="button" id="nasir-memoire-btn" onclick="nasirMemoireToggle()" title="Mémoire métier">🗂️ Mémoire</button>
+          <button class="ai-settings-btn" type="button" onclick="nasirToolsToggle()" title="Outils de calcul" style="margin-left:6px;">🧮 Outils</button>
           <button class="ai-settings-btn" type="button" onclick="nasirAiToggleSettings()" title="Configurer la clé API" style="margin-left:6px;">⚙️ Clé API</button>
           <button class="icon-btn" onclick="nasirAiClearHistory()" title="Nouvelle conversation" style="margin-left:6px;">🗑️</button>
         </div>
@@ -588,6 +603,50 @@
             <button type="button" id="mem-save-btn" class="mem-save-btn" onclick="nasirMemoireSave()">➕ Ajouter le dossier</button>
           </div>
         </div>
+        <div id="nasir-tools-panel" class="ai-settings-panel">
+          <div style="font-weight:800;margin-bottom:10px;">💱 Convertisseur devises Golfe / FCFA / EUR / USD</div>
+          <div class="mem-form-row">
+            <input type="number" id="tool-fx-amount" class="mem-input" placeholder="Montant" value="1000">
+            <select id="tool-fx-from" class="mem-select" aria-label="De">
+              <option value="XOF">FCFA (XOF)</option>
+              <option value="EUR">EUR</option>
+              <option value="USD" selected>USD</option>
+              <option value="SAR">Riyal saoudien (SAR)</option>
+              <option value="AED">Dirham EAU (AED)</option>
+              <option value="QAR">Riyal qatari (QAR)</option>
+              <option value="KWD">Dinar koweïtien (KWD)</option>
+              <option value="BHD">Dinar bahreïni (BHD)</option>
+              <option value="OMR">Rial omanais (OMR)</option>
+            </select>
+          </div>
+          <div class="mem-form-row">
+            <select id="tool-fx-to" class="mem-select" aria-label="Vers">
+              <option value="XOF" selected>FCFA (XOF)</option>
+              <option value="EUR">EUR</option>
+              <option value="USD">USD</option>
+              <option value="SAR">Riyal saoudien (SAR)</option>
+              <option value="AED">Dirham EAU (AED)</option>
+              <option value="QAR">Riyal qatari (QAR)</option>
+              <option value="KWD">Dinar koweïtien (KWD)</option>
+              <option value="BHD">Dinar bahreïni (BHD)</option>
+              <option value="OMR">Rial omanais (OMR)</option>
+            </select>
+            <input type="number" id="tool-eurusd-rate" class="mem-input" placeholder="Taux EUR/USD" value="1.08" step="0.001">
+          </div>
+          <div style="font-size:10.5px;color:var(--muted);margin:-2px 0 8px;">Taux fixes officiels pour SAR/AED/QAR/BHD/OMR (pegs) ; KWD indicatif ; FCFA fixé à l'EUR (655,957). Seul le taux EUR/USD est flottant — ajustez-le vous-même ci-dessus.</div>
+          <button type="button" class="mem-save-btn" onclick="nasirToolsRunConvert()">💱 Convertir</button>
+          <div id="tool-fx-result" class="tool-result" style="display:none;"></div>
+
+          <div style="font-weight:800;margin:18px 0 10px;border-top:1px dashed var(--border);padding-top:14px;">🏠 Rentabilité immobilière</div>
+          <input type="number" id="tool-immo-prix" class="mem-input" placeholder="Prix d'achat total (FCFA)">
+          <div class="mem-form-row">
+            <input type="number" id="tool-immo-loyer" class="mem-input" placeholder="Loyer mensuel">
+            <input type="number" id="tool-immo-charges" class="mem-input" placeholder="Charges annuelles (0 si aucune)">
+          </div>
+          <input type="number" id="tool-immo-apport" class="mem-input" placeholder="Apport personnel (optionnel)">
+          <button type="button" class="mem-save-btn" onclick="nasirToolsRunRentabilite()">🏠 Calculer la rentabilité</button>
+          <div id="tool-immo-result" class="tool-result" style="display:none;"></div>
+        </div>
         <div id="nasir-ai-config" class="ai-config-note">⚠️ Configurez votre clé Anthropic avec le bouton <b>⚙️ Clé API</b>.</div>
         <div id="nasir-alerts-banner" class="nasir-alerts-banner" style="display:none;">
           <div class="nasir-alerts-title">⚠️ <span id="nasir-alerts-count">0</span> dossier(s) à traiter</div>
@@ -596,7 +655,7 @@
         <div id="nasir-ai-messages" class="ai-messages"></div>
         <div class="ai-input-row">
           <div class="nasir-ai-voicebar">
-            <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Maintenir pour parler / démarrer l'écoute">🎙️</button>
+            <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Envoyer un message vocal">🎙️</button>
             <button type="button" id="nasir-ai-speak" class="ai-voice-btn active" onclick="nasirAiToggleSpeak()" title="Activer/désactiver la réponse vocale">🔊</button>
             <select id="nasir-ai-lang" class="ai-lang-select" aria-label="Langue">
               <option value="fr-FR">🇫🇷 Français</option>
@@ -610,7 +669,7 @@
             <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez votre message…" onkeydown="nasirAiKeydown(event)"></textarea>
             <button type="button" class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer le message">➤</button>
           </div>
-          <div class="nasir-ai-hint">🎙️ Parler : appuyez sur le micro, parlez, puis NASIR AI envoie automatiquement. &nbsp;•&nbsp; ⌨️ Écrire : tapez votre message puis appuyez sur ➤ ou <b>Entrée</b>.</div>
+          <div class="nasir-ai-hint">🎙️ Message vocal : appuyez sur le micro pour démarrer, ré-appuyez pour arrêter et envoyer, comme sur WhatsApp. &nbsp;•&nbsp; ⌨️ Écrire : tapez votre message puis appuyez sur ➤ ou <b>Entrée</b>.</div>
         </div>
       </div>
     </section>
@@ -1539,6 +1598,136 @@ function nasirAiInitMode(){
   nasirAiSetMode(btn ? btn.getAttribute('data-mode') : 'direction', btn);
 }
 
+// ============================================================
+// ---------- NASIR AI — Outils de calcul (devises Golfe, rentabilité) ----------
+// Taux de change officiels fixes (pegs) vis-à-vis de l'USD.
+// SAR, AED, QAR, BHD, OMR : pegs officiels stables. KWD : indicatif (panier non public, varie légèrement).
+const NASIR_FX_PER_USD = { USD:1, SAR:3.75, AED:3.6725, QAR:3.64, BHD:0.376, OMR:0.3845, KWD:0.307 };
+function nasirAiEurUsdRate(){
+  const el=document.getElementById('tool-eurusd-rate');
+  const v=el ? parseFloat(el.value) : NaN;
+  return (!isNaN(v) && v>0) ? v : 1.08;
+}
+function nasirAiToUsd(amount, cur){
+  amount=Number(amount);
+  if(cur==='USD') return amount;
+  if(cur==='EUR') return amount*nasirAiEurUsdRate();
+  if(cur==='XOF') return (amount/655.957)*nasirAiEurUsdRate();
+  if(NASIR_FX_PER_USD[cur]) return amount/NASIR_FX_PER_USD[cur];
+  throw new Error('Devise non reconnue : '+cur);
+}
+function nasirAiFromUsd(amountUsd, cur){
+  if(cur==='USD') return amountUsd;
+  if(cur==='EUR') return amountUsd/nasirAiEurUsdRate();
+  if(cur==='XOF') return (amountUsd/nasirAiEurUsdRate())*655.957;
+  if(NASIR_FX_PER_USD[cur]) return amountUsd*NASIR_FX_PER_USD[cur];
+  throw new Error('Devise non reconnue : '+cur);
+}
+function nasirAiToolConvert(input){
+  const {montant, de, vers}=input;
+  const usd=nasirAiToUsd(montant, de);
+  const result=nasirAiFromUsd(usd, vers);
+  return {
+    montant_source: montant, devise_source: de,
+    montant_converti: Math.round(result*100)/100, devise_cible: vers,
+    note: "Taux fixes officiels pour SAR/AED/QAR/BHD/OMR ; KWD indicatif ; FCFA fixé à l'EUR (655,957). Taux EUR/USD flottant utilisé : "+nasirAiEurUsdRate()+"."
+  };
+}
+function nasirAiToolRentabilite(input){
+  const prixAchat=Number(input.prix_achat)||0;
+  const loyerMensuel=Number(input.loyer_mensuel)||0;
+  const chargesAnnuelles=Number(input.charges_annuelles)||0;
+  const apport=(input.apport!=null && input.apport!=='') ? Number(input.apport) : null;
+  if(prixAchat<=0) throw new Error("Le prix d'achat doit être positif.");
+  const loyerAnnuel=loyerMensuel*12;
+  const rentabiliteBrute=(loyerAnnuel/prixAchat)*100;
+  const rentabiliteNette=((loyerAnnuel-chargesAnnuelles)/prixAchat)*100;
+  const cashflowMensuel=loyerMensuel-(chargesAnnuelles/12);
+  const result={
+    loyer_annuel: Math.round(loyerAnnuel),
+    rentabilite_brute_pct: Math.round(rentabiliteBrute*100)/100,
+    rentabilite_nette_pct: Math.round(rentabiliteNette*100)/100,
+    cashflow_mensuel: Math.round(cashflowMensuel)
+  };
+  if(apport && apport>0) result.rendement_sur_apport_pct=Math.round(((loyerAnnuel-chargesAnnuelles)/apport)*10000)/100;
+  return result;
+}
+function nasirAiRunLocalTool(name, input){
+  try{
+    if(name==='convertir_devise') return nasirAiToolConvert(input);
+    if(name==='calculer_rentabilite_immobiliere') return nasirAiToolRentabilite(input);
+    return {error:'Outil inconnu : '+name};
+  }catch(e){
+    return {error:'Erreur de calcul : '+(e.message||e)};
+  }
+}
+const NASIR_TOOL_CONVERT={
+  name:'convertir_devise',
+  description:"Convertit un montant entre devises du Golfe (SAR, AED, QAR, KWD, BHD, OMR), le FCFA (XOF), l'EUR et l'USD, à partir des taux de change officiels réels configurés dans l'app. Utilise toujours cet outil pour tout calcul de conversion — ne calcule jamais un taux de change de tête.",
+  input_schema:{
+    type:'object',
+    properties:{
+      montant:{type:'number', description:'Montant à convertir'},
+      de:{type:'string', enum:['SAR','AED','QAR','KWD','BHD','OMR','USD','EUR','XOF'], description:'Devise source'},
+      vers:{type:'string', enum:['SAR','AED','QAR','KWD','BHD','OMR','USD','EUR','XOF'], description:'Devise cible'}
+    },
+    required:['montant','de','vers']
+  }
+};
+const NASIR_TOOL_RENTABILITE={
+  name:'calculer_rentabilite_immobiliere',
+  description:"Calcule la rentabilité brute, la rentabilité nette et le cash-flow mensuel d'un bien locatif à partir du prix d'achat, du loyer mensuel et des charges annuelles. Utilise toujours cet outil pour ce type de calcul — ne calcule jamais ces pourcentages de tête.",
+  input_schema:{
+    type:'object',
+    properties:{
+      prix_achat:{type:'number', description:"Prix d'achat total du bien"},
+      loyer_mensuel:{type:'number', description:'Loyer mensuel perçu'},
+      charges_annuelles:{type:'number', description:"Charges annuelles (entretien, taxes, assurance, gestion...), 0 si non précisé"},
+      apport:{type:'number', description:"Apport personnel investi, optionnel"}
+    },
+    required:['prix_achat','loyer_mensuel']
+  }
+};
+
+function nasirToolsToggle(){
+  const p=document.getElementById('nasir-tools-panel'); if(p) p.classList.toggle('show');
+}
+function nasirToolsRunConvert(){
+  const box=document.getElementById('tool-fx-result');
+  try{
+    const r=nasirAiToolConvert({
+      montant: parseFloat(document.getElementById('tool-fx-amount').value)||0,
+      de: document.getElementById('tool-fx-from').value,
+      vers: document.getElementById('tool-fx-to').value
+    });
+    box.innerHTML=`<b>${r.montant_source.toLocaleString('fr-FR')} ${r.devise_source}</b> = <b>${r.montant_converti.toLocaleString('fr-FR')} ${r.devise_cible}</b><br><span style="font-size:11px;color:var(--muted);">${r.note}</span>`;
+    box.style.display='block';
+  }catch(e){
+    box.innerHTML='⚠️ '+(e.message||e);
+    box.style.display='block';
+  }
+}
+function nasirToolsRunRentabilite(){
+  const box=document.getElementById('tool-immo-result');
+  try{
+    const r=nasirAiToolRentabilite({
+      prix_achat: parseFloat(document.getElementById('tool-immo-prix').value)||0,
+      loyer_mensuel: parseFloat(document.getElementById('tool-immo-loyer').value)||0,
+      charges_annuelles: parseFloat(document.getElementById('tool-immo-charges').value)||0,
+      apport: document.getElementById('tool-immo-apport').value
+    });
+    let html=`Loyer annuel : <b>${r.loyer_annuel.toLocaleString('fr-FR')} FCFA</b><br>`;
+      html+=`Rentabilité brute : <b>${r.rentabilite_brute_pct}%</b> &nbsp;•&nbsp; Rentabilité nette : <b>${r.rentabilite_nette_pct}%</b><br>`;
+      html+=`Cash-flow mensuel : <b>${r.cashflow_mensuel.toLocaleString('fr-FR')} FCFA</b>`;
+    if(r.rendement_sur_apport_pct!=null) html+=`<br>Rendement sur apport : <b>${r.rendement_sur_apport_pct}%</b>`;
+    box.innerHTML=html;
+    box.style.display='block';
+  }catch(e){
+    box.innerHTML='⚠️ '+(e.message||e);
+    box.style.display='block';
+  }
+}
+
 const NASIR_AI_SYSTEM_PROMPT = `
 Tu es NASIR AI, l'assistant personnel, professionnel, stratégique et bras droit numérique de mouhamed nasirou Seck.
 
@@ -1569,6 +1758,9 @@ DOMAINES :
 MODES SPÉCIALISÉS :
 Nasir peut activer un mode (Direction, BTP, Immobilier, Marchés publics, Finance, Réseau Golfe), transmis séparément. Le mode indique où concentrer ton attention et tes propositions en priorité ; les règles absolues et ta connaissance des autres domaines restent valables dans tous les cas.
 
+OUTILS DE CALCUL :
+Tu disposes des outils "convertir_devise" (conversion FCFA/EUR/USD/devises du Golfe à partir de taux réels) et "calculer_rentabilite_immobiliere" (rentabilité brute/nette et cash-flow d'un bien locatif). Utilise-les systématiquement pour tout calcul de ce type — ne calcule jamais un taux de change ou une rentabilité de tête, même approximativement.
+
 MÉMOIRE MÉTIER :
 Un bloc "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR" est fourni séparément avec les dossiers réels (clients, chantiers, marchés publics, biens, contacts) que Nasir a enregistrés dans l'onglet 🗂️ Mémoire. C'est la seule source fiable sur ses affaires en cours : utilise-la en priorité, ne la contredis jamais, et si une information nécessaire n'y figure pas, dis clairement qu'elle doit être ajoutée ou vérifiée plutôt que de l'inventer.
 
@@ -1583,6 +1775,7 @@ RÈGLES ABSOLUES :
 - Pour les documents, conserver un style professionnel, administratif et crédible, sans exagération.
 - En arabe, écrire un arabe professionnel et naturel. En français, être clair et professionnel. Comprendre le Wolof et l'arabe même si la demande mélange les langues.
 - Pour les conversations vocales, répondre dans la même langue que l'utilisateur (français, arabe ou wolof) lorsque la langue est identifiable. Ne pas traduire automatiquement sauf si demandé.
+- Les messages vocaux sont transcrits automatiquement par le téléphone. Cette transcription peut être imparfaite, surtout en wolof (non pris en charge nativement par la reconnaissance vocale des téléphones et transcrit phonétiquement via le moteur français, signalé par la mention "[Message vocal — transcription phonétique approximative…]"). Dans ce cas, interprète l'intention avec tolérance en tenant compte du mélange possible français/wolof/arabe, et demande une clarification précise plutôt que de deviner ou d'halluciner un sens.
 - Répondre directement et concrètement. Commencer par l'essentiel, puis détailler si nécessaire.
 - Principe directeur : NASIR AI PRÉPARE. NASIR AI ANALYSE. NASIR AI ALERTE. NASIR AI ORGANISE. NASIR DÉCIDE.
 `;
@@ -1591,7 +1784,25 @@ function nasirAiLoadHistory(){
   try{ return JSON.parse(localStorage.getItem(NASIR_AI_HISTORY_KEY) || "[]"); }catch(e){ return []; }
 }
 function nasirAiSaveHistory(history){
-  try{ localStorage.setItem(NASIR_AI_HISTORY_KEY, JSON.stringify(history.slice(-40))); }catch(e){}
+  try{
+    const trimmed = history.slice(-40).map(m=>({...m}));
+    // On ne garde l'audio jouable (lourd en stockage) que pour les 5 derniers messages vocaux ;
+    // les plus anciens conservent leur transcription texte mais perdent le son rejouable.
+    let audioKept=0;
+    for(let i=trimmed.length-1;i>=0;i--){
+      if(trimmed[i].audio){
+        audioKept++;
+        if(audioKept>5) delete trimmed[i].audio;
+      }
+    }
+    localStorage.setItem(NASIR_AI_HISTORY_KEY, JSON.stringify(trimmed));
+  }catch(e){
+    // Quota dépassé (message vocal trop long) : on retente sans aucun audio.
+    try{
+      const noAudio = history.slice(-40).map(m=>{ const c={...m}; delete c.audio; return c; });
+      localStorage.setItem(NASIR_AI_HISTORY_KEY, JSON.stringify(noAudio));
+    }catch(e2){}
+  }
 }
 function nasirAiRender(){
   const box=document.getElementById('nasir-ai-messages'); if(!box) return;
@@ -1606,7 +1817,7 @@ function nasirAiRender(){
     intro += '\n\nQue souhaitez-vous préparer aujourd’hui ?';
     box.innerHTML=`<div class="ai-msg assistant">${nasirAiEscape(intro)}</div>`;
   }else{
-    box.innerHTML=history.map(m=>`<div class="ai-msg ${m.role==='user'?'user':'assistant'}">${nasirAiEscape(m.content)}</div>`).join('');
+    box.innerHTML=history.map(m=>nasirAiBubbleHtml(m)).join('');
   }
   box.scrollTop=box.scrollHeight;
 }
@@ -1658,45 +1869,62 @@ function nasirAiSaveKey(){
   if(status) status.textContent='✅ Clé enregistrée sur cet appareil.';
   if(note) note.classList.remove('show');
 }
-async function nasirAiSend(){
-  const input=document.getElementById('nasir-ai-input');
+async function nasirAiCoreSend(userMsgObj, bubbleHtml){
   const box=document.getElementById('nasir-ai-messages');
   const note=document.getElementById('nasir-ai-config');
-  if(!input || !box) return;
-  const text=input.value.trim(); if(!text) return; const st=document.getElementById('nasir-ai-status'); if(st)st.textContent='Envoi…';
+  if(!box) return;
+  const st=document.getElementById('nasir-ai-status'); if(st)st.textContent='Envoi…';
   const ANTHROPIC_API_KEY=nasirAiGetKey();
   if(!ANTHROPIC_API_KEY){
     if(note){ note.textContent='⚠️ Ajoutez votre clé Anthropic avec le bouton ⚙️ Clé API.'; note.classList.add('show'); }
     const panel=document.getElementById('nasir-ai-settings'); if(panel) panel.classList.add('show');
     nasirAiRefreshKeyStatus();
+    if(st)st.textContent='Prêt';
     return;
   }
   if(note) note.classList.remove('show');
   const history=nasirAiLoadHistory();
-  history.push({role:'user',content:text});
+  history.push(userMsgObj);
   nasirAiSaveHistory(history);
-  input.value='';
-  box.insertAdjacentHTML('beforeend',`<div class="ai-msg user">${nasirAiEscape(text)}</div>`);
+  box.insertAdjacentHTML('beforeend', bubbleHtml);
   const typing=document.createElement('div'); typing.className='ai-msg typing'; typing.id='nasir-ai-typing'; typing.textContent='NASIR AI réfléchit…'; box.appendChild(typing); box.scrollTop=box.scrollHeight;
   try{
-    const payload={
-      model:NASIR_AI_MODEL,
-      max_tokens:NASIR_AI_MAX_TOKENS,
-      system:NASIR_AI_SYSTEM_PROMPT + "\n\n" + (NASIR_MODES[nasirAiMode]?.focus || '') + "\n\n" + nasirMemoireContextText(),
-      messages:history.map(m=>({role:m.role,content:m.content})),
-      tools:[{type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']}]
-    };
-    const response=await fetch(ANTHROPIC_API_URL,{
-      method:'POST',
-      headers:{'content-type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify(payload)
-    });
-    const data=await response.json();
-    if(!response.ok) throw new Error(data?.error?.message || `Erreur API ${response.status}`);
-    const answer=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim() || 'Je n’ai pas reçu de réponse exploitable.';
+    const systemFull = NASIR_AI_SYSTEM_PROMPT + "\n\n" + (NASIR_MODES[nasirAiMode]?.focus || '') + "\n\n" + nasirMemoireContextText();
+    const toolsDef = [
+      {type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']},
+      NASIR_TOOL_CONVERT, NASIR_TOOL_RENTABILITE
+    ];
+    // Messages de travail pour cet échange : peuvent contenir des blocs tool_use/tool_result
+    // en plus du texte lors du calcul d'une conversion ou d'une rentabilité. Seule la réponse
+    // finale en texte est ensuite conservée dans l'historique persistant (format simple).
+    let workingMessages = history.map(m=>({role:m.role, content:m.content}));
+    let answer='';
+    for(let iter=0; iter<5; iter++){
+      const payload={ model:NASIR_AI_MODEL, max_tokens:NASIR_AI_MAX_TOKENS, system:systemFull, messages:workingMessages, tools:toolsDef };
+      const response=await fetch(ANTHROPIC_API_URL,{
+        method:'POST',
+        headers:{'content-type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify(payload)
+      });
+      const data=await response.json();
+      if(!response.ok) throw new Error(data?.error?.message || `Erreur API ${response.status}`);
+      const blocks=data.content||[];
+      const textParts=blocks.filter(b=>b.type==='text').map(b=>b.text).join('\n').trim();
+      const toolUses=blocks.filter(b=>b.type==='tool_use');
+      if(!toolUses.length){
+        answer=textParts || 'Je n’ai pas reçu de réponse exploitable.';
+        break;
+      }
+      workingMessages.push({role:'assistant', content:blocks});
+      const toolResults=toolUses.map(tu=>({
+        type:'tool_result', tool_use_id:tu.id, content: JSON.stringify(nasirAiRunLocalTool(tu.name, tu.input||{}))
+      }));
+      workingMessages.push({role:'user', content: toolResults});
+      if(iter===4) answer = textParts || 'Le calcul a demandé trop d’étapes — réessayez avec une demande plus simple.';
+    }
     const h=nasirAiLoadHistory(); h.push({role:'assistant',content:answer}); nasirAiSaveHistory(h);
     typing.remove();
-    box.insertAdjacentHTML('beforeend',`<div class="ai-msg assistant">${nasirAiEscape(answer)}</div>`);
+    box.insertAdjacentHTML('beforeend', nasirAiAssistantBubbleHtml(answer));
     nasirAiSpeak(answer);
   }catch(err){
     typing.remove();
@@ -1706,6 +1934,14 @@ async function nasirAiSend(){
   }
   box.scrollTop=box.scrollHeight;
   if(st)st.textContent='Prêt';
+}
+
+async function nasirAiSend(){
+  const input=document.getElementById('nasir-ai-input');
+  if(!input) return;
+  const text=input.value.trim(); if(!text) return;
+  input.value='';
+  await nasirAiCoreSend({role:'user',content:text}, `<div class="ai-msg user">${nasirAiEscape(text)}</div>`);
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); nasirAiInitMode(); });
@@ -1770,8 +2006,24 @@ function nasirAiStopSpeaking(){
   const btn=document.getElementById('nasir-ai-speak');
   if(btn) btn.classList.remove('active','nasir-ai-speaking');
 }
-function nasirAiToggleVoice(){
+let nasirAiMediaRecorder=null;
+let nasirAiAudioChunks=[];
+let nasirAiRecordStart=0;
+let nasirAiRecordTimer=null;
+let nasirAiRecordStream=null;
+
+function nasirAiBlobToDataUrl(blob){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onloadend=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(blob);
+  });
+}
+
+async function nasirAiToggleVoice(){
   if(nasirAiListening){
+    // Arrêter le message vocal en cours : stoppe la dictée puis l'enregistrement audio.
     try{nasirAiRecognition && nasirAiRecognition.stop();}catch(e){}
     return;
   }
@@ -1780,36 +2032,219 @@ function nasirAiToggleVoice(){
     alert('La dictée vocale n’est pas disponible dans ce navigateur. Sur iPhone, utilise Safari et autorise le microphone.');
     return;
   }
-  const lang=nasirAiSelectedLang()==='auto'?'fr-FR':nasirAiSelectedLang();
+  let recogLang=nasirAiSelectedLang()==='auto'?'fr-FR':nasirAiSelectedLang();
+  let wolofFallback=false;
+  if(recogLang==='wo-SN'){
+    // La reconnaissance vocale native des téléphones ne prend pas en charge le wolof :
+    // on transcrit phonétiquement avec le moteur français et on prévient NASIR AI d'être tolérant.
+    recogLang='fr-FR';
+    wolofFallback=true;
+  }
+
+  try{
+    nasirAiRecordStream = await navigator.mediaDevices.getUserMedia({audio:true});
+  }catch(e){
+    alert('Autorise le microphone pour envoyer un message vocal.');
+    return;
+  }
+  nasirAiAudioChunks=[];
+  const mimeType = (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm'))
+    ? 'audio/webm'
+    : (window.MediaRecorder && MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : '');
+  try{
+    nasirAiMediaRecorder = mimeType ? new MediaRecorder(nasirAiRecordStream,{mimeType}) : new MediaRecorder(nasirAiRecordStream);
+  }catch(e){
+    nasirAiMediaRecorder = new MediaRecorder(nasirAiRecordStream);
+  }
+  nasirAiMediaRecorder.ondataavailable=(e)=>{ if(e.data && e.data.size>0) nasirAiAudioChunks.push(e.data); };
+
   nasirAiRecognition=new SR();
-  nasirAiRecognition.lang=lang;
-  nasirAiRecognition.continuous=false;
+  nasirAiRecognition.lang=recogLang;
+  nasirAiRecognition.continuous=true;
   nasirAiRecognition.interimResults=true;
   nasirAiRecognition.maxAlternatives=1;
-  const input=document.getElementById('nasir-ai-input');
   const mic=document.getElementById('nasir-ai-mic');
+  const st=document.getElementById('nasir-ai-status');
   let finalText='';
-  nasirAiRecognition.onstart=()=>{nasirAiListening=true;if(mic)mic.classList.add('active','nasir-ai-speaking'); const st=document.getElementById('nasir-ai-status'); if(st){st.textContent='🎙️ Écoute…';st.classList.add('listening');}};
+
+  const updateTimer=()=>{
+    if(!st) return;
+    const secs=Math.floor((Date.now()-nasirAiRecordStart)/1000);
+    const mm=String(Math.floor(secs/60));
+    const ss=String(secs%60).padStart(2,'0');
+    st.textContent=`🔴 ${mm}:${ss}`;
+  };
+
+  nasirAiRecognition.onstart=()=>{
+    nasirAiListening=true;
+    nasirAiRecordStart=Date.now();
+    if(mic) mic.classList.add('active','nasir-ai-speaking');
+    if(st) st.classList.add('listening');
+    nasirAiRecordTimer=setInterval(updateTimer,500);
+    updateTimer();
+    try{ nasirAiMediaRecorder.start(); }catch(e){}
+  };
   nasirAiRecognition.onresult=(e)=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
       const part=e.results[i][0].transcript;
       if(e.results[i].isFinal) finalText+=part+' '; else interim+=part;
     }
-    if(input) input.value=(finalText+interim).trim();
   };
   nasirAiRecognition.onerror=(e)=>{
-    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking'); const st=document.getElementById('nasir-ai-status'); if(st){st.textContent='Envoi…';st.classList.remove('listening');}
     if(e.error==='not-allowed') alert('Autorise le microphone pour parler à NASIR AI.');
-    else if(e.error==='language-not-supported') alert('La reconnaissance vocale « '+lang+' » n’est pas disponible sur cet appareil. Essaie Français ou Arabe.');
+    else if(e.error==='language-not-supported') alert('La reconnaissance vocale « '+recogLang+' » n’est pas disponible sur cet appareil. Essaie Français ou Arabe.');
   };
   nasirAiRecognition.onend=()=>{
-    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking');
-    const st=document.getElementById('nasir-ai-status'); if(st)st.textContent=input && input.value.trim()?'Envoi…':'Prêt';
-    if(input && input.value.trim()) nasirAiSend();
+    nasirAiListening=false;
+    clearInterval(nasirAiRecordTimer);
+    if(mic) mic.classList.remove('active','nasir-ai-speaking');
+    if(st){ st.classList.remove('listening'); st.textContent='Envoi…'; }
+    if(nasirAiMediaRecorder && nasirAiMediaRecorder.state==='recording') nasirAiMediaRecorder.stop();
+    else if(nasirAiRecordStream){ nasirAiRecordStream.getTracks().forEach(t=>t.stop()); }
   };
-  try{nasirAiRecognition.start();}catch(e){}
+
+  nasirAiMediaRecorder.onstop=async ()=>{
+    if(nasirAiRecordStream){ nasirAiRecordStream.getTracks().forEach(t=>t.stop()); nasirAiRecordStream=null; }
+    const durationSec=Math.max(1,Math.round((Date.now()-nasirAiRecordStart)/1000));
+    const transcript=finalText.trim();
+    const st2=document.getElementById('nasir-ai-status');
+    if(!transcript){ if(st2) st2.textContent='Prêt'; return; }
+    let audioDataUrl=null;
+    try{
+      const blob=new Blob(nasirAiAudioChunks,{type:mimeType||'audio/webm'});
+      audioDataUrl=await nasirAiBlobToDataUrl(blob);
+    }catch(e){}
+    let contentForAI=transcript;
+    if(wolofFallback){
+      contentForAI=`[Message vocal — transcription phonétique approximative via moteur français, le message contient probablement du wolof] ${transcript}`;
+    }
+    nasirAiSendVoice(contentForAI, transcript, audioDataUrl, durationSec);
+  };
+
+  try{ nasirAiRecognition.start(); }
+  catch(e){ if(nasirAiRecordStream) nasirAiRecordStream.getTracks().forEach(t=>t.stop()); }
 }
+
+async function nasirAiSendVoice(contentForAI, transcriptDisplay, audioDataUrl, durationSec){
+  const userMsgObj={role:'user', content:contentForAI, voice:true, transcript:transcriptDisplay, duration:durationSec};
+  if(audioDataUrl) userMsgObj.audio=audioDataUrl;
+  await nasirAiCoreSend(userMsgObj, nasirAiBubbleHtml(userMsgObj));
+}
+
+const nasirAiPdfStore={};
+let nasirAiPdfCounter=0;
+function nasirAiAssistantBubbleHtml(text){
+  const id='pdf-'+(++nasirAiPdfCounter)+'-'+Date.now();
+  nasirAiPdfStore[id]=text;
+  return `<div class="ai-msg assistant">${nasirAiEscape(text)}<button type="button" class="ai-pdf-btn" onclick="nasirAiExportPdf('${id}')">📄 Exporter en PDF</button></div>`;
+}
+function nasirAiExportPdf(id){
+  const text=nasirAiPdfStore[id];
+  if(!text){ alert('Contenu introuvable.'); return; }
+  if(!window.jspdf){ alert('Le générateur PDF est indisponible — vérifiez la connexion internet.'); return; }
+  const { jsPDF }=window.jspdf;
+  const doc=new jsPDF({unit:'pt', format:'a4'});
+  const pageWidth=doc.internal.pageSize.getWidth();
+  const pageHeight=doc.internal.pageSize.getHeight();
+  const margin=50;
+  const maxWidth=pageWidth-margin*2;
+  doc.setFillColor(11,21,38);
+  doc.rect(0,0,pageWidth,72,'F');
+  doc.setTextColor(255,255,255);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(15);
+  doc.text('NASIR AI', margin, 32);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9.5);
+  doc.text('Assistant personnel de Mouhamed Nasirou Seck', margin, 48);
+  doc.text('BTP • Immobilier • Marchés publics • Réseau Golfe', margin, 61);
+  const dateStr=new Date().toLocaleDateString('fr-FR',{year:'numeric',month:'long',day:'numeric'});
+  doc.setFontSize(10);
+  doc.text(dateStr, pageWidth-margin, 32, {align:'right'});
+  let y=100;
+  doc.setTextColor(30,30,30);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(11);
+  const paragraphs=String(text).split('\n');
+  paragraphs.forEach(p=>{
+    const lines=p.trim()===''?['']:doc.splitTextToSize(p, maxWidth);
+    lines.forEach(line=>{
+      if(y>pageHeight-60){ doc.addPage(); y=60; }
+      doc.text(line, margin, y);
+      y+=15;
+    });
+    y+=4;
+  });
+  const totalPages=doc.internal.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFontSize(8);
+    doc.setTextColor(150,150,150);
+    doc.text('Document généré par NASIR AI — usage interne / confidentiel', margin, pageHeight-28);
+    doc.text('Page '+p+'/'+totalPages, pageWidth-margin, pageHeight-28, {align:'right'});
+  }
+  doc.save('NASIR-AI-'+new Date().toISOString().slice(0,10)+'-'+Date.now()+'.pdf');
+}
+
+function nasirAiWaveformHtml(seed){
+  let html='';
+  for(let i=0;i<24;i++){
+    const raw=Math.sin((seed+i)*12.9898)*43758.5453;
+    const frac=raw-Math.floor(raw);
+    const h=6+Math.round(frac*14);
+    html+=`<span class="voice-wave-bar" style="height:${h}px;"></span>`;
+  }
+  return html;
+}
+function nasirAiBubbleHtml(m){
+  const role=m.role==='user'?'user':'assistant';
+  if(m.voice){
+    const dur=m.duration||0;
+    const mm=String(Math.floor(dur/60));
+    const ss=String(dur%60).padStart(2,'0');
+    const transcriptText=m.transcript || m.content || '';
+    if(m.audio){
+      return `<div class="ai-msg ${role} voice-msg">
+        <div class="voice-row">
+          <button type="button" class="voice-play-btn" onclick="nasirAiToggleAudioPlay(this)">▶️</button>
+          <div class="voice-wave">${nasirAiWaveformHtml(dur||5)}</div>
+          <span class="voice-duration">${mm}:${ss}</span>
+        </div>
+        <audio class="voice-audio-el" preload="none" src="${m.audio}"></audio>
+        <button type="button" class="voice-transcript-toggle" onclick="nasirAiToggleTranscript(this)">📝 Voir le texte</button>
+        <div class="voice-transcript" style="display:none;">${nasirAiEscape(transcriptText)}</div>
+      </div>`;
+    }
+    return `<div class="ai-msg ${role}">🎙️ <i>Message vocal (audio non conservé)</i><br>${nasirAiEscape(transcriptText)}</div>`;
+  }
+  return role==='assistant' ? nasirAiAssistantBubbleHtml(m.content) : `<div class="ai-msg ${role}">${nasirAiEscape(m.content)}</div>`;
+}
+function nasirAiToggleAudioPlay(btn){
+  const wrap=btn.closest('.voice-msg'); if(!wrap) return;
+  const audioEl=wrap.querySelector('.voice-audio-el'); if(!audioEl) return;
+  document.querySelectorAll('.voice-audio-el').forEach(a=>{
+    if(a!==audioEl && !a.paused){
+      a.pause(); a.currentTime=0;
+      const b=a.closest('.voice-msg')?.querySelector('.voice-play-btn'); if(b) b.textContent='▶️';
+    }
+  });
+  if(audioEl.paused){
+    audioEl.play().catch(()=>alert('Lecture audio impossible sur cet appareil.'));
+    btn.textContent='⏸️';
+    audioEl.onended=()=>{ btn.textContent='▶️'; };
+  }else{
+    audioEl.pause();
+    btn.textContent='▶️';
+  }
+}
+function nasirAiToggleTranscript(btn){
+  const wrap=btn.nextElementSibling; if(!wrap) return;
+  const showing=wrap.style.display!=='none';
+  wrap.style.display=showing?'none':'block';
+  btn.textContent=showing?'📝 Voir le texte':'🙈 Masquer le texte';
+}
+
 
 if('speechSynthesis' in window){
   window.speechSynthesis.onvoiceschanged=()=>{};
