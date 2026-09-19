@@ -330,6 +330,14 @@
   .ai-lang-select{height:42px;border:1px solid var(--border);border-radius:13px;background:var(--panel-2);color:var(--text);font-size:13px;font-weight:700;padding:0 10px;flex:1;min-width:0;}
   .nasir-ai-speaking{animation:nasirVoicePulse 1s infinite;}
   @keyframes nasirVoicePulse{50%{transform:scale(1.04);opacity:.72;}}
+
+  .nasir-ai-status{font-size:11px;font-weight:700;color:var(--muted);padding:6px 9px;border:1px solid var(--border-soft);border-radius:999px;background:var(--panel);white-space:nowrap;}
+  .nasir-ai-status.listening{color:var(--gold-deep);border-color:var(--gold);}
+  .nasir-ai-hint{font-size:11px;line-height:1.45;color:var(--muted);padding:0 12px 10px;background:var(--panel-2);}
+  .ai-voice-btn{min-width:44px;height:44px;border:1px solid var(--border);border-radius:14px;background:var(--panel);cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;}
+  .ai-voice-btn.active{border-color:var(--gold);box-shadow:0 0 0 2px rgba(203,161,53,.14);}
+  .nasir-ai-inputline{display:flex;gap:8px;flex:1;min-width:0;}
+  @media(max-width:520px){.nasir-ai-status{display:none}.nasir-ai-hint{font-size:10px}.ai-lang-select{max-width:125px}}
 </style>
 </head>
 <body>
@@ -498,19 +506,21 @@
         <div id="nasir-ai-messages" class="ai-messages"></div>
         <div class="ai-input-row">
           <div class="nasir-ai-voicebar">
-            <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Parler à NASIR AI">🎙️</button>
-            <button type="button" id="nasir-ai-speak" class="ai-voice-btn" onclick="nasirAiToggleSpeak()" title="Activer/désactiver les réponses vocales">🔊</button>
-            <select id="nasir-ai-lang" class="ai-lang-select" aria-label="Langue vocale">
+            <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Maintenir pour parler / démarrer l'écoute">🎙️</button>
+            <button type="button" id="nasir-ai-speak" class="ai-voice-btn active" onclick="nasirAiToggleSpeak()" title="Activer/désactiver la réponse vocale">🔊</button>
+            <select id="nasir-ai-lang" class="ai-lang-select" aria-label="Langue">
               <option value="fr-FR">🇫🇷 Français</option>
               <option value="ar-SA">🇸🇦 العربية</option>
               <option value="wo-SN">🇸🇳 Wolof</option>
               <option value="auto">🌍 Auto</option>
             </select>
+            <span id="nasir-ai-status" class="nasir-ai-status">Prêt</span>
           </div>
           <div class="nasir-ai-inputline">
-            <textarea id="nasir-ai-input" rows="1" placeholder="Parlez ou écrivez à NASIR AI…" onkeydown="nasirAiKeydown(event)"></textarea>
-            <button class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer">➤</button>
+            <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez votre message…" onkeydown="nasirAiKeydown(event)"></textarea>
+            <button type="button" class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer le message">➤</button>
           </div>
+          <div class="nasir-ai-hint">🎙️ Parler : appuyez sur le micro, parlez, puis NASIR AI envoie automatiquement. &nbsp;•&nbsp; ⌨️ Écrire : tapez votre message puis appuyez sur ➤ ou <b>Entrée</b>.</div>
         </div>
       </div>
     </section>
@@ -1333,7 +1343,7 @@ async function nasirAiSend(){
   const box=document.getElementById('nasir-ai-messages');
   const note=document.getElementById('nasir-ai-config');
   if(!input || !box) return;
-  const text=input.value.trim(); if(!text) return;
+  const text=input.value.trim(); if(!text) return; const st=document.getElementById('nasir-ai-status'); if(st)st.textContent='Envoi…';
   const ANTHROPIC_API_KEY=nasirAiGetKey();
   if(!ANTHROPIC_API_KEY){
     if(note){ note.textContent='⚠️ Ajoutez votre clé Anthropic avec le bouton ⚙️ Clé API.'; note.classList.add('show'); }
@@ -1375,6 +1385,7 @@ async function nasirAiSend(){
     const h=nasirAiLoadHistory(); h.push({role:'assistant',content:msg}); nasirAiSaveHistory(h);
   }
   box.scrollTop=box.scrollHeight;
+  if(st)st.textContent='Prêt';
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); });
@@ -1458,7 +1469,7 @@ function nasirAiToggleVoice(){
   const input=document.getElementById('nasir-ai-input');
   const mic=document.getElementById('nasir-ai-mic');
   let finalText='';
-  nasirAiRecognition.onstart=()=>{nasirAiListening=true;if(mic)mic.classList.add('active','nasir-ai-speaking');};
+  nasirAiRecognition.onstart=()=>{nasirAiListening=true;if(mic)mic.classList.add('active','nasir-ai-speaking'); const st=document.getElementById('nasir-ai-status'); if(st){st.textContent='🎙️ Écoute…';st.classList.add('listening');}};
   nasirAiRecognition.onresult=(e)=>{
     let interim='';
     for(let i=e.resultIndex;i<e.results.length;i++){
@@ -1468,12 +1479,13 @@ function nasirAiToggleVoice(){
     if(input) input.value=(finalText+interim).trim();
   };
   nasirAiRecognition.onerror=(e)=>{
-    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking');
+    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking'); const st=document.getElementById('nasir-ai-status'); if(st){st.textContent='Envoi…';st.classList.remove('listening');}
     if(e.error==='not-allowed') alert('Autorise le microphone pour parler à NASIR AI.');
     else if(e.error==='language-not-supported') alert('La reconnaissance vocale « '+lang+' » n’est pas disponible sur cet appareil. Essaie Français ou Arabe.');
   };
   nasirAiRecognition.onend=()=>{
     nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking');
+    const st=document.getElementById('nasir-ai-status'); if(st)st.textContent=input && input.value.trim()?'Envoi…':'Prêt';
     if(input && input.value.trim()) nasirAiSend();
   };
   try{nasirAiRecognition.start();}catch(e){}
