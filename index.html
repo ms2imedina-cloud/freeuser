@@ -322,6 +322,14 @@
   .ai-send-btn:active{transform:scale(0.94);}
   .ai-config-note{margin:10px 14px 0;font-size:11px;color:var(--danger-deep);background:rgba(168,59,51,0.08);border:1px solid rgba(168,59,51,0.25);border-radius:10px;padding:8px 10px;display:none;}
   .ai-config-note.show{display:block;}
+
+  .nasir-ai-voicebar{display:flex;align-items:center;gap:8px;padding:8px 12px 0;background:var(--panel);}
+  .nasir-ai-inputline{display:flex;align-items:flex-end;gap:8px;padding:8px 12px 12px;background:var(--panel);}
+  .ai-voice-btn{width:42px;height:42px;border-radius:13px;border:1px solid var(--border);background:var(--panel-2);font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .ai-voice-btn.active{background:var(--gold-soft);border-color:var(--gold-deep);box-shadow:0 0 0 2px rgba(180,130,30,.15);}
+  .ai-lang-select{height:42px;border:1px solid var(--border);border-radius:13px;background:var(--panel-2);color:var(--text);font-size:13px;font-weight:700;padding:0 10px;flex:1;min-width:0;}
+  .nasir-ai-speaking{animation:nasirVoicePulse 1s infinite;}
+  @keyframes nasirVoicePulse{50%{transform:scale(1.04);opacity:.72;}}
 </style>
 </head>
 <body>
@@ -489,8 +497,20 @@
         <div id="nasir-ai-config" class="ai-config-note">⚠️ Configurez votre clé Anthropic avec le bouton <b>⚙️ Clé API</b>.</div>
         <div id="nasir-ai-messages" class="ai-messages"></div>
         <div class="ai-input-row">
-          <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez à NASIR AI…" onkeydown="nasirAiKeydown(event)"></textarea>
-          <button class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer">➤</button>
+          <div class="nasir-ai-voicebar">
+            <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Parler à NASIR AI">🎙️</button>
+            <button type="button" id="nasir-ai-speak" class="ai-voice-btn" onclick="nasirAiToggleSpeak()" title="Activer/désactiver les réponses vocales">🔊</button>
+            <select id="nasir-ai-lang" class="ai-lang-select" aria-label="Langue vocale">
+              <option value="fr-FR">🇫🇷 Français</option>
+              <option value="ar-SA">🇸🇦 العربية</option>
+              <option value="wo-SN">🇸🇳 Wolof</option>
+              <option value="auto">🌍 Auto</option>
+            </select>
+          </div>
+          <div class="nasir-ai-inputline">
+            <textarea id="nasir-ai-input" rows="1" placeholder="Parlez ou écrivez à NASIR AI…" onkeydown="nasirAiKeydown(event)"></textarea>
+            <button class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer">➤</button>
+          </div>
         </div>
       </div>
     </section>
@@ -1239,6 +1259,7 @@ RÈGLES ABSOLUES :
 - Pour les sujets juridiques, fiscaux, réglementaires ou financiers importants : fournir une pré-analyse factuelle et recommander une validation professionnelle lorsque nécessaire.
 - Pour les documents, conserver un style professionnel, administratif et crédible, sans exagération.
 - En arabe, écrire un arabe professionnel et naturel. En français, être clair et professionnel. Comprendre le Wolof et l'arabe même si la demande mélange les langues.
+- Pour les conversations vocales, répondre dans la même langue que l'utilisateur (français, arabe ou wolof) lorsque la langue est identifiable. Ne pas traduire automatiquement sauf si demandé.
 - Répondre directement et concrètement. Commencer par l'essentiel, puis détailler si nécessaire.
 - Principe directeur : NASIR AI PRÉPARE. NASIR AI ANALYSE. NASIR AI ALERTE. NASIR AI ORGANISE. NASIR DÉCIDE.
 `;
@@ -1346,6 +1367,7 @@ async function nasirAiSend(){
     const h=nasirAiLoadHistory(); h.push({role:'assistant',content:answer}); nasirAiSaveHistory(h);
     typing.remove();
     box.insertAdjacentHTML('beforeend',`<div class="ai-msg assistant">${nasirAiEscape(answer)}</div>`);
+    nasirAiSpeak(answer);
   }catch(err){
     typing.remove();
     const msg=`Erreur NASIR AI : ${err.message || 'connexion impossible'}`;
@@ -1356,6 +1378,110 @@ async function nasirAiSend(){
 }
 
 document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); });
+
+// ============================================================
+// ---------- NASIR AI — Voix : parler et écouter ----------
+let nasirAiRecognition = null;
+let nasirAiListening = false;
+let nasirAiVoiceEnabled = true;
+let nasirAiSpeaking = false;
+
+function nasirAiSelectedLang(){
+  const el=document.getElementById('nasir-ai-lang');
+  return el ? el.value : 'fr-FR';
+}
+function nasirAiDetectLanguage(text){
+  const t=String(text||'');
+  // Détection simple pour choisir la langue de lecture quand Auto est sélectionné.
+  if(/[ء-ي]/.test(t)) return 'ar-SA';
+  // Quelques marqueurs fréquents du wolof. Si le navigateur ne possède pas de voix wo-SN,
+  // la fonction de lecture choisira une voix compatible de secours.
+  if(/(nga|naka|jamm|waaw|déedéet|dama|dinaa|laa|ci|ak|bu|ñu|jëf|jërejëf)/i.test(t)) return 'wo-SN';
+  return 'fr-FR';
+}
+function nasirAiVoiceLangForText(text){
+  const selected=nasirAiSelectedLang();
+  return selected==='auto' ? nasirAiDetectLanguage(text) : selected;
+}
+function nasirAiFindVoice(lang){
+  if(!('speechSynthesis' in window)) return null;
+  const voices=window.speechSynthesis.getVoices()||[];
+  const exact=voices.find(v=>String(v.lang||'').toLowerCase()===lang.toLowerCase());
+  if(exact) return exact;
+  const base=lang.split('-')[0].toLowerCase();
+  return voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base+'-')) ||
+         voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base)) || null;
+}
+function nasirAiSpeak(text){
+  if(!nasirAiVoiceEnabled || !('speechSynthesis' in window) || !text) return;
+  window.speechSynthesis.cancel();
+  const lang=nasirAiVoiceLangForText(text);
+  const utter=new SpeechSynthesisUtterance(String(text).replace(/https?:\/\/\S+/g,''));
+  utter.lang=lang;
+  utter.rate=0.98;
+  utter.pitch=1;
+  const voice=nasirAiFindVoice(lang);
+  if(voice) utter.voice=voice;
+  const btn=document.getElementById('nasir-ai-speak');
+  utter.onstart=()=>{nasirAiSpeaking=true;if(btn)btn.classList.add('active','nasir-ai-speaking');};
+  utter.onend=utter.onerror=()=>{nasirAiSpeaking=false;if(btn)btn.classList.remove('active','nasir-ai-speaking');};
+  window.speechSynthesis.speak(utter);
+}
+function nasirAiToggleSpeak(){
+  nasirAiVoiceEnabled=!nasirAiVoiceEnabled;
+  const btn=document.getElementById('nasir-ai-speak');
+  if(btn) btn.classList.toggle('active',nasirAiVoiceEnabled);
+  if(!nasirAiVoiceEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+}
+function nasirAiStopSpeaking(){
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  nasirAiSpeaking=false;
+  const btn=document.getElementById('nasir-ai-speak');
+  if(btn) btn.classList.remove('active','nasir-ai-speaking');
+}
+function nasirAiToggleVoice(){
+  if(nasirAiListening){
+    try{nasirAiRecognition && nasirAiRecognition.stop();}catch(e){}
+    return;
+  }
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){
+    alert('La dictée vocale n’est pas disponible dans ce navigateur. Sur iPhone, utilise Safari et autorise le microphone.');
+    return;
+  }
+  const lang=nasirAiSelectedLang()==='auto'?'fr-FR':nasirAiSelectedLang();
+  nasirAiRecognition=new SR();
+  nasirAiRecognition.lang=lang;
+  nasirAiRecognition.continuous=false;
+  nasirAiRecognition.interimResults=true;
+  nasirAiRecognition.maxAlternatives=1;
+  const input=document.getElementById('nasir-ai-input');
+  const mic=document.getElementById('nasir-ai-mic');
+  let finalText='';
+  nasirAiRecognition.onstart=()=>{nasirAiListening=true;if(mic)mic.classList.add('active','nasir-ai-speaking');};
+  nasirAiRecognition.onresult=(e)=>{
+    let interim='';
+    for(let i=e.resultIndex;i<e.results.length;i++){
+      const part=e.results[i][0].transcript;
+      if(e.results[i].isFinal) finalText+=part+' '; else interim+=part;
+    }
+    if(input) input.value=(finalText+interim).trim();
+  };
+  nasirAiRecognition.onerror=(e)=>{
+    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking');
+    if(e.error==='not-allowed') alert('Autorise le microphone pour parler à NASIR AI.');
+    else if(e.error==='language-not-supported') alert('La reconnaissance vocale « '+lang+' » n’est pas disponible sur cet appareil. Essaie Français ou Arabe.');
+  };
+  nasirAiRecognition.onend=()=>{
+    nasirAiListening=false;if(mic)mic.classList.remove('active','nasir-ai-speaking');
+    if(input && input.value.trim()) nasirAiSend();
+  };
+  try{nasirAiRecognition.start();}catch(e){}
+}
+
+if('speechSynthesis' in window){
+  window.speechSynthesis.onvoiceschanged=()=>{};
+}
 
 // ============================================================
 // ---------- Heures de prière : calcul astronomique précis ----------
