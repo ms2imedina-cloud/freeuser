@@ -459,15 +459,21 @@
     </section>
 
     <section id="view-ai" class="view active">
-      <div class="card" style="text-align:center;">
-        <h2 class="card-title" style="justify-content:center;"><span class="ci">🤖</span> NASIR AI</h2>
-        <p style="color:var(--muted);font-size:14px;line-height:1.6;margin:0 0 20px;">
-          Votre assistant personnel. Il s'ouvre dans l'application Claude,
-          avec tout le contexte de vos affaires déjà en mémoire.
-        </p>
-        <a href="https://claude.ai/project/01a0b703-0d32-7194-ad8d-c68a4931b113" target="_blank" rel="noopener" class="big-btn" style="text-decoration:none;">
-          <span class="bi">💬</span> Ouvrir NASIR AI
-        </a>
+      <div class="ai-card">
+        <div class="ai-header">
+          <div class="ah-badge">🤖</div>
+          <div>
+            <div class="ah-title">NASIR AI</div>
+            <div class="ah-sub">Assistant personnel • Direction • BTP • Immobilier • Golfe</div>
+          </div>
+          <button class="icon-btn" onclick="nasirAiClearHistory()" title="Nouvelle conversation" style="margin-left:auto;">🗑️</button>
+        </div>
+        <div id="nasir-ai-config" class="ai-config-note">⚠️ Ajoutez votre clé Anthropic dans <b>ANTHROPIC_API_KEY</b> en haut du fichier HTML.</div>
+        <div id="nasir-ai-messages" class="ai-messages"></div>
+        <div class="ai-input-row">
+          <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez à NASIR AI…" onkeydown="nasirAiKeydown(event)"></textarea>
+          <button class="ai-send-btn" onclick="nasirAiSend()" title="Envoyer">➤</button>
+        </div>
       </div>
     </section>
 
@@ -1167,6 +1173,134 @@ function playResultSound(status){
     beep(220, 0.32, 'sawtooth', 0, 0.20);
   }
 }
+
+// ============================================================
+// ---------- NASIR AI — Anthropic direct depuis le navigateur ----------
+// IMPORTANT : la clé ci-dessous sera visible dans le code source du site.
+// Pour un site public, il est plus sûr d'utiliser un serveur intermédiaire.
+const ANTHROPIC_API_KEY = "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";
+const NASIR_AI_MODEL = "claude-sonnet-5";
+const NASIR_AI_MAX_TOKENS = 4096;
+const NASIR_AI_HISTORY_KEY = "nasir_ai_history_v1";
+
+const NASIR_AI_SYSTEM_PROMPT = `
+Tu es NASIR AI, l'assistant personnel, professionnel, stratégique et bras droit numérique de mouhamed nasirou Seck.
+
+PROFIL :
+mouhamed nasirou Seck est un homme d'affaires investiteur et entrepreneur. Ses activités comprennent le BTP, l'immobilier, la location de villas, la vente de terrains, le développement de projets, les relations d'affaires et partenariats et les marchés publics. Ses activités immobilières concernent Dakar, Kaolack et partout au Sénégal. Il maîtrise très bien l'arabe et utilise aussi le Wolof et le français.
+
+MISSION :
+Préparer, analyser, organiser, rechercher, alerter, suivre et proposer des actions concrètes. Nasir reste le décideur final. Ne décide jamais à sa place.
+
+DOMAINES :
+1. Direction et pilotage global.
+2. Gestion d'entreprise, organisation, procédures et tableaux de bord.
+3. BTP, chantiers, planning, budget, achats, fournisseurs, sous-traitants, qualité, sécurité et réception.
+4. Immobilier, terrains, villas, ventes, locations, acquisitions, visites, négociations et rentabilité.
+5. Marchés publics et appels d'offres : veille, vérification, conformité, pièces, délais, analyse et préparation des dossiers.
+6. Finance et trésorerie : entrées, sorties, créances, dettes, budgets, écarts, prévisions et anomalies. Ne jamais inventer de chiffres.
+7. Ressources humaines : organisation, postes, recrutement, dossiers, paie, congés, performance et effectifs.
+8. Relations clients, investisseurs, partenaires, fournisseurs et institutions avec suivi CRM.
+9. Réseau Sénégal/international, priorité au Golfe : Arabie saoudite, Émirats arabes unis, Qatar, Koweït, Bahreïn et Oman.
+10. Recherche et intelligence : entreprises, investisseurs, entrepreneurs, dirigeants, institutions, fonds, développeurs et partenaires, uniquement à partir d'informations publiques et professionnelles.
+11. Communication : WhatsApp, SMS, e-mails, lettres, présentations, demandes de rendez-vous, partenariats, financement et correspondances administratives.
+12. Mémoire et organisation : distinguer CONFIRMÉ, À VÉRIFIER, SOURCE EXTERNE et HYPOTHÈSE.
+13. Sécurité et confidentialité : ne jamais demander ou exposer mots de passe, codes, données bancaires privées, adresses privées, données familiales privées ou informations non publiques.
+14. Agenda, tâches, réunions, déplacements, échéances et relances.
+15. Opportunités et risques : signaler clairement URGENT, IMPORTANT, À SURVEILLER, OPPORTUNITÉ et RISQUE.
+16. Reporting direction : produire des briefings, bilans, tableaux de bord et plans d'action.
+
+RÈGLES ABSOLUES :
+- Ne jamais inventer un nom, contact, contrat, relation, projet, chiffre, document, qualification, marché, entreprise, rendez-vous ou résultat.
+- Si une information manque, écrire [À COMPLÉTER] ou dire qu'elle doit être vérifiée.
+- Séparer les faits vérifiés des informations à vérifier, hypothèses et analyses.
+- Pour les informations actuelles, utiliser la recherche web si elle est disponible et citer les sources.
+- Pour les contacts, uniquement des coordonnées professionnelles publiques.
+- Ne jamais prétendre avoir appelé, envoyé un message, réservé, payé, signé ou effectué une action réelle si cela n'a pas été fait par un outil autorisé.
+- Pour les sujets juridiques, fiscaux, réglementaires ou financiers importants : fournir une pré-analyse factuelle et recommander une validation professionnelle lorsque nécessaire.
+- Pour les documents, conserver un style professionnel, administratif et crédible, sans exagération.
+- En arabe, écrire un arabe professionnel et naturel. En français, être clair et professionnel. Comprendre le Wolof et l'arabe même si la demande mélange les langues.
+- Répondre directement et concrètement. Commencer par l'essentiel, puis détailler si nécessaire.
+- Principe directeur : NASIR AI PRÉPARE. NASIR AI ANALYSE. NASIR AI ALERTE. NASIR AI ORGANISE. NASIR DÉCIDE.
+`;
+
+function nasirAiLoadHistory(){
+  try{ return JSON.parse(localStorage.getItem(NASIR_AI_HISTORY_KEY) || "[]"); }catch(e){ return []; }
+}
+function nasirAiSaveHistory(history){
+  try{ localStorage.setItem(NASIR_AI_HISTORY_KEY, JSON.stringify(history.slice(-40))); }catch(e){}
+}
+function nasirAiRender(){
+  const box=document.getElementById('nasir-ai-messages'); if(!box) return;
+  const history=nasirAiLoadHistory();
+  if(!history.length){
+    box.innerHTML='<div class="ai-msg assistant">👋 Bonjour. Je suis NASIR AI, le bras droit numérique de mouhamed nasirou Seck.\n\nJe peux vous aider à piloter les affaires, le BTP, l’immobilier, les marchés publics, les finances, les relations et le réseau international.\n\nQue souhaitez-vous préparer aujourd’hui ?</div>';
+  }else{
+    box.innerHTML=history.map(m=>`<div class="ai-msg ${m.role==='user'?'user':'assistant'}">${nasirAiEscape(m.content)}</div>`).join('');
+  }
+  box.scrollTop=box.scrollHeight;
+}
+function nasirAiEscape(v){
+  return String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function nasirAiClearHistory(){
+  if(!confirm('Effacer la conversation NASIR AI sur cet appareil ?')) return;
+  localStorage.removeItem(NASIR_AI_HISTORY_KEY); nasirAiRender();
+}
+function nasirAiKeydown(e){
+  if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); nasirAiSend(); }
+}
+async function nasirAiSend(){
+  const input=document.getElementById('nasir-ai-input');
+  const box=document.getElementById('nasir-ai-messages');
+  const note=document.getElementById('nasir-ai-config');
+  if(!input || !box) return;
+  const text=input.value.trim(); if(!text) return;
+  if(!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY.includes('PASTE_YOUR_')){
+    if(note) note.classList.add('show');
+    return;
+  }
+  if(note) note.classList.remove('show');
+  const history=nasirAiLoadHistory();
+  history.push({role:'user',content:text});
+  nasirAiSaveHistory(history);
+  input.value='';
+  box.insertAdjacentHTML('beforeend',`<div class="ai-msg user">${nasirAiEscape(text)}</div>`);
+  const typing=document.createElement('div'); typing.className='ai-msg typing'; typing.id='nasir-ai-typing'; typing.textContent='NASIR AI réfléchit…'; box.appendChild(typing); box.scrollTop=box.scrollHeight;
+  try{
+    const payload={
+      model:NASIR_AI_MODEL,
+      max_tokens:NASIR_AI_MAX_TOKENS,
+      system:NASIR_AI_SYSTEM_PROMPT,
+      messages:history.map(m=>({role:m.role,content:m.content})),
+      tools:[{type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']}]
+    };
+    const response=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':ANTHROPIC_API_KEY,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify(payload)
+    });
+    const data=await response.json();
+    if(!response.ok) throw new Error(data?.error?.message || `Erreur API ${response.status}`);
+    const answer=(data.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('\n').trim() || 'Je n’ai pas reçu de réponse exploitable.';
+    const h=nasirAiLoadHistory(); h.push({role:'assistant',content:answer}); nasirAiSaveHistory(h);
+    typing.remove();
+    box.insertAdjacentHTML('beforeend',`<div class="ai-msg assistant">${nasirAiEscape(answer)}</div>`);
+  }catch(err){
+    typing.remove();
+    const msg=`Erreur NASIR AI : ${err.message || 'connexion impossible'}`;
+    box.insertAdjacentHTML('beforeend',`<div class="ai-msg assistant">⚠️ ${nasirAiEscape(msg)}</div>`);
+    const h=nasirAiLoadHistory(); h.push({role:'assistant',content:msg}); nasirAiSaveHistory(h);
+  }
+  box.scrollTop=box.scrollHeight;
+}
+
+document.addEventListener('DOMContentLoaded', nasirAiRender);
 
 // ============================================================
 // ---------- Heures de prière : calcul astronomique précis ----------
