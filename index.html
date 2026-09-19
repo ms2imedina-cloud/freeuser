@@ -297,6 +297,14 @@
 
   /* ===== NASIR AI — chat ===== */
   #view-ai{display:flex;flex-direction:column;height:calc(100vh - 160px);min-height:420px;}
+  .ai-settings-btn{margin-left:auto;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:11px;padding:9px 11px;font-size:12px;font-weight:800;cursor:pointer;}
+  .ai-settings-panel{display:none;padding:14px 16px;background:var(--panel-2);border-bottom:1px solid var(--border);}
+  .ai-settings-panel.show{display:block;}
+  .ai-key-row{display:flex;gap:8px;align-items:center;}
+  .ai-key-input{flex:1;min-width:0;padding:12px 13px;border-radius:12px;border:1.5px solid var(--border);background:var(--panel);color:var(--text);font-size:14px;outline:none;}
+  .ai-key-save{padding:12px 14px;border:0;border-radius:12px;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#fff;font-weight:800;cursor:pointer;}
+  .ai-key-status{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.45;}
+  .ai-key-help{font-size:11px;color:var(--muted);margin-top:7px;line-height:1.45;}
   .ai-card{background:var(--panel);border:1px solid var(--border);border-radius:20px;box-shadow:var(--shadow-lg);display:flex;flex-direction:column;flex:1;overflow:hidden;}
   .ai-header{padding:16px 18px;border-bottom:1px solid var(--border-soft);display:flex;align-items:center;gap:10px;background:linear-gradient(160deg,#0B1526,#16233D);}
   .ai-header .ah-badge{width:34px;height:34px;border-radius:50%;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));display:flex;align-items:center;justify-content:center;font-size:17px;}
@@ -466,9 +474,19 @@
             <div class="ah-title">NASIR AI</div>
             <div class="ah-sub">Assistant personnel • Direction • BTP • Immobilier • Golfe</div>
           </div>
-          <button class="icon-btn" onclick="nasirAiClearHistory()" title="Nouvelle conversation" style="margin-left:auto;">🗑️</button>
+          <button class="ai-settings-btn" type="button" onclick="nasirAiToggleSettings()" title="Configurer la clé API">⚙️ Clé API</button>
+          <button class="icon-btn" onclick="nasirAiClearHistory()" title="Nouvelle conversation" style="margin-left:6px;">🗑️</button>
         </div>
-        <div id="nasir-ai-config" class="ai-config-note">⚠️ Ajoutez votre clé Anthropic dans <b>ANTHROPIC_API_KEY</b> en haut du fichier HTML.</div>
+        <div id="nasir-ai-settings" class="ai-settings-panel">
+          <div style="font-weight:800;margin-bottom:8px;">🔐 Configuration de NASIR AI</div>
+          <div class="ai-key-row">
+            <input id="nasir-ai-key" class="ai-key-input" type="password" autocomplete="off" placeholder="Collez votre clé Anthropic ici…">
+            <button class="ai-key-save" type="button" onclick="nasirAiSaveKey()">Enregistrer</button>
+          </div>
+          <div id="nasir-ai-key-status" class="ai-key-status"></div>
+          <div class="ai-key-help">La clé est enregistrée uniquement dans le stockage local de ce navigateur et n’est pas écrite dans GitHub. Ne la partagez jamais dans le chat.</div>
+        </div>
+        <div id="nasir-ai-config" class="ai-config-note">⚠️ Configurez votre clé Anthropic avec le bouton <b>⚙️ Clé API</b>.</div>
         <div id="nasir-ai-messages" class="ai-messages"></div>
         <div class="ai-input-row">
           <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez à NASIR AI…" onkeydown="nasirAiKeydown(event)"></textarea>
@@ -1178,7 +1196,8 @@ function playResultSound(status){
 // ---------- NASIR AI — Anthropic direct depuis le navigateur ----------
 // IMPORTANT : la clé ci-dessous sera visible dans le code source du site.
 // Pour un site public, il est plus sûr d'utiliser un serveur intermédiaire.
-const ANTHROPIC_API_KEY = "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";
+const NASIR_AI_KEY_STORAGE = "nasir_anthropic_api_key_v1";
+const ANTHROPIC_API_URL = "https://api.anthropic.com/v1/messages";
 const NASIR_AI_MODEL = "claude-sonnet-5";
 const NASIR_AI_MAX_TOKENS = 4096;
 const NASIR_AI_HISTORY_KEY = "nasir_ai_history_v1";
@@ -1250,14 +1269,55 @@ function nasirAiClearHistory(){
 function nasirAiKeydown(e){
   if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); nasirAiSend(); }
 }
+function nasirAiGetKey(){
+  try{return localStorage.getItem(NASIR_AI_KEY_STORAGE) || '';}catch(e){return '';}
+}
+function nasirAiToggleSettings(){
+  const p=document.getElementById('nasir-ai-settings');
+  if(!p) return;
+  p.classList.toggle('show');
+  nasirAiRefreshKeyStatus();
+}
+function nasirAiRefreshKeyStatus(){
+  const status=document.getElementById('nasir-ai-key-status');
+  const input=document.getElementById('nasir-ai-key');
+  const key=nasirAiGetKey();
+  if(input && key) input.value=key;
+  if(status) status.textContent=key ? '✅ Clé enregistrée sur cet appareil.' : '⚠️ Aucune clé enregistrée pour le moment.';
+}
+function nasirAiSaveKey(){
+  const input=document.getElementById('nasir-ai-key');
+  const status=document.getElementById('nasir-ai-key-status');
+  const note=document.getElementById('nasir-ai-config');
+  const key=(input?.value || '').trim();
+  if(!key){
+    try{localStorage.removeItem(NASIR_AI_KEY_STORAGE);}catch(e){}
+    if(status) status.textContent='⚠️ Clé supprimée de cet appareil.';
+    if(note) note.classList.add('show');
+    return;
+  }
+  if(!key.startsWith('sk-ant-')){
+    if(status) status.textContent='⚠️ Cette clé ne semble pas être une clé Anthropic valide.';
+    return;
+  }
+  try{localStorage.setItem(NASIR_AI_KEY_STORAGE,key);}catch(e){
+    if(status) status.textContent='❌ Impossible d’enregistrer la clé dans ce navigateur.';
+    return;
+  }
+  if(status) status.textContent='✅ Clé enregistrée sur cet appareil.';
+  if(note) note.classList.remove('show');
+}
 async function nasirAiSend(){
   const input=document.getElementById('nasir-ai-input');
   const box=document.getElementById('nasir-ai-messages');
   const note=document.getElementById('nasir-ai-config');
   if(!input || !box) return;
   const text=input.value.trim(); if(!text) return;
-  if(!ANTHROPIC_API_KEY || ANTHROPIC_API_KEY.includes('PASTE_YOUR_')){
-    if(note) note.classList.add('show');
+  const ANTHROPIC_API_KEY=nasirAiGetKey();
+  if(!ANTHROPIC_API_KEY){
+    if(note){ note.textContent='⚠️ Ajoutez votre clé Anthropic avec le bouton ⚙️ Clé API.'; note.classList.add('show'); }
+    const panel=document.getElementById('nasir-ai-settings'); if(panel) panel.classList.add('show');
+    nasirAiRefreshKeyStatus();
     return;
   }
   if(note) note.classList.remove('show');
@@ -1275,14 +1335,9 @@ async function nasirAiSend(){
       messages:history.map(m=>({role:m.role,content:m.content})),
       tools:[{type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']}]
     };
-    const response=await fetch('https://api.anthropic.com/v1/messages',{
+    const response=await fetch(ANTHROPIC_API_URL,{
       method:'POST',
-      headers:{
-        'content-type':'application/json',
-        'x-api-key':ANTHROPIC_API_KEY,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
+      headers:{'content-type':'application/json','x-api-key':ANTHROPIC_API_KEY,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify(payload)
     });
     const data=await response.json();
@@ -1300,7 +1355,7 @@ async function nasirAiSend(){
   box.scrollTop=box.scrollHeight;
 }
 
-document.addEventListener('DOMContentLoaded', nasirAiRender);
+document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); });
 
 // ============================================================
 // ---------- Heures de prière : calcul astronomique précis ----------
