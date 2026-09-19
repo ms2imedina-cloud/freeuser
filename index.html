@@ -312,6 +312,9 @@
   .ai-header .ah-badge{width:34px;height:34px;border-radius:50%;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));display:flex;align-items:center;justify-content:center;font-size:17px;}
   .ai-header .ah-title{color:#fff;font-weight:800;font-size:14px;letter-spacing:0.04em;}
   .ai-header .ah-sub{color:#8FB3E8;font-size:11px;font-weight:600;}
+  .ai-mode-bar{display:flex;flex-wrap:nowrap;gap:6px;padding:10px 12px;background:var(--panel-2);border-bottom:1px solid var(--border-soft);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  .ai-mode-chip{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:999px;padding:7px 13px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;flex-shrink:0;}
+  .ai-mode-chip.active{background:linear-gradient(155deg,#16233D,#0B1526);color:#fff;border-color:transparent;}
   .ai-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;}
   .ai-msg{max-width:82%;padding:11px 14px;border-radius:16px;font-size:14px;line-height:1.5;white-space:pre-wrap;}
   .ai-msg.user{align-self:flex-end;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#20160A;border-bottom-right-radius:4px;font-weight:600;}
@@ -324,6 +327,45 @@
   .ai-send-btn:active{transform:scale(0.94);}
   .ai-config-note{margin:10px 14px 0;font-size:11px;color:var(--danger-deep);background:rgba(168,59,51,0.08);border:1px solid rgba(168,59,51,0.25);border-radius:10px;padding:8px 10px;display:none;}
   .ai-config-note.show{display:block;}
+
+  /* ===== NASIR AI — Mémoire métier ===== */
+  .mem-count-badge{display:inline-block;background:var(--gold-soft);color:var(--gold-deep);border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;margin-left:6px;}
+  .mem-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+  .mem-filter-chip{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:999px;padding:6px 11px;font-size:11.5px;font-weight:700;cursor:pointer;}
+  .mem-filter-chip.active{background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#fff;border-color:transparent;}
+  .mem-list{display:flex;flex-direction:column;gap:8px;max-height:280px;overflow-y:auto;margin-bottom:14px;}
+  .mem-item{background:var(--panel);border:1px solid var(--border-soft);border-radius:14px;padding:10px 12px;}
+  .mem-item-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px;flex-wrap:wrap;}
+  .mem-cat-badge{font-size:10.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:0.03em;}
+  .mem-status{font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:999px;white-space:nowrap;}
+  .mem-status-urgent{background:rgba(168,59,51,0.13);color:var(--danger-deep);}
+  .mem-status-a_faire{background:rgba(107,97,82,0.13);color:var(--muted);}
+  .mem-status-en_cours{background:var(--gold-soft);color:var(--gold-deep);}
+  .mem-status-surveiller{background:rgba(203,161,53,0.18);color:var(--gold-deep);}
+  .mem-status-termine{background:rgba(35,122,78,0.13);color:var(--success-deep);}
+  .mem-item-title{font-size:14px;font-weight:700;color:var(--text);}
+  .mem-item-meta{font-size:11.5px;color:var(--muted);margin-top:2px;}
+  .mem-item-notes{font-size:12.5px;color:var(--muted);margin-top:4px;line-height:1.4;white-space:pre-wrap;}
+  .mem-item-actions{display:flex;gap:14px;margin-top:8px;}
+  .mem-edit-btn,.mem-del-btn{background:none;border:none;padding:0;font-size:11.5px;font-weight:700;cursor:pointer;color:var(--gold-deep);}
+  .mem-del-btn{color:var(--danger-deep);}
+  .mem-form{border-top:1px dashed var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;}
+  .mem-form-row{display:flex;gap:8px;}
+  .mem-select,.mem-input,.mem-textarea{border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-family:inherit;font-size:13.5px;color:var(--text);background:var(--panel);width:100%;min-width:0;}
+  .mem-select{flex:1;}
+  .mem-textarea{resize:vertical;}
+  .mem-save-btn{border:0;border-radius:12px;padding:12px;background:linear-gradient(155deg,var(--gold-light),var(--gold-deep));color:#fff;font-weight:800;font-size:13.5px;cursor:pointer;}
+  .mem-alert-dot{display:inline-block;background:var(--danger-deep);color:#fff;border-radius:999px;padding:1px 7px;font-size:10px;font-weight:800;margin-left:6px;}
+
+  /* ===== NASIR AI — Alertes proactives ===== */
+  .nasir-alerts-banner{margin:12px 14px 0;background:rgba(168,59,51,0.06);border:1px solid rgba(168,59,51,0.25);border-radius:14px;padding:10px 12px;}
+  .nasir-alerts-title{font-size:12.5px;font-weight:800;color:var(--danger-deep);margin-bottom:6px;}
+  .nasir-alerts-list{display:flex;flex-direction:column;gap:4px;}
+  .nasir-alert-item{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;}
+  .nasir-alert-tag{font-weight:800;color:var(--danger-deep);white-space:nowrap;}
+  .nasir-alert-title{color:var(--text);font-weight:600;}
+  .nasir-alert-date{color:var(--muted);font-size:11px;margin-left:auto;}
+  .nasir-alert-more{font-size:11px;color:var(--muted);margin-top:2px;font-style:italic;}
 
   .nasir-ai-voicebar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:8px 12px 0;background:var(--panel);}
   .nasir-ai-inputline{display:flex;align-items:flex-end;gap:8px;padding:8px 12px 12px;background:var(--panel);}
@@ -490,8 +532,17 @@
             <div class="ah-title">NASIR AI</div>
             <div class="ah-sub">Assistant personnel • Direction • BTP • Immobilier • Golfe</div>
           </div>
-          <button class="ai-settings-btn" type="button" onclick="nasirAiToggleSettings()" title="Configurer la clé API">⚙️ Clé API</button>
+          <button class="ai-settings-btn" type="button" id="nasir-memoire-btn" onclick="nasirMemoireToggle()" title="Mémoire métier">🗂️ Mémoire</button>
+          <button class="ai-settings-btn" type="button" onclick="nasirAiToggleSettings()" title="Configurer la clé API" style="margin-left:6px;">⚙️ Clé API</button>
           <button class="icon-btn" onclick="nasirAiClearHistory()" title="Nouvelle conversation" style="margin-left:6px;">🗑️</button>
+        </div>
+        <div class="ai-mode-bar" id="nasir-mode-bar">
+          <button type="button" class="ai-mode-chip" data-mode="direction" onclick="nasirAiSetMode('direction', this)">🧭 Direction</button>
+          <button type="button" class="ai-mode-chip" data-mode="btp" onclick="nasirAiSetMode('btp', this)">🏗️ BTP</button>
+          <button type="button" class="ai-mode-chip" data-mode="immobilier" onclick="nasirAiSetMode('immobilier', this)">🏠 Immobilier</button>
+          <button type="button" class="ai-mode-chip" data-mode="marches" onclick="nasirAiSetMode('marches', this)">📋 Marchés publics</button>
+          <button type="button" class="ai-mode-chip" data-mode="finance" onclick="nasirAiSetMode('finance', this)">💰 Finance</button>
+          <button type="button" class="ai-mode-chip" data-mode="golfe" onclick="nasirAiSetMode('golfe', this)">🌍 Golfe</button>
         </div>
         <div id="nasir-ai-settings" class="ai-settings-panel">
           <div style="font-weight:800;margin-bottom:8px;">🔐 Configuration de NASIR AI</div>
@@ -502,7 +553,46 @@
           <div id="nasir-ai-key-status" class="ai-key-status"></div>
           <div class="ai-key-help">La clé est enregistrée uniquement dans le stockage local de ce navigateur et n’est pas écrite dans GitHub. Ne la partagez jamais dans le chat.</div>
         </div>
+        <div id="nasir-memoire-panel" class="ai-settings-panel">
+          <div style="font-weight:800;margin-bottom:10px;">🗂️ Mémoire métier <span id="nasir-memoire-count" class="mem-count-badge">0</span></div>
+          <div class="mem-filters">
+            <button type="button" class="mem-filter-chip active" onclick="nasirMemoireSetFilter('tous', this)">Tous</button>
+            <button type="button" class="mem-filter-chip" onclick="nasirMemoireSetFilter('client', this)">👤 Clients</button>
+            <button type="button" class="mem-filter-chip" onclick="nasirMemoireSetFilter('chantier', this)">🏗️ Chantiers</button>
+            <button type="button" class="mem-filter-chip" onclick="nasirMemoireSetFilter('marche', this)">📋 Marchés publics</button>
+            <button type="button" class="mem-filter-chip" onclick="nasirMemoireSetFilter('bien', this)">🏠 Immobilier</button>
+            <button type="button" class="mem-filter-chip" onclick="nasirMemoireSetFilter('contact', this)">🌍 Contacts Golfe</button>
+          </div>
+          <div id="nasir-memoire-list" class="mem-list"><div class="empty">Aucun dossier pour le moment.</div></div>
+          <div class="mem-form">
+            <input type="hidden" id="mem-edit-id" value="">
+            <div class="mem-form-row">
+              <select id="mem-cat" class="mem-select" aria-label="Catégorie">
+                <option value="client">👤 Client / Investisseur</option>
+                <option value="chantier">🏗️ Chantier BTP</option>
+                <option value="marche">📋 Marché public</option>
+                <option value="bien">🏠 Bien immobilier</option>
+                <option value="contact">🌍 Contact Golfe / International</option>
+              </select>
+              <select id="mem-statut" class="mem-select" aria-label="Statut">
+                <option value="a_faire">⚪ À faire</option>
+                <option value="en_cours">🟡 En cours</option>
+                <option value="urgent">🔴 Urgent</option>
+                <option value="surveiller">🟠 À surveiller</option>
+                <option value="termine">🟢 Terminé</option>
+              </select>
+            </div>
+            <input type="text" id="mem-titre" class="mem-input" placeholder="Nom du dossier (ex : Villa Ngor — vente, SCI Al Barakah, AO Voirie Kaolack…)">
+            <input type="date" id="mem-echeance" class="mem-input" aria-label="Échéance">
+            <textarea id="mem-notes" class="mem-textarea" rows="2" placeholder="Notes, contact, montant, avancement…"></textarea>
+            <button type="button" id="mem-save-btn" class="mem-save-btn" onclick="nasirMemoireSave()">➕ Ajouter le dossier</button>
+          </div>
+        </div>
         <div id="nasir-ai-config" class="ai-config-note">⚠️ Configurez votre clé Anthropic avec le bouton <b>⚙️ Clé API</b>.</div>
+        <div id="nasir-alerts-banner" class="nasir-alerts-banner" style="display:none;">
+          <div class="nasir-alerts-title">⚠️ <span id="nasir-alerts-count">0</span> dossier(s) à traiter</div>
+          <div id="nasir-alerts-list" class="nasir-alerts-list"></div>
+        </div>
         <div id="nasir-ai-messages" class="ai-messages"></div>
         <div class="ai-input-row">
           <div class="nasir-ai-voicebar">
@@ -571,6 +661,7 @@ db.enablePersistence({ synchronizeTabs: true }).catch(err=>{
 });
 const codesRef = db.collection('codes');
 const guardsRef = db.collection('guards');
+const memoireRef = db.collection('memoire');
 
 // ---------- Cache local pour le scan hors-ligne ----------
 const codesCache = new Map();
@@ -1232,6 +1323,222 @@ const NASIR_AI_MODEL = "claude-sonnet-5";
 const NASIR_AI_MAX_TOKENS = 4096;
 const NASIR_AI_HISTORY_KEY = "nasir_ai_history_v1";
 
+// ============================================================
+// ---------- NASIR AI — Mémoire métier (Firestore) ----------
+const MEM_CAT_LABEL = {client:'Clients / Investisseurs', chantier:'Chantiers BTP', marche:'Marchés publics', bien:'Biens immobiliers', contact:'Contacts Golfe / International'};
+const MEM_CAT_ICON = {client:'👤', chantier:'🏗️', marche:'📋', bien:'🏠', contact:'🌍'};
+const MEM_STATUT_LABEL = {urgent:'🔴 Urgent', a_faire:'⚪ À faire', en_cours:'🟡 En cours', surveiller:'🟠 À surveiller', termine:'🟢 Terminé'};
+let memoireCache = [];
+let memoireFilter = 'tous';
+
+memoireRef.onSnapshot(snap=>{
+  memoireCache = snap.docs.map(d=>({id:d.id, ...d.data()}));
+  memoireCache.sort((a,b)=>{
+    if(a.echeance && b.echeance) return a.echeance.localeCompare(b.echeance);
+    if(a.echeance && !b.echeance) return -1;
+    if(!a.echeance && b.echeance) return 1;
+    return (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0);
+  });
+  nasirMemoireRender();
+  nasirRenderAlerts();
+  if(!nasirAiLoadHistory().length) nasirAiRender();
+}, err=>console.error('Erreur Firestore (memoire) :', err));
+
+const NASIR_ALERT_DAYS_AHEAD = 3;
+function nasirMemoireAlertItems(){
+  const soonDate = new Date(); soonDate.setDate(soonDate.getDate()+NASIR_ALERT_DAYS_AHEAD);
+  const soonStr = soonDate.toISOString().slice(0,10);
+  return memoireCache.filter(m=>{
+    if(m.statut==='termine') return false;
+    if(m.statut==='urgent') return true;
+    if(m.echeance && m.echeance <= soonStr) return true;
+    return false;
+  }).sort((a,b)=>{
+    if(a.echeance && b.echeance) return a.echeance.localeCompare(b.echeance);
+    if(a.echeance && !b.echeance) return -1;
+    if(!a.echeance && b.echeance) return 1;
+    return 0;
+  });
+}
+function nasirMemoireAlertLabel(m){
+  const todayStr = new Date().toISOString().slice(0,10);
+  if(!m.echeance) return '🔴 Urgent';
+  if(m.echeance < todayStr) return '⏰ En retard';
+  if(m.echeance === todayStr) return '📅 Aujourd’hui';
+  return '📅 Bientôt';
+}
+function nasirRenderAlerts(){
+  const banner = document.getElementById('nasir-alerts-banner');
+  const listEl = document.getElementById('nasir-alerts-list');
+  const countEl = document.getElementById('nasir-alerts-count');
+  const memBtn = document.getElementById('nasir-memoire-btn');
+  const alerts = nasirMemoireAlertItems();
+  if(memBtn){
+    let dot = memBtn.querySelector('.mem-alert-dot');
+    if(alerts.length){
+      if(!dot){ dot=document.createElement('span'); dot.className='mem-alert-dot'; memBtn.appendChild(dot); }
+      dot.textContent = alerts.length;
+    }else if(dot){ dot.remove(); }
+  }
+  if(!banner || !listEl || !countEl) return;
+  countEl.textContent = alerts.length;
+  if(!alerts.length){ banner.style.display='none'; return; }
+  banner.style.display='block';
+  listEl.innerHTML = alerts.slice(0,5).map(m=>`
+    <div class="nasir-alert-item">
+      <span class="nasir-alert-tag">${nasirMemoireAlertLabel(m)}</span>
+      <span class="nasir-alert-title">${nasirAiEscape(m.titre)}</span>
+      ${m.echeance?`<span class="nasir-alert-date">${nasirAiEscape(m.echeance)}</span>`:''}
+    </div>
+  `).join('') + (alerts.length>5?`<div class="nasir-alert-more">+ ${alerts.length-5} autre(s) — voir 🗂️ Mémoire</div>`:'');
+}
+
+function nasirMemoireToggle(){
+  const p=document.getElementById('nasir-memoire-panel'); if(!p) return;
+  p.classList.toggle('show');
+}
+function nasirMemoireSetFilter(cat, btn){
+  memoireFilter = cat;
+  document.querySelectorAll('.mem-filter-chip').forEach(c=>c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  nasirMemoireRender();
+}
+function nasirMemoireRender(){
+  const list = document.getElementById('nasir-memoire-list');
+  const counter = document.getElementById('nasir-memoire-count');
+  if(counter) counter.textContent = memoireCache.length;
+  if(!list) return;
+  const filtered = memoireFilter==='tous' ? memoireCache : memoireCache.filter(m=>m.categorie===memoireFilter);
+  if(!filtered.length){
+    list.innerHTML = '<div class="empty">Aucun dossier dans cette catégorie.</div>';
+    return;
+  }
+  list.innerHTML = filtered.map(m=>`
+    <div class="mem-item">
+      <div class="mem-item-top">
+        <span class="mem-cat-badge">${MEM_CAT_ICON[m.categorie]||'📁'} ${nasirAiEscape(MEM_CAT_LABEL[m.categorie]||m.categorie)}</span>
+        <span class="mem-status mem-status-${m.statut}">${MEM_STATUT_LABEL[m.statut]||m.statut}</span>
+      </div>
+      <div class="mem-item-title">${nasirAiEscape(m.titre)}</div>
+      ${m.echeance?`<div class="mem-item-meta">📅 Échéance : ${nasirAiEscape(m.echeance)}</div>`:''}
+      ${m.notes?`<div class="mem-item-notes">${nasirAiEscape(m.notes)}</div>`:''}
+      <div class="mem-item-actions">
+        <button type="button" class="mem-edit-btn" onclick="nasirMemoireEdit('${m.id}')">✏️ Modifier</button>
+        <button type="button" class="mem-del-btn" onclick="nasirMemoireDelete('${m.id}')">🗑️ Supprimer</button>
+      </div>
+    </div>
+  `).join('');
+}
+async function nasirMemoireSave(){
+  const catEl=document.getElementById('mem-cat'), titreEl=document.getElementById('mem-titre'), statutEl=document.getElementById('mem-statut'), echEl=document.getElementById('mem-echeance'), notesEl=document.getElementById('mem-notes'), editIdEl=document.getElementById('mem-edit-id');
+  if(!catEl||!titreEl||!statutEl) return;
+  const titre = titreEl.value.trim();
+  if(!titre){ alert("Merci d'indiquer un nom / titre pour ce dossier."); return; }
+  const data = {
+    categorie: catEl.value,
+    titre,
+    statut: statutEl.value,
+    echeance: echEl.value || null,
+    notes: notesEl.value.trim() || null
+  };
+  const editId = editIdEl.value;
+  try{
+    if(editId){
+      await memoireRef.doc(editId).update(data);
+    }else{
+      data.createdAt = firebase.firestore.FieldValue.serverTimestamp();
+      await memoireRef.add(data);
+    }
+    nasirMemoireResetForm();
+  }catch(e){
+    console.error(e);
+    alert("Erreur d'enregistrement — vérifiez la connexion.");
+  }
+}
+function nasirMemoireResetForm(){
+  document.getElementById('mem-edit-id').value='';
+  document.getElementById('mem-titre').value='';
+  document.getElementById('mem-echeance').value='';
+  document.getElementById('mem-notes').value='';
+  document.getElementById('mem-statut').value='a_faire';
+  document.getElementById('mem-cat').value='client';
+  document.getElementById('mem-save-btn').textContent='➕ Ajouter le dossier';
+}
+function nasirMemoireEdit(id){
+  const m = memoireCache.find(x=>x.id===id); if(!m) return;
+  document.getElementById('mem-edit-id').value=id;
+  document.getElementById('mem-cat').value=m.categorie;
+  document.getElementById('mem-titre').value=m.titre;
+  document.getElementById('mem-statut').value=m.statut;
+  document.getElementById('mem-echeance').value=m.echeance||'';
+  document.getElementById('mem-notes').value=m.notes||'';
+  document.getElementById('mem-save-btn').textContent='💾 Mettre à jour le dossier';
+  const panel=document.getElementById('nasir-memoire-panel'); if(panel) panel.classList.add('show');
+  document.getElementById('mem-titre').scrollIntoView({behavior:'smooth', block:'center'});
+}
+async function nasirMemoireDelete(id){
+  if(!confirm('Supprimer définitivement ce dossier de la mémoire ?')) return;
+  try{ await memoireRef.doc(id).delete(); }
+  catch(e){ console.error(e); alert('Erreur, réessayez.'); }
+}
+function nasirMemoireContextText(){
+  const mode = NASIR_MODES[nasirAiMode] || NASIR_MODES.direction;
+  const catFilter = mode.cat;
+  const scoped = catFilter ? memoireCache.filter(m=>m.categorie===catFilter) : memoireCache;
+  const alerts = catFilter ? nasirMemoireAlertItems().filter(m=>m.categorie===catFilter) : nasirMemoireAlertItems();
+  let out = '';
+  if(alerts.length){
+    out += `🔔 ALERTES ACTIVES (${alerts.length} — échéances dépassées, imminentes sous ${NASIR_ALERT_DAYS_AHEAD} jours, ou marquées URGENT ; signale-les à Nasir de façon proactive et concrète si sa question s'y rapporte, ou spontanément en début d'échange si pertinent) :\n`;
+    alerts.forEach(m=>{
+      out += `- [${nasirMemoireAlertLabel(m)}] ${m.titre} (${MEM_CAT_LABEL[m.categorie]||m.categorie})${m.echeance?` — échéance : ${m.echeance}`:''}${m.notes?` — ${m.notes}`:''}\n`;
+    });
+    out += "\n";
+  }
+  if(!scoped.length){
+    out += catFilter
+      ? `MÉMOIRE MÉTIER : aucun dossier enregistré dans la catégorie "${MEM_CAT_LABEL[catFilter]}" pour le mode actif. Propose à Nasir d'en ajouter via 🗂️ Mémoire si pertinent.`
+      : "MÉMOIRE MÉTIER : aucun dossier n'est encore enregistré. Si Nasir mentionne un client, un chantier, un marché public, un bien ou un contact, propose-lui de l'ajouter via le bouton 🗂️ Mémoire pour que tu puisses t'en souvenir la prochaine fois.";
+    return out.slice(0, 6000);
+  }
+  out += "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR (données réelles, à utiliser en priorité pour toute question sur ses affaires ; ne jamais contredire ces informations ni en inventer d'autres) :\n";
+  Object.keys(MEM_CAT_LABEL).forEach(cat=>{
+    if(catFilter && cat!==catFilter) return;
+    const items = scoped.filter(m=>m.categorie===cat);
+    if(!items.length) return;
+    out += `\n[${MEM_CAT_LABEL[cat]}]\n`;
+    items.forEach(m=>{
+      out += `- ${m.titre} | Statut : ${MEM_STATUT_LABEL[m.statut]||m.statut}${m.echeance?` | Échéance : ${m.echeance}`:''}${m.notes?` | Notes : ${m.notes}`:''}\n`;
+    });
+  });
+  return out.slice(0, 6000);
+}
+
+// ============================================================
+// ---------- NASIR AI — Modes spécialisés ----------
+const NASIR_MODES = {
+  direction:  {label:'Direction',       cat:null,       focus:"MODE ACTIF : DIRECTION GÉNÉRALE. Adopte une vision globale et transversale : priorités du moment, arbitrages entre chantiers/immobilier/marchés publics/finance, synthèse claire pour la décision. Ne néglige aucun domaine."},
+  btp:        {label:'BTP',             cat:'chantier', focus:"MODE ACTIF : BTP / CHANTIERS. Concentre ton analyse et tes propositions sur le planning, le budget, les achats, les fournisseurs, les sous-traitants, la qualité, la sécurité et la réception des chantiers."},
+  immobilier: {label:'Immobilier',      cat:'bien',     focus:"MODE ACTIF : IMMOBILIER. Concentre ton analyse et tes propositions sur les terrains, villas, ventes, locations, acquisitions, visites, négociations et rentabilité."},
+  marches:    {label:'Marchés publics', cat:'marche',   focus:"MODE ACTIF : MARCHÉS PUBLICS. Concentre ton analyse et tes propositions sur la veille des appels d'offres, la conformité, les pièces à fournir, les délais et la préparation des dossiers."},
+  finance:    {label:'Finance',         cat:null,       focus:"MODE ACTIF : FINANCE ET TRÉSORERIE. Concentre ton analyse sur les entrées, sorties, créances, dettes, budgets, écarts et prévisions. Ne jamais inventer de chiffre — utilise uniquement ceux que Nasir fournit ou qui sont déjà enregistrés dans la mémoire."},
+  golfe:      {label:'Réseau Golfe',    cat:'contact',  focus:"MODE ACTIF : RÉSEAU GOLFE / INTERNATIONAL. Concentre ton analyse sur les relations, partenariats et opportunités avec l'Arabie saoudite, les Émirats arabes unis, le Qatar, le Koweït, le Bahreïn, Oman, ainsi que le Nigeria et l'Afrique du Nord. Utilise un arabe professionnel si l'échange s'y prête."}
+};
+const NASIR_MODE_KEY = 'nasir_ai_mode';
+let nasirAiMode = (function(){ try{ return localStorage.getItem(NASIR_MODE_KEY) || 'direction'; }catch(e){ return 'direction'; } })();
+
+function nasirAiSetMode(mode, btn){
+  nasirAiMode = mode;
+  try{ localStorage.setItem(NASIR_MODE_KEY, mode); }catch(e){}
+  document.querySelectorAll('.ai-mode-chip').forEach(c=>c.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  const sub = document.querySelector('#view-ai .ah-sub');
+  if(sub) sub.textContent = 'Assistant personnel • Mode : ' + (NASIR_MODES[mode]?.label || 'Direction');
+}
+function nasirAiInitMode(){
+  const btn = document.querySelector(`.ai-mode-chip[data-mode="${nasirAiMode}"]`) || document.querySelector('.ai-mode-chip[data-mode="direction"]');
+  nasirAiSetMode(btn ? btn.getAttribute('data-mode') : 'direction', btn);
+}
+
 const NASIR_AI_SYSTEM_PROMPT = `
 Tu es NASIR AI, l'assistant personnel, professionnel, stratégique et bras droit numérique de mouhamed nasirou Seck.
 
@@ -1259,6 +1566,12 @@ DOMAINES :
 15. Opportunités et risques : signaler clairement URGENT, IMPORTANT, À SURVEILLER, OPPORTUNITÉ et RISQUE.
 16. Reporting direction : produire des briefings, bilans, tableaux de bord et plans d'action.
 
+MODES SPÉCIALISÉS :
+Nasir peut activer un mode (Direction, BTP, Immobilier, Marchés publics, Finance, Réseau Golfe), transmis séparément. Le mode indique où concentrer ton attention et tes propositions en priorité ; les règles absolues et ta connaissance des autres domaines restent valables dans tous les cas.
+
+MÉMOIRE MÉTIER :
+Un bloc "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR" est fourni séparément avec les dossiers réels (clients, chantiers, marchés publics, biens, contacts) que Nasir a enregistrés dans l'onglet 🗂️ Mémoire. C'est la seule source fiable sur ses affaires en cours : utilise-la en priorité, ne la contredis jamais, et si une information nécessaire n'y figure pas, dis clairement qu'elle doit être ajoutée ou vérifiée plutôt que de l'inventer.
+
 RÈGLES ABSOLUES :
 - Ne jamais inventer un nom, contact, contrat, relation, projet, chiffre, document, qualification, marché, entreprise, rendez-vous ou résultat.
 - Si une information manque, écrire [À COMPLÉTER] ou dire qu'elle doit être vérifiée.
@@ -1284,7 +1597,14 @@ function nasirAiRender(){
   const box=document.getElementById('nasir-ai-messages'); if(!box) return;
   const history=nasirAiLoadHistory();
   if(!history.length){
-    box.innerHTML='<div class="ai-msg assistant">👋 Bonjour. Je suis NASIR AI, le bras droit numérique de mouhamed nasirou Seck.\n\nJe peux vous aider à piloter les affaires, le BTP, l’immobilier, les marchés publics, les finances, les relations et le réseau international.\n\nQue souhaitez-vous préparer aujourd’hui ?</div>';
+    const alerts = nasirMemoireAlertItems();
+    let intro = '👋 Bonjour. Je suis NASIR AI, le bras droit numérique de mouhamed nasirou Seck.\n\nJe peux vous aider à piloter les affaires, le BTP, l’immobilier, les marchés publics, les finances, les relations et le réseau international.';
+    if(alerts.length){
+      const noms = alerts.slice(0,3).map(m=>m.titre).join(', ');
+      intro += `\n\n⚠️ ${alerts.length} dossier(s) à traiter en priorité : ${noms}${alerts.length>3?'…':''}.`;
+    }
+    intro += '\n\nQue souhaitez-vous préparer aujourd’hui ?';
+    box.innerHTML=`<div class="ai-msg assistant">${nasirAiEscape(intro)}</div>`;
   }else{
     box.innerHTML=history.map(m=>`<div class="ai-msg ${m.role==='user'?'user':'assistant'}">${nasirAiEscape(m.content)}</div>`).join('');
   }
@@ -1362,7 +1682,7 @@ async function nasirAiSend(){
     const payload={
       model:NASIR_AI_MODEL,
       max_tokens:NASIR_AI_MAX_TOKENS,
-      system:NASIR_AI_SYSTEM_PROMPT,
+      system:NASIR_AI_SYSTEM_PROMPT + "\n\n" + (NASIR_MODES[nasirAiMode]?.focus || '') + "\n\n" + nasirMemoireContextText(),
       messages:history.map(m=>({role:m.role,content:m.content})),
       tools:[{type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']}]
     };
@@ -1388,7 +1708,7 @@ async function nasirAiSend(){
   if(st)st.textContent='Prêt';
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); });
+document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); nasirAiInitMode(); });
 
 // ============================================================
 // ---------- NASIR AI — Voix : parler et écouter ----------
