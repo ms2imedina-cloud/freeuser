@@ -2063,11 +2063,46 @@ function nasirAiFindVoice(lang){
   return voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base+'-')) ||
          voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base)) || null;
 }
+function nasirAiCleanTextForSpeech(text){
+  let t = String(text||'');
+  // Blocs de code ```...``` : on les retire entièrement (jamais utiles à l'oral).
+  t = t.replace(/```[\s\S]*?```/g, ' ');
+  // Code en ligne `...` : on garde le contenu, on retire les backticks.
+  t = t.replace(/`([^`]+)`/g, '$1');
+  // Tableaux Markdown : lignes composées de | et de tirets/espaces -> supprimées.
+  t = t.split('\n').filter(line => !/^\s*\|?[\s:|-]+\|[\s:|-]*\|?\s*$/.test(line) && !(line.trim().startsWith('|') && line.trim().endsWith('|'))).join('\n');
+  // Liens Markdown [texte](url) -> on garde juste le texte.
+  t = t.replace(/\[([^\]]+)\]\((?:[^)]+)\)/g, '$1');
+  // URLs brutes.
+  t = t.replace(/https?:\/\/\S+/g, '');
+  // Titres Markdown (#, ##, ###...) -> on retire les dièses en début de ligne.
+  t = t.replace(/^#{1,6}\s*/gm, '');
+  // Gras / italique (** __ * _) -> on retire les marqueurs, on garde le mot.
+  t = t.replace(/\*\*\*([^*]+)\*\*\*/g, '$1');
+  t = t.replace(/\*\*([^*]+)\*\*/g, '$1');
+  t = t.replace(/__([^_]+)__/g, '$1');
+  t = t.replace(/(?<!\w)\*([^*\n]+)\*(?!\w)/g, '$1');
+  t = t.replace(/(?<!\w)_([^_\n]+)_(?!\w)/g, '$1');
+  // Puces de liste (-, *, •) en début de ligne -> retirées (le point suffit à marquer une pause).
+  t = t.replace(/^\s*[-*•]\s+/gm, '');
+  // Séparateurs horizontaux Markdown (---, ***, ___ seuls sur une ligne).
+  t = t.replace(/^\s*([-*_])\1{2,}\s*$/gm, ' ');
+  // Citations Markdown (>).
+  t = t.replace(/^\s*>\s?/gm, '');
+  // Emojis et pictogrammes (larges plages Unicode) -> supprimés.
+  t = t.replace(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{2190}-\u{21FF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '');
+  // Espaces multiples et lignes vides en excès.
+  t = t.replace(/[ \t]{2,}/g, ' ').replace(/\n{2,}/g, '. ').replace(/\n/g, '. ').trim();
+  t = t.replace(/\.\s*\./g, '.').replace(/\s+([,.;:!?])/g, '$1');
+  return t;
+}
 function nasirAiSpeak(text){
   if(!nasirAiVoiceEnabled || !('speechSynthesis' in window) || !text) return;
+  const spokenText = nasirAiCleanTextForSpeech(text);
+  if(!spokenText) return;
   window.speechSynthesis.cancel();
-  const lang=nasirAiVoiceLangForText(text);
-  const utter=new SpeechSynthesisUtterance(String(text).replace(/https?:\/\/\S+/g,''));
+  const lang=nasirAiVoiceLangForText(spokenText);
+  const utter=new SpeechSynthesisUtterance(spokenText);
   utter.lang=lang;
   utter.rate=0.98;
   utter.pitch=1;
