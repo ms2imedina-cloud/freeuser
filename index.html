@@ -1549,24 +1549,24 @@ function nasirMemoireContextText(){
   if(alerts.length){
     out += `🔔 ALERTES ACTIVES (${alerts.length} — échéances dépassées, imminentes sous ${NASIR_ALERT_DAYS_AHEAD} jours, ou marquées URGENT ; signale-les à Nasir de façon proactive et concrète si sa question s'y rapporte, ou spontanément en début d'échange si pertinent) :\n`;
     alerts.forEach(m=>{
-      out += `- [${nasirMemoireAlertLabel(m)}] ${m.titre} (${MEM_CAT_LABEL[m.categorie]||m.categorie})${m.echeance?` — échéance : ${m.echeance}`:''}${m.notes?` — ${m.notes}`:''}\n`;
+      out += `- [id:${m.id}] [${nasirMemoireAlertLabel(m)}] ${m.titre} (${MEM_CAT_LABEL[m.categorie]||m.categorie})${m.echeance?` — échéance : ${m.echeance}`:''}${m.notes?` — ${m.notes}`:''}\n`;
     });
     out += "\n";
   }
   if(!scoped.length){
     out += catFilter
-      ? `MÉMOIRE MÉTIER : aucun dossier enregistré dans la catégorie "${MEM_CAT_LABEL[catFilter]}" pour le mode actif. Propose à Nasir d'en ajouter via 🗂️ Mémoire si pertinent.`
-      : "MÉMOIRE MÉTIER : aucun dossier n'est encore enregistré. Si Nasir mentionne un client, un chantier, un marché public, un bien ou un contact, propose-lui de l'ajouter via le bouton 🗂️ Mémoire pour que tu puisses t'en souvenir la prochaine fois.";
+      ? `MÉMOIRE MÉTIER : aucun dossier enregistré dans la catégorie "${MEM_CAT_LABEL[catFilter]}" pour le mode actif. Si pertinent, ajoute-en un directement avec l'outil ajouter_dossier_memoire.`
+      : "MÉMOIRE MÉTIER : aucun dossier n'est encore enregistré. Si Nasir mentionne un client, un chantier, un marché public, un bien ou un contact, ajoute-le directement avec l'outil ajouter_dossier_memoire pour t'en souvenir la prochaine fois.";
     return out.slice(0, 6000);
   }
-  out += "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR (données réelles, à utiliser en priorité pour toute question sur ses affaires ; ne jamais contredire ces informations ni en inventer d'autres) :\n";
+  out += "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR (données réelles, à utiliser en priorité pour toute question sur ses affaires ; ne jamais contredire ces informations ni en inventer d'autres ; l'id entre crochets sert à cibler un dossier précis avec les outils modifier_dossier_memoire / supprimer_dossier_memoire) :\n";
   Object.keys(MEM_CAT_LABEL).forEach(cat=>{
     if(catFilter && cat!==catFilter) return;
     const items = scoped.filter(m=>m.categorie===cat);
     if(!items.length) return;
     out += `\n[${MEM_CAT_LABEL[cat]}]\n`;
     items.forEach(m=>{
-      out += `- ${m.titre} | Statut : ${MEM_STATUT_LABEL[m.statut]||m.statut}${m.echeance?` | Échéance : ${m.echeance}`:''}${m.notes?` | Notes : ${m.notes}`:''}\n`;
+      out += `- [id:${m.id}] ${m.titre} | Statut : ${MEM_STATUT_LABEL[m.statut]||m.statut}${m.echeance?` | Échéance : ${m.echeance}`:''}${m.notes?` | Notes : ${m.notes}`:''}\n`;
     });
   });
   return out.slice(0, 6000);
@@ -1652,13 +1652,16 @@ function nasirAiToolRentabilite(input){
   if(apport && apport>0) result.rendement_sur_apport_pct=Math.round(((loyerAnnuel-chargesAnnuelles)/apport)*10000)/100;
   return result;
 }
-function nasirAiRunLocalTool(name, input){
+async function nasirAiRunLocalTool(name, input){
   try{
     if(name==='convertir_devise') return nasirAiToolConvert(input);
     if(name==='calculer_rentabilite_immobiliere') return nasirAiToolRentabilite(input);
+    if(name==='ajouter_dossier_memoire') return await nasirAiToolAjouterDossier(input);
+    if(name==='modifier_dossier_memoire') return await nasirAiToolModifierDossier(input);
+    if(name==='supprimer_dossier_memoire') return await nasirAiToolSupprimerDossier(input);
     return {error:'Outil inconnu : '+name};
   }catch(e){
-    return {error:'Erreur de calcul : '+(e.message||e)};
+    return {error:'Erreur : '+(e.message||e)};
   }
 }
 const NASIR_TOOL_CONVERT={
@@ -1686,6 +1689,83 @@ const NASIR_TOOL_RENTABILITE={
       apport:{type:'number', description:"Apport personnel investi, optionnel"}
     },
     required:['prix_achat','loyer_mensuel']
+  }
+};
+
+async function nasirAiToolAjouterDossier(input){
+  const categorie=input.categorie;
+  const titre=String(input.titre||'').trim();
+  if(!titre) throw new Error('Titre requis pour ajouter un dossier.');
+  if(!MEM_CAT_LABEL[categorie]) throw new Error('Catégorie invalide : "'+categorie+'". Valeurs possibles : client, chantier, marche, bien, contact.');
+  const statut=(input.statut && MEM_STATUT_LABEL[input.statut]) ? input.statut : 'a_faire';
+  const data={
+    categorie, titre, statut,
+    echeance: input.echeance || null,
+    notes: input.notes || null,
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  const ref=await memoireRef.add(data);
+  return {ok:true, id:ref.id, message:`Dossier "${titre}" ajouté dans ${MEM_CAT_LABEL[categorie]}, statut ${MEM_STATUT_LABEL[statut]}.`};
+}
+async function nasirAiToolModifierDossier(input){
+  const id=input.id;
+  if(!id) throw new Error("id requis (repris tel quel depuis le contexte MÉMOIRE MÉTIER, ex. [id:...]).");
+  const existing=memoireCache.find(m=>m.id===id);
+  if(!existing) throw new Error("Dossier introuvable avec cet id — vérifie l'id exact fourni dans le contexte.");
+  const patch={};
+  if(input.statut!==undefined){ if(!MEM_STATUT_LABEL[input.statut]) throw new Error('Statut invalide : "'+input.statut+'".'); patch.statut=input.statut; }
+  if(input.echeance!==undefined) patch.echeance=input.echeance || null;
+  if(input.notes!==undefined) patch.notes=input.notes || null;
+  if(input.titre) patch.titre=input.titre;
+  if(!Object.keys(patch).length) throw new Error('Aucune modification fournie.');
+  await memoireRef.doc(id).update(patch);
+  return {ok:true, id, message:`Dossier "${existing.titre}" mis à jour.`, modifications:patch};
+}
+async function nasirAiToolSupprimerDossier(input){
+  const id=input.id;
+  if(!id) throw new Error('id requis.');
+  const existing=memoireCache.find(m=>m.id===id);
+  if(!existing) throw new Error('Dossier introuvable avec cet id.');
+  await memoireRef.doc(id).delete();
+  return {ok:true, message:`Dossier "${existing.titre}" supprimé définitivement.`};
+}
+const NASIR_TOOL_AJOUTER={
+  name:'ajouter_dossier_memoire',
+  description:"Ajoute réellement un nouveau dossier dans la mémoire métier (client/investisseur, chantier BTP, marché public, bien immobilier ou contact Golfe). Utilise cet outil dès que Nasir demande d'enregistrer, noter ou ajouter un dossier, un client, un chantier, un contact, un bien, etc. — ne te contente jamais de lui dire de le faire lui-même dans l'onglet Mémoire.",
+  input_schema:{
+    type:'object',
+    properties:{
+      categorie:{type:'string', enum:['client','chantier','marche','bien','contact']},
+      titre:{type:'string', description:'Nom / intitulé du dossier'},
+      statut:{type:'string', enum:['urgent','a_faire','en_cours','surveiller','termine']},
+      echeance:{type:'string', description:"Date d'échéance au format AAAA-MM-JJ, optionnel"},
+      notes:{type:'string', description:'Notes libres, optionnel'}
+    },
+    required:['categorie','titre']
+  }
+};
+const NASIR_TOOL_MODIFIER={
+  name:'modifier_dossier_memoire',
+  description:"Modifie réellement un dossier existant (statut, échéance, notes ou titre). L'id doit être repris exactement depuis le bloc MÉMOIRE MÉTIER fourni en contexte (préfixé [id:...]). Utilise cet outil dès que Nasir demande de mettre à jour, clôturer, marquer terminé/urgent, ou changer une échéance — agis directement, ne demande pas à Nasir de le faire lui-même.",
+  input_schema:{
+    type:'object',
+    properties:{
+      id:{type:'string', description:'Identifiant exact du dossier, tel que fourni dans le contexte mémoire'},
+      statut:{type:'string', enum:['urgent','a_faire','en_cours','surveiller','termine']},
+      echeance:{type:'string', description:"Nouvelle date AAAA-MM-JJ, ou chaîne vide pour la retirer"},
+      notes:{type:'string'},
+      titre:{type:'string'}
+    },
+    required:['id']
+  }
+};
+const NASIR_TOOL_SUPPRIMER={
+  name:'supprimer_dossier_memoire',
+  description:"Supprime définitivement un dossier de la mémoire métier. N'utilise cet outil que si Nasir le demande explicitement et sans ambiguïté (ex. « supprime le dossier X »), jamais de ta propre initiative ni par déduction.",
+  input_schema:{
+    type:'object',
+    properties:{ id:{type:'string', description:'Identifiant exact du dossier à supprimer'} },
+    required:['id']
   }
 };
 
@@ -1760,6 +1840,9 @@ Nasir peut activer un mode (Direction, BTP, Immobilier, Marchés publics, Financ
 
 OUTILS DE CALCUL :
 Tu disposes des outils "convertir_devise" (conversion FCFA/EUR/USD/devises du Golfe à partir de taux réels) et "calculer_rentabilite_immobiliere" (rentabilité brute/nette et cash-flow d'un bien locatif). Utilise-les systématiquement pour tout calcul de ce type — ne calcule jamais un taux de change ou une rentabilité de tête, même approximativement.
+
+AGENT ACTIF — TU AGIS, TU NE TE CONTENTES PAS DE CONSEILLER :
+Tu disposes des outils "ajouter_dossier_memoire", "modifier_dossier_memoire" et "supprimer_dossier_memoire" qui écrivent réellement dans la mémoire métier de Nasir. Dès qu'il te donne une instruction actionnable concernant un dossier — enregistrer un client, un chantier, un marché public, un bien ou un contact ; changer un statut ; clôturer un dossier ; mettre à jour une échéance ou des notes — utilise directement l'outil correspondant pour le faire, puis confirme en une phrase concrète ce qui a été fait (jamais "vous pouvez l'ajouter via l'onglet Mémoire" si l'information est suffisante pour agir toi-même). Si une information indispensable manque pour agir (ex. catégorie ambiguë), pose une seule question ciblée avant d'exécuter. Pour "modifier_dossier_memoire" et "supprimer_dossier_memoire", utilise l'id exact fourni entre crochets dans le contexte MÉMOIRE MÉTIER — ne l'invente jamais. La suppression est irréversible : ne l'utilise que sur demande explicite et sans ambiguïté ; en cas de doute sur le dossier visé, demande confirmation avant de supprimer plutôt qu'après.
 
 MÉMOIRE MÉTIER :
 Un bloc "MÉMOIRE MÉTIER ENREGISTRÉE PAR NASIR" est fourni séparément avec les dossiers réels (clients, chantiers, marchés publics, biens, contacts) que Nasir a enregistrés dans l'onglet 🗂️ Mémoire. C'est la seule source fiable sur ses affaires en cours : utilise-la en priorité, ne la contredis jamais, et si une information nécessaire n'y figure pas, dis clairement qu'elle doit être ajoutée ou vérifiée plutôt que de l'inventer.
@@ -1892,14 +1975,15 @@ async function nasirAiCoreSend(userMsgObj, bubbleHtml){
     const systemFull = NASIR_AI_SYSTEM_PROMPT + "\n\n" + (NASIR_MODES[nasirAiMode]?.focus || '') + "\n\n" + nasirMemoireContextText();
     const toolsDef = [
       {type:'web_search_20260318',name:'web_search',max_uses:5,allowed_callers:['direct']},
-      NASIR_TOOL_CONVERT, NASIR_TOOL_RENTABILITE
+      NASIR_TOOL_CONVERT, NASIR_TOOL_RENTABILITE,
+      NASIR_TOOL_AJOUTER, NASIR_TOOL_MODIFIER, NASIR_TOOL_SUPPRIMER
     ];
     // Messages de travail pour cet échange : peuvent contenir des blocs tool_use/tool_result
     // en plus du texte lors du calcul d'une conversion ou d'une rentabilité. Seule la réponse
     // finale en texte est ensuite conservée dans l'historique persistant (format simple).
     let workingMessages = history.map(m=>({role:m.role, content:m.content}));
     let answer='';
-    for(let iter=0; iter<5; iter++){
+    for(let iter=0; iter<8; iter++){
       const payload={ model:NASIR_AI_MODEL, max_tokens:NASIR_AI_MAX_TOKENS, system:systemFull, messages:workingMessages, tools:toolsDef };
       const response=await fetch(ANTHROPIC_API_URL,{
         method:'POST',
@@ -1916,11 +2000,11 @@ async function nasirAiCoreSend(userMsgObj, bubbleHtml){
         break;
       }
       workingMessages.push({role:'assistant', content:blocks});
-      const toolResults=toolUses.map(tu=>({
-        type:'tool_result', tool_use_id:tu.id, content: JSON.stringify(nasirAiRunLocalTool(tu.name, tu.input||{}))
-      }));
+      const toolResults=await Promise.all(toolUses.map(async tu=>({
+        type:'tool_result', tool_use_id:tu.id, content: JSON.stringify(await nasirAiRunLocalTool(tu.name, tu.input||{}))
+      })));
       workingMessages.push({role:'user', content: toolResults});
-      if(iter===4) answer = textParts || 'Le calcul a demandé trop d’étapes — réessayez avec une demande plus simple.';
+      if(iter===7) answer = textParts || 'Le calcul a demandé trop d’étapes — réessayez avec une demande plus simple.';
     }
     const h=nasirAiLoadHistory(); h.push({role:'assistant',content:answer}); nasirAiSaveHistory(h);
     typing.remove();
