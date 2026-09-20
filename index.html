@@ -567,6 +567,20 @@
           </div>
           <div id="nasir-ai-key-status" class="ai-key-status"></div>
           <div class="ai-key-help">La clé est enregistrée uniquement dans le stockage local de ce navigateur et n’est pas écrite dans GitHub. Ne la partagez jamais dans le chat.</div>
+
+          <div style="font-weight:800;margin:16px 0 8px;">🗣️ Voix humaine (ElevenLabs — optionnel)</div>
+          <div class="ai-key-row">
+            <input id="nasir-eleven-key" class="ai-key-input" type="password" autocomplete="off" placeholder="Clé API ElevenLabs…">
+            <button class="ai-key-save" type="button" onclick="nasirAiSaveElevenConfig()">Enregistrer</button>
+          </div>
+          <div class="ai-key-row" style="margin-top:8px;">
+            <input id="nasir-eleven-voice-fr" class="ai-key-input" type="text" autocomplete="off" placeholder="ID voix française (ElevenLabs)">
+          </div>
+          <div class="ai-key-row" style="margin-top:8px;">
+            <input id="nasir-eleven-voice-ar" class="ai-key-input" type="text" autocomplete="off" placeholder="ID voix arabe (ElevenLabs)">
+          </div>
+          <div id="nasir-eleven-status" class="ai-key-status"></div>
+          <div class="ai-key-help">Créez une clé sur elevenlabs.io, puis copiez l’ID d’une voix française et d’une voix arabe depuis leur bibliothèque de voix (icône ⋮ → Copy Voice ID). Le wolof n’étant proposé par aucun service de synthèse, la voix française sera réutilisée pour les messages en wolof. Sans clé enregistrée ici, l’app continue d’utiliser automatiquement la meilleure voix du téléphone.</div>
         </div>
         <div id="nasir-memoire-panel" class="ai-settings-panel">
           <div style="font-weight:800;margin-bottom:10px;">🗂️ Mémoire métier <span id="nasir-memoire-count" class="mem-count-badge">0</span></div>
@@ -657,6 +671,14 @@
           <div class="nasir-ai-voicebar">
             <button type="button" id="nasir-ai-mic" class="ai-voice-btn" onclick="nasirAiToggleVoice()" title="Envoyer un message vocal">🎙️</button>
             <button type="button" id="nasir-ai-speak" class="ai-voice-btn active" onclick="nasirAiToggleSpeak()" title="Activer/désactiver la réponse vocale">🔊</button>
+            <select id="nasir-ai-quickmute" class="ai-lang-select" aria-label="Silence temporaire" onchange="nasirAiSetQuickMute(this.value)">
+              <option value="">🔔 Vocal actif</option>
+              <option value="15m">🔇 15 minutes</option>
+              <option value="30m">🔇 30 minutes</option>
+              <option value="1h">🔇 1 heure</option>
+              <option value="prayer">🕌 Jusqu'à la prière</option>
+              <option value="day">🌙 Jusqu'à demain</option>
+            </select>
             <select id="nasir-ai-lang" class="ai-lang-select" aria-label="Langue">
               <option value="fr-FR">🇫🇷 Français</option>
               <option value="ar-SA">🇸🇦 العربية</option>
@@ -664,6 +686,7 @@
               <option value="auto">🌍 Auto</option>
             </select>
             <span id="nasir-ai-status" class="nasir-ai-status">Prêt</span>
+            <span id="nasir-ai-mute-label" class="nasir-ai-status" style="display:none;"></span>
           </div>
           <div class="nasir-ai-inputline">
             <textarea id="nasir-ai-input" rows="1" placeholder="Écrivez votre message…" onkeydown="nasirAiKeydown(event)"></textarea>
@@ -1922,6 +1945,7 @@ function nasirAiToggleSettings(){
   if(!p) return;
   p.classList.toggle('show');
   nasirAiRefreshKeyStatus();
+  nasirAiRefreshElevenStatus();
 }
 function nasirAiRefreshKeyStatus(){
   const status=document.getElementById('nasir-ai-key-status');
@@ -2015,6 +2039,7 @@ async function nasirAiCoreSend(userMsgObj, bubbleHtml){
     const msg=`Erreur NASIR AI : ${err.message || 'connexion impossible'}`;
     box.insertAdjacentHTML('beforeend',`<div class="ai-msg assistant">⚠️ ${nasirAiEscape(msg)}</div>`);
     const h=nasirAiLoadHistory(); h.push({role:'assistant',content:msg}); nasirAiSaveHistory(h);
+    nasirAiSpeak(msg);
   }
   box.scrollTop=box.scrollHeight;
   if(st)st.textContent='Prêt';
@@ -2028,14 +2053,67 @@ async function nasirAiSend(){
   await nasirAiCoreSend({role:'user',content:text}, `<div class="ai-msg user">${nasirAiEscape(text)}</div>`);
 }
 
-document.addEventListener('DOMContentLoaded', ()=>{ nasirAiRender(); nasirAiRefreshKeyStatus(); nasirAiInitMode(); });
+document.addEventListener('DOMContentLoaded', ()=>{
+  nasirAiRender(); nasirAiRefreshKeyStatus(); nasirAiRefreshElevenStatus(); nasirAiInitMode();
+  const speakBtn=document.getElementById('nasir-ai-speak');
+  if(speakBtn) speakBtn.classList.toggle('active', nasirAiVoiceEnabled);
+});
 
 // ============================================================
 // ---------- NASIR AI — Voix : parler et écouter ----------
 let nasirAiRecognition = null;
 let nasirAiListening = false;
-let nasirAiVoiceEnabled = true;
+const NASIR_AI_VOICE_KEY = 'nasir_ai_voice_enabled';
+// Réponse vocale activée en permanence par défaut ; si jamais désactivée manuellement,
+// le choix est mémorisé sur l'appareil — mais un appareil neuf (ou données effacées) repart toujours en vocal.
+let nasirAiVoiceEnabled = (function(){
+  try{ const saved=localStorage.getItem(NASIR_AI_VOICE_KEY); return saved===null ? true : saved==='1'; }
+  catch(e){ return true; }
+})();
 let nasirAiSpeaking = false;
+let nasirAiCurrentAudio = null; // piste ElevenLabs actuellement jouée, pour pouvoir l'arrêter
+
+// ---------- Voix humaine ElevenLabs (optionnelle) ----------
+const NASIR_ELEVEN_KEY_STORAGE='nasir_eleven_key';
+const NASIR_ELEVEN_VOICE_FR_STORAGE='nasir_eleven_voice_fr';
+const NASIR_ELEVEN_VOICE_AR_STORAGE='nasir_eleven_voice_ar';
+function nasirAiElevenGetKey(){ try{return localStorage.getItem(NASIR_ELEVEN_KEY_STORAGE)||'';}catch(e){return '';} }
+function nasirAiElevenGetVoiceId(lang){
+  const base=lang.split('-')[0].toLowerCase();
+  try{
+    if(base==='ar') return localStorage.getItem(NASIR_ELEVEN_VOICE_AR_STORAGE)||'';
+    // wolof (wo) et français (fr) partagent la voix française : aucun service ne propose le wolof.
+    return localStorage.getItem(NASIR_ELEVEN_VOICE_FR_STORAGE)||'';
+  }catch(e){ return ''; }
+}
+function nasirAiRefreshElevenStatus(){
+  const status=document.getElementById('nasir-eleven-status');
+  const keyInput=document.getElementById('nasir-eleven-key');
+  const frInput=document.getElementById('nasir-eleven-voice-fr');
+  const arInput=document.getElementById('nasir-eleven-voice-ar');
+  const key=nasirAiElevenGetKey();
+  if(keyInput && key) keyInput.value=key;
+  try{
+    if(frInput) frInput.value=localStorage.getItem(NASIR_ELEVEN_VOICE_FR_STORAGE)||'';
+    if(arInput) arInput.value=localStorage.getItem(NASIR_ELEVEN_VOICE_AR_STORAGE)||'';
+  }catch(e){}
+  if(status) status.textContent = key ? '✅ Voix humaine ElevenLabs activée sur cet appareil.' : 'ℹ️ Non configuré — l’app utilise la voix du téléphone.';
+}
+function nasirAiSaveElevenConfig(){
+  const status=document.getElementById('nasir-eleven-status');
+  const key=(document.getElementById('nasir-eleven-key')?.value||'').trim();
+  const voiceFr=(document.getElementById('nasir-eleven-voice-fr')?.value||'').trim();
+  const voiceAr=(document.getElementById('nasir-eleven-voice-ar')?.value||'').trim();
+  try{
+    if(key) localStorage.setItem(NASIR_ELEVEN_KEY_STORAGE,key); else localStorage.removeItem(NASIR_ELEVEN_KEY_STORAGE);
+    if(voiceFr) localStorage.setItem(NASIR_ELEVEN_VOICE_FR_STORAGE,voiceFr); else localStorage.removeItem(NASIR_ELEVEN_VOICE_FR_STORAGE);
+    if(voiceAr) localStorage.setItem(NASIR_ELEVEN_VOICE_AR_STORAGE,voiceAr); else localStorage.removeItem(NASIR_ELEVEN_VOICE_AR_STORAGE);
+  }catch(e){
+    if(status) status.textContent='❌ Impossible d’enregistrer sur ce navigateur.';
+    return;
+  }
+  nasirAiRefreshElevenStatus();
+}
 
 function nasirAiSelectedLang(){
   const el=document.getElementById('nasir-ai-lang');
@@ -2054,14 +2132,55 @@ function nasirAiVoiceLangForText(text){
   const selected=nasirAiSelectedLang();
   return selected==='auto' ? nasirAiDetectLanguage(text) : selected;
 }
-function nasirAiFindVoice(lang){
+// Score une voix : plus le score est élevé, plus la voix est naturelle/qualitative.
+// Les moteurs "Enhanced/Premium/Neural/Natural/Wavenet" sonnent nettement moins robotiques
+// que les voix "Compact/eSpeak" installées par défaut sur beaucoup de téléphones.
+function nasirAiVoiceQualityScore(v){
+  const name=String(v.name||'').toLowerCase();
+  let score=0;
+  if(/enhanced|premium|neural|natural|wavenet|siri|améliorée|plus/.test(name)) score+=10;
+  if(/google/.test(name)) score+=4;
+  if(/compact|espeak|robot|default/.test(name)) score-=6;
+  if(v.localService===false) score+=1; // souvent des voix cloud, plus riches
+  return score;
+}
+function nasirAiFindBestVoice(lang){
   if(!('speechSynthesis' in window)) return null;
   const voices=window.speechSynthesis.getVoices()||[];
-  const exact=voices.find(v=>String(v.lang||'').toLowerCase()===lang.toLowerCase());
-  if(exact) return exact;
+  if(!voices.length) return null;
   const base=lang.split('-')[0].toLowerCase();
-  return voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base+'-')) ||
-         voices.find(v=>String(v.lang||'').toLowerCase().startsWith(base)) || null;
+  const byQuality=(a,b)=>nasirAiVoiceQualityScore(b)-nasirAiVoiceQualityScore(a);
+  const exactMatches=voices.filter(v=>String(v.lang||'').toLowerCase()===lang.toLowerCase()).sort(byQuality);
+  if(exactMatches.length) return exactMatches[0];
+  const baseMatches=voices.filter(v=>String(v.lang||'').toLowerCase().startsWith(base)).sort(byQuality);
+  if(baseMatches.length) return baseMatches[0];
+  // Wolof : aucun téléphone ne propose de voix "wo" nativement à ce jour.
+  // Repli sur la meilleure voix française disponible plutôt qu'une voix par défaut au hasard.
+  if(base==='wo'){
+    const frMatches=voices.filter(v=>String(v.lang||'').toLowerCase().startsWith('fr')).sort(byQuality);
+    if(frMatches.length) return frMatches[0];
+  }
+  return voices.slice().sort(byQuality)[0] || null;
+}
+// Réglages de débit/tonalité par langue : plus lent et légèrement plus grave qu'une
+// synthèse par défaut, pour un rendu posé, "sénior", plutôt qu'une lecture pressée.
+function nasirAiVoiceTuning(lang){
+  const base=lang.split('-')[0].toLowerCase();
+  if(base==='ar') return {rate:0.88, pitch:0.94};
+  if(base==='wo') return {rate:0.90, pitch:0.96};
+  return {rate:0.92, pitch:0.96}; // français
+}
+// Découpe le texte en phrases pour l'insertion de courtes pauses naturelles entre elles,
+// au lieu d'un seul flux ininterrompu.
+function nasirAiSplitIntoSentences(text){
+  const parts=String(text||'').split(/(?<=[.!?؟])\s+/).map(s=>s.trim()).filter(Boolean);
+  // Regroupe les fragments très courts (ex. abréviations mal coupées) avec le suivant.
+  const merged=[];
+  for(const p of parts){
+    if(merged.length && p.length<12) merged[merged.length-1]+=' '+p;
+    else merged.push(p);
+  }
+  return merged.length ? merged : [String(text||'').trim()].filter(Boolean);
 }
 function nasirAiCleanTextForSpeech(text){
   let t = String(text||'');
@@ -2096,31 +2215,170 @@ function nasirAiCleanTextForSpeech(text){
   t = t.replace(/\.\s*\./g, '.').replace(/\s+([,.;:!?])/g, '$1');
   return t;
 }
-function nasirAiSpeak(text){
-  if(!nasirAiVoiceEnabled || !('speechSynthesis' in window) || !text) return;
-  const spokenText = nasirAiCleanTextForSpeech(text);
-  if(!spokenText) return;
-  window.speechSynthesis.cancel();
-  const lang=nasirAiVoiceLangForText(spokenText);
-  const utter=new SpeechSynthesisUtterance(spokenText);
-  utter.lang=lang;
-  utter.rate=0.98;
-  utter.pitch=1;
-  const voice=nasirAiFindVoice(lang);
-  if(voice) utter.voice=voice;
+let nasirAiSpeechToken=0; // incrémenté à chaque nouvelle lecture ou arrêt, pour annuler proprement une file en cours
+
+// ---------- Silence temporaire (réunion / prière) ----------
+// Indépendant du réglage permanent 🔊 : une pause programmée n'écrase pas la préférence
+// "toujours vocal", elle la suspend juste pour la durée choisie, puis reprend seule.
+const NASIR_AI_MUTE_UNTIL_KEY = 'nasir_ai_mute_until';
+function nasirAiGetMuteUntil(){
+  try{ return parseInt(localStorage.getItem(NASIR_AI_MUTE_UNTIL_KEY)||'0', 10) || 0; }catch(e){ return 0; }
+}
+function nasirAiIsTemporarilyMuted(){
+  return nasirAiGetMuteUntil() > Date.now();
+}
+// Réutilise le calcul astronomique de l'onglet Prière pour trouver l'horodatage exact
+// (en millisecondes UTC) de la prochaine prière majeure, si une localisation est enregistrée.
+function nasirAiNextPrayerTimestamp(){
+  try{
+    if(!prayerLocation) return null;
+    const methodEl=document.getElementById('prayer-method');
+    const asrEl=document.getElementById('prayer-asr');
+    const method=methodEl?methodEl.value:'MWL';
+    const asrFactor=asrEl?parseInt(asrEl.value,10):1;
+    const now=new Date();
+    const tzOffset=getTZOffsetHours(prayerLocation.tz, now);
+    const nowHourFixed=fixHour24(now.getUTCHours()+tzOffset+now.getUTCMinutes()/60+now.getUTCSeconds()/3600);
+    const { times } = computePrayerTimes(prayerLocation.lat, prayerLocation.lng, tzOffset, now, method, asrFactor);
+    let bestDiff=Infinity;
+    times.filter(x=>!x.minor && x.t!==null).forEach(x=>{
+      let diff=x.t - nowHourFixed;
+      if(diff<0) diff+=24;
+      if(diff<bestDiff) bestDiff=diff;
+    });
+    if(bestDiff===Infinity) return null;
+    return Date.now() + bestDiff*3600*1000 + 15*60*1000; // +15 min après l'appel pour laisser la prière se terminer
+  }catch(e){ return null; }
+}
+function nasirAiSetQuickMute(choice){
+  let until=0;
+  const now=Date.now();
+  if(choice==='15m') until=now+15*60000;
+  else if(choice==='30m') until=now+30*60000;
+  else if(choice==='1h') until=now+60*60000;
+  else if(choice==='prayer'){
+    until=nasirAiNextPrayerTimestamp();
+    if(!until){ until=now+45*60000; alert("Aucune localisation enregistrée dans l'onglet Prière — silence de 45 minutes appliqué par défaut. Renseignez votre ville dans l'onglet 🕌 Prière pour un calage exact."); }
+  }
+  else if(choice==='day'){ const d=new Date(); d.setHours(23,59,59,999); until=d.getTime(); }
+  try{ localStorage.setItem(NASIR_AI_MUTE_UNTIL_KEY, String(until)); }catch(e){}
+  if(until>now){ nasirAiSpeechToken++; if('speechSynthesis' in window) window.speechSynthesis.cancel(); if(nasirAiCurrentAudio){ try{nasirAiCurrentAudio.pause();}catch(e){} nasirAiCurrentAudio=null; } }
+  nasirAiRefreshMuteLabel();
+}
+function nasirAiRefreshMuteLabel(){
+  const label=document.getElementById('nasir-ai-mute-label');
+  const select=document.getElementById('nasir-ai-quickmute');
+  const until=nasirAiGetMuteUntil();
+  if(until>Date.now()){
+    if(label){ label.style.display='inline'; label.textContent='🔇 Jusqu’à '+new Date(until).toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}); }
+  }else{
+    if(label) label.style.display='none';
+    if(select && select.value) select.value='';
+  }
+}
+setInterval(nasirAiRefreshMuteLabel, 30000);
+document.addEventListener('DOMContentLoaded', nasirAiRefreshMuteLabel);
+
+async function nasirAiSpeakElevenLabs(text, lang, apiKey, voiceId, myToken){
+  try{
+    const resp=await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${encodeURIComponent(voiceId)}`, {
+      method:'POST',
+      headers:{'xi-api-key':apiKey, 'content-type':'application/json', 'accept':'audio/mpeg'},
+      body:JSON.stringify({
+        text,
+        model_id:'eleven_multilingual_v2',
+        voice_settings:{stability:0.5, similarity_boost:0.8, style:0.35, use_speaker_boost:true}
+      })
+    });
+    if(!resp.ok) throw new Error('ElevenLabs HTTP '+resp.status);
+    const blob=await resp.blob();
+    if(myToken!==nasirAiSpeechToken) return true; // annulé entre-temps par une lecture plus récente
+    const url=URL.createObjectURL(blob);
+    const audio=new Audio(url);
+    nasirAiCurrentAudio=audio;
+    const btn=document.getElementById('nasir-ai-speak');
+    await new Promise(resolve=>{
+      audio.onplay=()=>{nasirAiSpeaking=true; if(btn) btn.classList.add('active','nasir-ai-speaking');};
+      const finish=()=>{
+        nasirAiSpeaking=false;
+        if(btn) btn.classList.remove('active','nasir-ai-speaking');
+        URL.revokeObjectURL(url);
+        if(nasirAiCurrentAudio===audio) nasirAiCurrentAudio=null;
+        resolve();
+      };
+      audio.onended=finish; audio.onerror=finish;
+      if(myToken!==nasirAiSpeechToken){ finish(); return; }
+      audio.play().catch(finish);
+    });
+    return true; // lecture humaine réussie, pas besoin de repli
+  }catch(e){
+    console.warn('ElevenLabs indisponible, repli sur la voix du téléphone :', e.message);
+    return false;
+  }
+}
+
+function nasirAiSpeakBrowser(spokenText, lang, myToken){
+  const voice=nasirAiFindBestVoice(lang);
+  const tuning=nasirAiVoiceTuning(lang);
+  const sentences=nasirAiSplitIntoSentences(spokenText);
   const btn=document.getElementById('nasir-ai-speak');
-  utter.onstart=()=>{nasirAiSpeaking=true;if(btn)btn.classList.add('active','nasir-ai-speaking');};
-  utter.onend=utter.onerror=()=>{nasirAiSpeaking=false;if(btn)btn.classList.remove('active','nasir-ai-speaking');};
-  window.speechSynthesis.speak(utter);
+  const PAUSE_MS=260; // courte pause entre deux phrases, façon débit humain posé
+  let i=0;
+  function speakNext(){
+    if(myToken!==nasirAiSpeechToken) return; // une lecture plus récente (ou un arrêt) a pris le relais
+    if(i>=sentences.length){
+      nasirAiSpeaking=false;
+      if(btn) btn.classList.remove('active','nasir-ai-speaking');
+      return;
+    }
+    const utter=new SpeechSynthesisUtterance(sentences[i]);
+    utter.lang=lang;
+    utter.rate=tuning.rate;
+    utter.pitch=tuning.pitch;
+    if(voice) utter.voice=voice;
+    if(i===0) utter.onstart=()=>{nasirAiSpeaking=true;if(btn)btn.classList.add('active','nasir-ai-speaking');};
+    utter.onend=()=>{ i++; if(myToken===nasirAiSpeechToken) setTimeout(speakNext, PAUSE_MS); };
+    utter.onerror=()=>{ i++; if(myToken===nasirAiSpeechToken) speakNext(); };
+    window.speechSynthesis.speak(utter);
+  }
+  speakNext();
+}
+
+async function nasirAiSpeak(text){
+  if(!nasirAiVoiceEnabled || !text) return;
+  if(nasirAiIsTemporarilyMuted()){
+    const st=document.getElementById('nasir-ai-status');
+    if(st) st.textContent='🔇 Vocal en pause';
+    return;
+  }
+  const spokenText=nasirAiCleanTextForSpeech(text);
+  if(!spokenText) return;
+  if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if(nasirAiCurrentAudio){ try{nasirAiCurrentAudio.pause();}catch(e){} nasirAiCurrentAudio=null; }
+  const myToken=++nasirAiSpeechToken;
+  const lang=nasirAiVoiceLangForText(spokenText);
+  const elevenKey=nasirAiElevenGetKey();
+  const elevenVoiceId=nasirAiElevenGetVoiceId(lang);
+  if(elevenKey && elevenVoiceId){
+    const st=document.getElementById('nasir-ai-status');
+    const ok=await nasirAiSpeakElevenLabs(spokenText, lang, elevenKey, elevenVoiceId, myToken);
+    if(myToken!==nasirAiSpeechToken) return; // annulé pendant l'appel réseau
+    if(ok) return; // voix humaine jouée, terminé
+    if(st) st.textContent='Voix humaine indisponible, repli…';
+  }
+  if('speechSynthesis' in window) nasirAiSpeakBrowser(spokenText, lang, myToken);
 }
 function nasirAiToggleSpeak(){
   nasirAiVoiceEnabled=!nasirAiVoiceEnabled;
+  try{ localStorage.setItem(NASIR_AI_VOICE_KEY, nasirAiVoiceEnabled ? '1' : '0'); }catch(e){}
   const btn=document.getElementById('nasir-ai-speak');
   if(btn) btn.classList.toggle('active',nasirAiVoiceEnabled);
-  if(!nasirAiVoiceEnabled && 'speechSynthesis' in window) window.speechSynthesis.cancel();
+  if(!nasirAiVoiceEnabled) nasirAiStopSpeaking();
 }
 function nasirAiStopSpeaking(){
+  nasirAiSpeechToken++;
   if('speechSynthesis' in window) window.speechSynthesis.cancel();
+  if(nasirAiCurrentAudio){ try{nasirAiCurrentAudio.pause();}catch(e){} nasirAiCurrentAudio=null; }
   nasirAiSpeaking=false;
   const btn=document.getElementById('nasir-ai-speak');
   if(btn) btn.classList.remove('active','nasir-ai-speaking');
