@@ -151,14 +151,14 @@ async function search(){
  const q=document.getElementById("query").value.trim(); if(!q){toast("Entrez une recherche.");return}
  const country=document.getElementById("country").value, sector=document.getElementById("sector").value;
  state.searches++;state.history.unshift({date:new Date().toISOString(),mode:currentMode,query:q,country,sector});state.history=state.history.slice(0,100);save();
- const results=document.getElementById("results");results.innerHTML='<div class="empty"><strong>Recherche en cours…</strong>Vérification des sources publiques.</div>';
+ const results=document.getElementById("results");results.innerHTML='<div class="empty"><strong>Recherche en cours…</strong>'+(state.settings.searchMode==="live"?"L’agent IA recoupe les sources publiques et complète la fiche entreprise : comptez 30 à 120 secondes.":"Vérification des sources publiques.")+'</div>';
  const mode=state.settings.searchMode;
  if(mode==="live" && state.settings.backendUrl){
    try{
-    const r=await fetch(state.settings.backendUrl.replace(/\/$/,"")+"/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:currentMode,query:q,country,sector})});
+    const r=await fetch(state.settings.backendUrl.replace(/\/$/,"")+"/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:currentMode,query:q,country,sector}),signal:AbortSignal.timeout(170000)});
     if(!r.ok)throw new Error("HTTP "+r.status);
-    const data=await r.json();renderResults(data.results||[]);document.getElementById("backendStatus").textContent="Backend connecté";return;
-   }catch(e){document.getElementById("backendStatus").textContent="Backend erreur";toast("Backend inaccessible — affichage démo.");}
+    const data=await r.json();renderResults(data.results||[],data.note);document.getElementById("backendStatus").textContent="Backend connecté";return;
+   }catch(e){document.getElementById("backendStatus").textContent="Backend erreur";const m=/HTTP 429/.test(e.message)?"Trop de recherches : patientez une minute.":"Le backend n’a pas répondu (il se réveille peut-être : réessayez dans 30 secondes).";results.innerHTML='<div class="empty"><strong>Recherche impossible</strong>'+m+'</div>';toast("Erreur backend.");return;}
  }
  const rq=currentMode==="phone"?normalizePhone(q):q.toLowerCase();
  let found=demoData.filter(x=>{
@@ -173,25 +173,38 @@ async function search(){
  renderResults(found);
 }
 
-function renderResults(arr){
+function hostName(u){try{return new URL(u).hostname.replace(/^www\./,"")}catch{return String(u||"")}}
+function renderResults(arr,note){
+ window.__results=arr;
  const box=document.getElementById("results");document.getElementById("resultCount").textContent=arr.length+" résultat"+(arr.length>1?"s":"");
- if(!arr.length){box.innerHTML='<div class="empty"><strong>Aucun résultat exploitable</strong>Aucune association publique suffisante n’a été trouvée.</div>';return}
- box.innerHTML=arr.map((x,i)=>`<article class="result">
-  <div class="resultHead"><div class="identity"><div class="avatar">${initials(x.name)}</div><div><h4>${esc(x.name)}</h4><p>${esc(x.arabic||"")} · ${esc(countryNames[x.country]||x.country||"Pays non déterminé")} · ${esc(x.role||"")}</p></div></div><span class="badge ${x.confidence}">${labelConfidence(x.confidence)}</span></div>
-  <div class="meta"><div><b>Entreprise</b>${esc(x.company||"—")}</div><div><b>Secteur</b>${esc(x.sector||"—")}</div><div><b>Téléphone public</b>${esc(x.phone||"—")}</div><div><b>Email professionnel</b>${esc(x.email||"—")}</div></div>
-  <div class="sources">${(x.sources||[]).map(s=>`<span class="source">${esc(s)}</span>`).join("")}</div>
+ if(!arr.length){box.innerHTML='<div class="empty"><strong>Aucun résultat exploitable</strong>'+esc(note||"Aucune association publique suffisante n’a été trouvée.")+'</div>';return}
+ box.innerHTML=arr.map((x,i)=>{
+  const fs=x.fieldSources||{};
+  const cell=(label,val,key)=>`<div title="${esc((fs[key]||[]).length?"Source : "+fs[key].join(", "):"")}"><b>${label}</b>${esc(val||"—")}</div>`;
+  const cells=[cell("Entreprise",x.company,"company"),cell("Secteur",x.sector,"sector"),cell("Téléphone public",x.phone,"phone"),cell("Email professionnel",x.email,"email")];
+  if(x.companyPhone)cells.push(cell("Standard entreprise",x.companyPhone,"companyPhone"));
+  if(x.companyEmail)cells.push(cell("Email général entreprise",x.companyEmail,"companyEmail"));
+  if(x.address)cells.push(cell("Adresse (siège / bureau)",x.address,"address"));
+  if(x.registryNumber)cells.push(cell("N° registre du commerce",x.registryNumber,"registryNumber"));
+  const links=(x.sourceLinks&&x.sourceLinks.length)?x.sourceLinks.map(s=>`<a class="source" target="_blank" rel="noopener" title="${esc(s.title||"")}" href="${safeUrl(s.url)}">${esc(hostName(s.url))}</a>`).join(""):(x.sources||[]).map(s=>`<span class="source">${esc(s)}</span>`).join("");
+  const socials=(x.socials||[]).map(s=>`<a class="source" target="_blank" rel="noopener" href="${safeUrl(s.url)}">${esc(s.name||hostName(s.url))}</a>`).join("");
+  const score=Number.isFinite(x.score)&&x.score>0?" · "+x.score+"/100":"";
+  return `<article class="result">
+  <div class="resultHead"><div class="identity"><div class="avatar">${initials(x.name)}</div><div><h4>${esc(x.name)}</h4><p>${esc(x.arabic||"")} · ${esc(countryNames[x.country]||x.country||"Pays non déterminé")} · ${esc(x.role||"")}</p></div></div><span class="badge ${x.confidence}">${labelConfidence(x.confidence)}${score}</span></div>
+  <div class="meta">${cells.join("")}</div>
+  <div class="sources">${links}${socials?'<span class="muted" style="font-size:11px;align-self:center">Pages officielles :</span>'+socials:""}</div>
   <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
    ${x.website&&x.website!=="—"?`<a class="secondary" style="text-decoration:none" target="_blank" rel="noopener" href="${safeUrl(x.website)}">Site</a>`:""}
-   ${x.confidence!=="unverified"?`<button class="primary" onclick='saveProspect(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Sauvegarder</button>`:""}
-   <button class="secondary" onclick='makeMessage(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Message AR/FR</button>
+   ${x.confidence!=="unverified"?`<button class="primary" onclick="saveProspect(window.__results[${i}])">Sauvegarder</button>`:""}
+   <button class="secondary" onclick="makeMessage(window.__results[${i}])">Message AR/FR</button>
   </div>
- </article>`).join("");
+ </article>`}).join("");
 }
 
 function saveProspect(x){if(x.demo&&x.name==="Identité non confirmée"){toast("Profil non confirmé : non sauvegardé.");return}if(!state.prospects.some(p=>p.phone===x.phone&&p.name===x.name)){state.prospects.push({...x,savedAt:new Date().toISOString()});save();toast("Prospect sauvegardé.");}else toast("Prospect déjà présent.");}
 function makeMessage(x){const msg=`السلام عليكم ${x.arabic||x.name}،\nأتواصل معكم بخصوص فرص أعمال واستثمار في السنغال، خصوصاً في مجال ${x.sector||"الأعمال"}، وأرغب في التعرف على إمكانية التعاون مع شركتكم.\n\nBonjour ${x.name}, je vous contacte au sujet d’opportunités d’affaires et d’investissement au Sénégal dans le secteur ${x.sector||"des affaires"}. Je serais heureux d’échanger avec vous sur une éventuelle collaboration.`;navigator.clipboard?.writeText(msg);toast("Message arabe/français copié.");}
 
-function renderProspects(){const box=document.getElementById("prospectTable");if(!state.prospects.length){box.innerHTML='<div class="empty"><strong>Aucun prospect</strong>Sauvegardez un profil confirmé ou probable depuis une recherche.</div>';return}box.innerHTML=`<table class="table"><thead><tr><th>Identité</th><th>Entreprise</th><th>Pays</th><th>Contact public</th><th>Confiance</th><th></th></tr></thead><tbody>${state.prospects.map((p,i)=>`<tr><td><b>${esc(p.name)}</b><br><span class="muted">${esc(p.role||"")}</span></td><td>${esc(p.company||"—")}</td><td>${esc(countryNames[p.country]||p.country)}</td><td>${esc(p.phone||"—")}<br>${esc(p.email||"—")}</td><td>${labelConfidence(p.confidence)}</td><td><button class="secondary" onclick="removeProspect(${i})">Supprimer</button></td></tr>`).join("")}</tbody></table>`}
+function renderProspects(){const box=document.getElementById("prospectTable");if(!state.prospects.length){box.innerHTML='<div class="empty"><strong>Aucun prospect</strong>Sauvegardez un profil confirmé ou probable depuis une recherche.</div>';return}box.innerHTML=`<table class="table"><thead><tr><th>Identité</th><th>Entreprise</th><th>Pays</th><th>Contact public</th><th>Confiance</th><th></th></tr></thead><tbody>${state.prospects.map((p,i)=>`<tr><td><b>${esc(p.name)}</b><br><span class="muted">${esc(p.role||"")}</span></td><td>${esc(p.company||"—")}</td><td>${esc(countryNames[p.country]||p.country)}</td><td>${esc(p.phone||p.companyPhone||"—")}<br>${esc(p.email||p.companyEmail||"—")}${p.address?'<br><span class="muted">'+esc(p.address)+'</span>':""}</td><td>${labelConfidence(p.confidence)}</td><td><button class="secondary" onclick="removeProspect(${i})">Supprimer</button></td></tr>`).join("")}</tbody></table>`}
 function removeProspect(i){state.prospects.splice(i,1);save();toast("Prospect supprimé.");}
 function renderReports(){document.getElementById("reportActivity").innerHTML=`<div class="statline"><span>Recherches totales</span><b>${state.searches}</b></div><div class="statline"><span>Prospects sauvegardés</span><b>${state.prospects.length}</b></div><div class="statline"><span>Historique conservé</span><b>${state.history.length}</b></div>`;const c=state.prospects.filter(x=>x.confidence==="confirmed").length,p=state.prospects.filter(x=>x.confidence==="probable").length,u=state.prospects.filter(x=>x.confidence==="unverified").length;document.getElementById("reportQuality").innerHTML=`<div class="statline"><span>Confirmés</span><b>${c}</b></div><div class="statline"><span>Probables</span><b>${p}</b></div><div class="statline"><span>Non confirmés</span><b>${u}</b></div>`}
 function labelConfidence(x){return x==="confirmed"?"Confirmé":x==="probable"?"Probable":"Non confirmé"}
@@ -199,10 +212,10 @@ function initials(s){return (s||"?").split(/\s+/).slice(0,2).map(x=>x[0]).join("
 function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
 function safeUrl(u){try{const x=new URL(u);return ["http:","https:"].includes(x.protocol)?x.href:"#"}catch{return "#"}}
 
-document.getElementById("searchBtn").onclick=search;document.getElementById("query").addEventListener("keydown",e=>{if(e.key==="Enter")search()});
+document.getElementById("searchBtn").onclick=async()=>{const b=document.getElementById("searchBtn");b.disabled=true;b.textContent="Recherche…";try{await search()}finally{b.disabled=false;b.textContent="Rechercher"}};document.getElementById("query").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("searchBtn").click()});
 document.getElementById("saveSettings").onclick=()=>{state.settings.backendUrl=document.getElementById("backendUrl").value.trim();state.settings.searchMode=document.getElementById("searchMode").value;save();document.getElementById("backendNotice").textContent=state.settings.backendUrl?"Backend enregistré.":"Backend non configuré.";toast("Paramètres enregistrés.");};
 document.getElementById("testBackend").onclick=async()=>{const u=document.getElementById("backendUrl").value.trim();if(!u){toast("Ajoutez l’URL du backend.");return}try{const r=await fetch(u.replace(/\/$/,"")+"/health");if(!r.ok)throw 0;document.getElementById("backendStatus").textContent="Backend connecté";toast("Backend opérationnel.");}catch{document.getElementById("backendStatus").textContent="Backend erreur";toast("Impossible de joindre le backend.");}};
-document.getElementById("exportBtn").onclick=()=>{if(!state.prospects.length){toast("Aucun prospect à exporter.");return}const cols=["name","arabic","country","company","role","phone","email","website","sector","confidence"];const csv=[cols.join(","),...state.prospects.map(p=>cols.map(c=>`"${String(p[c]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="gulf-reverse-prospects.csv";a.click();URL.revokeObjectURL(a.href);};
+document.getElementById("exportBtn").onclick=()=>{if(!state.prospects.length){toast("Aucun prospect à exporter.");return}const cols=["name","arabic","country","company","role","phone","email","companyPhone","companyEmail","address","registryNumber","website","sector","confidence","score"];const csv=[cols.join(","),...state.prospects.map(p=>cols.map(c=>`"${String(p[c]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="gulf-reverse-prospects.csv";a.click();URL.revokeObjectURL(a.href);};
 document.getElementById("backendUrl").value=state.settings.backendUrl;document.getElementById("searchMode").value=state.settings.searchMode;updateKpis();renderProspects();renderReports();
 </script>
 </body>
