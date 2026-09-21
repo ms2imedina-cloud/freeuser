@@ -48,7 +48,7 @@ app.post("/search", async (req, res) => {
     const agent = await runAgent({ mode, query: q, country, sector, hint });
 
     const results = [];
-    for (const x of agent.results.slice(0, 5)) {
+    for (const x of agent.results.slice(0, 8)) {
       // Anti-hallucination : on ne garde que les sources réellement consultées par l agent
       const srcs = (Array.isArray(x.sources) ? x.sources : []).filter((s) => s && agent.retrieved.has(normUrl(s.url)));
       if (!srcs.length) continue;
@@ -65,10 +65,21 @@ app.post("/search", async (req, res) => {
         website: cut(x.website || srcs[0].url, 300),
         sector: cut(x.sector, 80) || sector,
         confidence: confirmed ? "confirmed" : "probable",
+        score: Number.isFinite(x.score) ? x.score : 0,
+        companyPhone: cut(x.companyPhone, 40),
+        companyEmail: cut(x.companyEmail, 120),
+        address: cut(x.address, 240),
+        registryNumber: cut(x.registryNumber, 60),
+        socials: (Array.isArray(x.socials) ? x.socials : [])
+          .filter((s) => s && agent.retrieved.has(normUrl(s.url)))
+          .slice(0, 4)
+          .map((s) => ({ name: cut(s.name, 20), url: cut(s.url, 300) })),
+        fieldSources: x.fieldSources && typeof x.fieldSources === "object" ? x.fieldSources : {},
         sources: [...hosts].filter(Boolean),
+        sourceLinks: srcs.slice(0, 8).map((s) => ({ title: cut(s.title, 100), url: cut(s.url, 300) })),
       });
     }
-    res.json({ results, note: agent.note });
+    res.json({ results, note: agent.note || (results.length ? "" : "Aucune source publique suffisante n a été trouvée.") });
   } catch (e) {
     console.error(e);
     res.status(502).json({ error: "Erreur de l agent IA" });
