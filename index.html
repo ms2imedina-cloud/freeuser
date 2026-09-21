@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>GULF REVERSE PRO — Reverse Business Intelligence</title>
+<meta name="description" content="Gulf Reverse Pro — recherche professionnelle multilingue par téléphone, nom, email ou entreprise.">
+<style>
+:root{--bg:#07111f;--panel:#0d1b2d;--panel2:#10243a;--line:#203752;--text:#eef6ff;--muted:#91a5bc;--accent:#27d3a2;--accent2:#4da3ff;--warn:#f7c65b;--danger:#ff6b7a;--shadow:0 18px 50px #0006}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#06101d,#091a2c 55%,#07111f);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}
+.app{display:flex;min-height:100vh}.sidebar{width:270px;border-right:1px solid var(--line);background:#081522eF;padding:22px 16px;position:sticky;top:0;height:100vh}
+.logo{display:flex;gap:12px;align-items:center;margin:3px 8px 30px}.logoMark{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,var(--accent),var(--accent2));display:grid;place-items:center;color:#04131d;font-weight:900}.logo strong{display:block;font-size:16px;letter-spacing:.5px}.logo small{color:var(--muted)}
+.nav{display:grid;gap:8px}.nav button{background:transparent;border:1px solid transparent;color:#b8c8d9;text-align:left;padding:12px 13px;border-radius:11px}.nav button:hover,.nav button.active{background:#10263b;border-color:#21435f;color:#fff}.nav button span{margin-right:10px}
+.sideBottom{position:absolute;bottom:20px;left:16px;right:16px}.status{padding:12px;border:1px solid var(--line);border-radius:12px;background:#0b1a2a;color:var(--muted);font-size:12px}.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--warn);margin-right:7px}
+.main{flex:1;min-width:0}.top{height:72px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 28px;background:#081522aa;backdrop-filter:blur(12px);position:sticky;top:0;z-index:5}.top h1{font-size:18px;margin:0}.top p{margin:3px 0 0;color:var(--muted);font-size:12px}.pill{border:1px solid #27506b;background:#0d2134;color:#9ec7e7;border-radius:999px;padding:7px 11px;font-size:12px}
+.content{padding:28px;max-width:1500px;margin:auto}.page{display:none}.page.active{display:block}
+.hero{display:flex;justify-content:space-between;gap:25px;align-items:flex-end;margin-bottom:22px}.hero h2{font-size:31px;margin:0 0 7px}.hero p{color:var(--muted);margin:0;max-width:760px;line-height:1.5}
+.card{background:linear-gradient(180deg,#0e1f32,#0b1a2b);border:1px solid var(--line);border-radius:17px;box-shadow:var(--shadow)}.pad{padding:20px}
+.searchBox{padding:18px}.modeRow{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}.mode{padding:9px 12px;border-radius:10px;background:#0a1726;border:1px solid #21364e;color:#a9bdd0}.mode.active{background:#12354b;border-color:#2c7a89;color:#fff}.fields{display:grid;grid-template-columns:1.8fr .8fr .8fr auto;gap:10px}.input,.select,.textarea{width:100%;background:#071421;border:1px solid #254059;color:#eef6ff;border-radius:11px;padding:13px;outline:none}.input:focus,.select:focus,.textarea:focus{border-color:#3b9cc1;box-shadow:0 0 0 3px #2a9fc31c}.primary{border:0;border-radius:11px;padding:12px 17px;background:linear-gradient(135deg,#1bcda0,#28a9df);color:#04131d;font-weight:800}.secondary{border:1px solid #2b4762;border-radius:11px;padding:11px 14px;background:#0b1c2e;color:#d8e8f6}.danger{border-color:#62313b;color:#ff9ca7}
+.notice{margin-top:13px;padding:11px 13px;border-radius:10px;background:#111f2e;border:1px solid #2a4159;color:#a9b9c8;font-size:12px;line-height:1.5}.notice strong{color:#fff}.notice.warn{border-color:#6b572c;background:#211d12}.notice.good{border-color:#235a4b;background:#0d231e}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:13px;margin:18px 0}.kpi{padding:18px}.kpi .n{font-size:25px;font-weight:800}.kpi small{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1.15fr .85fr;gap:16px}.sectionTitle{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}.sectionTitle h3{margin:0;font-size:15px}.muted{color:var(--muted)}
+.results{display:grid;gap:12px}.result{padding:16px;border:1px solid #203a53;border-radius:14px;background:#0a1929}.resultHead{display:flex;justify-content:space-between;gap:15px}.identity{display:flex;gap:12px}.avatar{width:42px;height:42px;border-radius:12px;background:#12334a;display:grid;place-items:center;font-weight:800;color:#74d8ff}.identity h4{margin:0 0 3px}.identity p{margin:0;color:var(--muted);font-size:12px}.badge{font-size:11px;border-radius:999px;padding:5px 8px;height:max-content}.confirmed{background:#0e3329;color:#72e3be;border:1px solid #246c59}.probable{background:#302911;color:#f5d279;border:1px solid #69552a}.unverified{background:#331c23;color:#ff9ca7;border:1px solid #67313d}
+.meta{display:grid;grid-template-columns:repeat(2,1fr);gap:7px;margin-top:13px}.meta div{padding:9px;background:#071522;border-radius:9px;color:#bdd0e0;font-size:12px;overflow-wrap:anywhere}.meta b{color:#6f8ba4;font-weight:500;display:block;margin-bottom:3px}.sources{margin-top:11px;display:flex;flex-wrap:wrap;gap:7px}.source{font-size:11px;padding:6px 8px;border-radius:7px;background:#10263a;color:#83c8ef;text-decoration:none}.source:hover{background:#16344e}
+.empty{padding:35px;text-align:center;color:var(--muted)}.empty strong{display:block;color:#d9e7f3;margin-bottom:7px}.table{width:100%;border-collapse:collapse;font-size:12px}.table th,.table td{padding:12px 10px;border-bottom:1px solid #1d3349;text-align:left}.table th{color:#7f96ad;font-weight:600}.table td{color:#d2e0ed}
+.statline{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid #1b3044}.statline:last-child{border:0}.formgrid{display:grid;grid-template-columns:1fr 1fr;gap:13px}.formgrid label{display:grid;gap:6px;color:#91a5bc;font-size:12px}.full{grid-column:1/-1}
+.countryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.country{padding:13px;background:#091827;border:1px solid #1d344a;border-radius:12px}.country b{display:block}.country span{font-size:12px;color:var(--muted)}
+.toast{position:fixed;right:22px;bottom:22px;background:#10273b;border:1px solid #2d5872;padding:12px 15px;border-radius:11px;box-shadow:var(--shadow);display:none;z-index:20;font-size:13px}
+@media(max-width:1000px){.sidebar{width:76px}.logo div:not(.logoMark),.nav button span:last-child,.sideBottom{display:none}.nav button{text-align:center}.fields{grid-template-columns:1fr 1fr}.fields button{grid-column:1/-1}.grid2{grid-template-columns:1fr}.kpis{grid-template-columns:1fr 1fr}}
+@media(max-width:650px){.sidebar{display:none}.content{padding:17px}.top{padding:0 17px}.hero{display:block}.hero h2{font-size:25px;margin-bottom:8px}.fields,.formgrid,.meta{grid-template-columns:1fr}.countryGrid{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="logo"><div class="logoMark">GR</div><div><strong>GULF REVERSE</strong><small>PRO Intelligence</small></div></div>
+  <nav class="nav">
+    <button class="active" data-page="dashboard"><span>⌂</span><span>Dashboard</span></button>
+    <button data-page="search"><span>⌕</span><span>Recherche</span></button>
+    <button data-page="prospects"><span>◎</span><span>Prospects</span></button>
+    <button data-page="reports"><span>▣</span><span>Rapports</span></button>
+    <button data-page="settings"><span>⚙</span><span>Paramètres</span></button>
+  </nav>
+  <div class="sideBottom"><div class="status"><span class="dot"></span><b id="backendStatus">Backend non connecté</b><br><span>Recherche publique sécurisée</span></div></div>
+</aside>
+
+<main class="main">
+<header class="top"><div><h1 id="topTitle">Gulf Reverse Pro</h1><p id="topSub">Reverse business intelligence — Golfe ↔ Sénégal</p></div><div class="pill">SA • AE • QA • KW • BH • OM</div></header>
+<div class="content">
+
+<section class="page active" id="dashboard">
+  <div class="hero"><div><h2>Centre d’intelligence</h2><p>Identifiez une personne ou une entreprise à partir d’informations professionnelles publiquement disponibles, puis transformez le résultat en opportunité business.</p></div><button class="primary" id="newSearch">+ Nouvelle recherche</button></div>
+  <div class="kpis">
+    <div class="card kpi"><small>Recherches</small><div class="n" id="kSearches">0</div></div>
+    <div class="card kpi"><small>Prospects sauvegardés</small><div class="n" id="kProspects">0</div></div>
+    <div class="card kpi"><small>Confirmations</small><div class="n" id="kConfirmed">0</div></div>
+    <div class="card kpi"><small>Pays actifs</small><div class="n">6</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card pad"><div class="sectionTitle"><h3>Fonctions principales</h3><span class="muted">V1</span></div>
+      <div class="statline"><span>📱 Téléphone → identité professionnelle</span><b>Public</b></div>
+      <div class="statline"><span>👤 Nom → dossier professionnel</span><b>Multilingue</b></div>
+      <div class="statline"><span>✉️ Email → personne / société</span><b>Vérification</b></div>
+      <div class="statline"><span>🏢 Entreprise → dirigeants / activité</span><b>Sources</b></div>
+      <div class="statline"><span>🤝 Profil → approche business</span><b>AR / FR / EN</b></div>
+    </div>
+    <div class="card pad"><div class="sectionTitle"><h3>Périmètre géographique</h3></div><div class="countryGrid">
+      <div class="country"><b>🇸🇦 Arabie saoudite</b><span>+966</span></div><div class="country"><b>🇦🇪 Émirats arabes unis</b><span>+971</span></div>
+      <div class="country"><b>🇶🇦 Qatar</b><span>+974</span></div><div class="country"><b>🇰🇼 Koweït</b><span>+965</span></div>
+      <div class="country"><b>🇧🇭 Bahreïn</b><span>+973</span></div><div class="country"><b>🇴🇲 Oman</b><span>+968</span></div>
+    </div></div>
+  </div>
+</section>
+
+<section class="page" id="search">
+  <div class="hero"><div><h2>Recherche Reverse</h2><p>Entrez un numéro professionnel/public, un nom, un email ou une entreprise. Le moteur doit vérifier les associations publiques avant de confirmer une identité.</p></div></div>
+  <div class="card searchBox">
+    <div class="modeRow">
+      <button class="mode active" data-mode="phone">📱 Téléphone</button>
+      <button class="mode" data-mode="name">👤 Nom</button>
+      <button class="mode" data-mode="email">✉️ Email</button>
+      <button class="mode" data-mode="company">🏢 Entreprise</button>
+      <button class="mode" data-mode="registry">▣ Registre</button>
+      <button class="mode" data-mode="project">◆ Projet</button>
+    </div>
+    <div class="fields">
+      <input class="input" id="query" placeholder="+966 5X XXX XXXX — numéro public/professionnel">
+      <select class="select" id="country"><option value="">Tous les pays</option><option value="SA">🇸🇦 Arabie saoudite</option><option value="AE">🇦🇪 Émirats arabes unis</option><option value="QA">🇶🇦 Qatar</option><option value="KW">🇰🇼 Koweït</option><option value="BH">🇧🇭 Bahreïn</option><option value="OM">🇴🇲 Oman</option></select>
+      <select class="select" id="sector"><option value="">Tous secteurs</option><option>BTP / Construction</option><option>Immobilier</option><option>Investissement</option><option>Finance</option><option>Logistique</option><option>Énergie</option><option>Commerce</option><option>Technologie</option><option>Autre</option></select>
+      <button class="primary" id="searchBtn">Rechercher</button>
+    </div>
+    <div class="notice warn"><strong>Règle de confidentialité :</strong> le moteur ne doit pas révéler de données privées ou contourner une protection. Pour un téléphone personnel, une identité n’est affichée que si l’association personne ↔ numéro est déjà publique/légitime. Sinon : <b>Identité non confirmée.</b></div>
+  </div>
+  <div style="height:16px"></div>
+  <div class="card pad"><div class="sectionTitle"><h3>Résultats</h3><span class="muted" id="resultCount">0 résultat</span></div><div id="results" class="results"><div class="empty"><strong>Aucune recherche</strong>Lancez une recherche pour afficher les résultats vérifiables.</div></div></div>
+</section>
+
+<section class="page" id="prospects">
+  <div class="hero"><div><h2>Prospects</h2><p>Votre base locale de contacts professionnels identifiés et vérifiés.</p></div><button class="secondary" id="exportBtn">Exporter CSV</button></div>
+  <div class="card pad"><div id="prospectTable"></div></div>
+</section>
+
+<section class="page" id="reports">
+  <div class="hero"><div><h2>Rapports</h2><p>Vue synthétique des recherches et des profils enregistrés.</p></div></div>
+  <div class="grid2"><div class="card pad"><div class="sectionTitle"><h3>Activité</h3></div><div id="reportActivity"></div></div><div class="card pad"><div class="sectionTitle"><h3>Qualité des données</h3></div><div id="reportQuality"></div></div></div>
+</section>
+
+<section class="page" id="settings">
+  <div class="hero"><div><h2>Paramètres</h2><p>Connectez votre backend sans exposer vos clés API dans GitHub.</p></div></div>
+  <div class="card pad">
+    <div class="formgrid">
+      <label>URL du backend<input class="input" id="backendUrl" placeholder="https://votre-worker.exemple.workers.dev"></label>
+      <label>Mode de recherche<select class="select" id="searchMode"><option value="live">Live — backend</option><option value="demo">Démo locale</option></select></label>
+      <label class="full">Notes sécurité<textarea class="textarea" rows="4" readonly>Les clés Anthropic/OpenAI/Tavily et autres secrets doivent rester côté serveur. Le HTML public GitHub ne doit contenir aucune clé secrète.</textarea></label>
+    </div>
+    <div style="margin-top:14px;display:flex;gap:9px"><button class="primary" id="saveSettings">Enregistrer</button><button class="secondary" id="testBackend">Tester le backend</button></div>
+    <div class="notice" id="backendNotice">Backend non configuré. Le mode Démo permet de tester l’interface sans prétendre fournir de vraies identités.</div>
+  </div>
+</section>
+
+</div></main></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const KEY="gulf_reverse_pro_v1";
+const state=JSON.parse(localStorage.getItem(KEY)||'{"searches":0,"prospects":[],"history":[],"settings":{"backendUrl":"","searchMode":"demo"}}');
+let currentMode="phone";
+
+const demoData=[
+ {name:"Mohammed Al-Rashid",arabic:"محمد الراشد",country:"SA",company:"Al Noor Construction Group",role:"Managing Director",phone:"+966 50 000 0000",email:"business@example.com",website:"https://example.com",sector:"BTP / Construction",confidence:"confirmed",sources:["Registre / source publique","Site entreprise"],demo:true},
+ {name:"Ahmed Al-Hammadi",arabic:"أحمد الحمادي",country:"AE",company:"Gulf Horizon Investments",role:"Investment Executive",phone:"+971 50 000 0000",email:"invest@example.com",website:"https://example.com",sector:"Investissement",confidence:"probable",sources:["Profil professionnel","Site entreprise"],demo:true}
+];
+
+const countryNames={SA:"Arabie saoudite",AE:"Émirats arabes unis",QA:"Qatar",KW:"Koweït",BH:"Bahreïn",OM:"Oman"};
+const prefixes={SA:"+966",AE:"+971",QA:"+974",KW:"+965",BH:"+973",OM:"+968"};
+
+function save(){localStorage.setItem(KEY,JSON.stringify(state));updateKpis();renderProspects();renderReports();}
+function toast(s){const t=document.getElementById("toast");t.textContent=s;t.style.display="block";setTimeout(()=>t.style.display="none",2600)}
+function updateKpis(){document.getElementById("kSearches").textContent=state.searches;document.getElementById("kProspects").textContent=state.prospects.length;document.getElementById("kConfirmed").textContent=state.prospects.filter(x=>x.confidence==="confirmed").length}
+function go(page){document.querySelectorAll(".page").forEach(x=>x.classList.remove("active"));document.getElementById(page).classList.add("active");document.querySelectorAll(".nav button").forEach(x=>x.classList.toggle("active",x.dataset.page===page));const titles={dashboard:["Gulf Reverse Pro","Reverse business intelligence — Golfe ↔ Sénégal"],search:["Recherche Reverse","Téléphone • Nom • Email • Entreprise"],prospects:["Prospects","Base locale de contacts professionnels"],reports:["Rapports","Activité et qualité des données"],settings:["Paramètres","Backend et sécurité"]};document.getElementById("topTitle").textContent=titles[page][0];document.getElementById("topSub").textContent=titles[page][1]}
+document.querySelectorAll(".nav button").forEach(b=>b.onclick=()=>go(b.dataset.page));
+document.getElementById("newSearch").onclick=()=>{go("search");document.getElementById("query").focus()};
+
+document.querySelectorAll(".mode").forEach(b=>b.onclick=()=>{document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));b.classList.add("active");currentMode=b.dataset.mode;const ph={phone:"+966 5X XXX XXXX — numéro public/professionnel",name:"Nom complet — arabe, anglais ou français",email:"email professionnel",company:"Nom de l’entreprise / groupe",registry:"Numéro ou nom du registre commercial",project:"Nom du projet / opportunité"};document.getElementById("query").placeholder=ph[currentMode]});
+
+function detectCountry(q){const clean=q.replace(/[^\d+]/g,"");for(const [c,p] of Object.entries(prefixes))if(clean.startsWith(p))return c;return document.getElementById("country").value||""}
+function normalizePhone(q){let x=q.replace(/[^\d+]/g,"");if(x.startsWith("00"))x="+"+x.slice(2);return x}
+
+async function search(){
+ const q=document.getElementById("query").value.trim(); if(!q){toast("Entrez une recherche.");return}
+ const country=document.getElementById("country").value, sector=document.getElementById("sector").value;
+ state.searches++;state.history.unshift({date:new Date().toISOString(),mode:currentMode,query:q,country,sector});state.history=state.history.slice(0,100);save();
+ const results=document.getElementById("results");results.innerHTML='<div class="empty"><strong>Recherche en cours…</strong>Vérification des sources publiques.</div>';
+ const mode=state.settings.searchMode;
+ if(mode==="live" && state.settings.backendUrl){
+   try{
+    const r=await fetch(state.settings.backendUrl.replace(/\/$/,"")+"/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({mode:currentMode,query:q,country,sector})});
+    if(!r.ok)throw new Error("HTTP "+r.status);
+    const data=await r.json();renderResults(data.results||[]);document.getElementById("backendStatus").textContent="Backend connecté";return;
+   }catch(e){document.getElementById("backendStatus").textContent="Backend erreur";toast("Backend inaccessible — affichage démo.");}
+ }
+ const rq=currentMode==="phone"?normalizePhone(q):q.toLowerCase();
+ let found=demoData.filter(x=>{
+   const hay=[x.name,x.arabic,x.company,x.phone,x.email,x.website].join(" ").toLowerCase();
+   const ok=hay.includes(rq.toLowerCase()) || (currentMode==="phone" && x.phone.replace(/\D/g,"").endsWith(rq.replace(/\D/g,"")));
+   return ok && (!country||x.country===country) && (!sector||x.sector===sector);
+ });
+ if(!found.length && currentMode==="phone"){
+   const c=detectCountry(q);
+   found=[{name:"Identité non confirmée",arabic:"غير مؤكد",country:c||"—",company:"Aucune association publique démontrée",role:"—",phone:normalizePhone(q),email:"—",website:"—",sector:sector||"—",confidence:"unverified",sources:["Aucune source publique suffisante"],demo:true}];
+ }
+ renderResults(found);
+}
+
+function renderResults(arr){
+ const box=document.getElementById("results");document.getElementById("resultCount").textContent=arr.length+" résultat"+(arr.length>1?"s":"");
+ if(!arr.length){box.innerHTML='<div class="empty"><strong>Aucun résultat exploitable</strong>Aucune association publique suffisante n’a été trouvée.</div>';return}
+ box.innerHTML=arr.map((x,i)=>`<article class="result">
+  <div class="resultHead"><div class="identity"><div class="avatar">${initials(x.name)}</div><div><h4>${esc(x.name)}</h4><p>${esc(x.arabic||"")} · ${esc(countryNames[x.country]||x.country||"Pays non déterminé")} · ${esc(x.role||"")}</p></div></div><span class="badge ${x.confidence}">${labelConfidence(x.confidence)}</span></div>
+  <div class="meta"><div><b>Entreprise</b>${esc(x.company||"—")}</div><div><b>Secteur</b>${esc(x.sector||"—")}</div><div><b>Téléphone public</b>${esc(x.phone||"—")}</div><div><b>Email professionnel</b>${esc(x.email||"—")}</div></div>
+  <div class="sources">${(x.sources||[]).map(s=>`<span class="source">${esc(s)}</span>`).join("")}</div>
+  <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+   ${x.website&&x.website!=="—"?`<a class="secondary" style="text-decoration:none" target="_blank" rel="noopener" href="${safeUrl(x.website)}">Site</a>`:""}
+   ${x.confidence!=="unverified"?`<button class="primary" onclick='saveProspect(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Sauvegarder</button>`:""}
+   <button class="secondary" onclick='makeMessage(${JSON.stringify(x).replace(/'/g,"&#39;")})'>Message AR/FR</button>
+  </div>
+ </article>`).join("");
+}
+
+function saveProspect(x){if(x.demo&&x.name==="Identité non confirmée"){toast("Profil non confirmé : non sauvegardé.");return}if(!state.prospects.some(p=>p.phone===x.phone&&p.name===x.name)){state.prospects.push({...x,savedAt:new Date().toISOString()});save();toast("Prospect sauvegardé.");}else toast("Prospect déjà présent.");}
+function makeMessage(x){const msg=`السلام عليكم ${x.arabic||x.name}،\nأتواصل معكم بخصوص فرص أعمال واستثمار في السنغال، خصوصاً في مجال ${x.sector||"الأعمال"}، وأرغب في التعرف على إمكانية التعاون مع شركتكم.\n\nBonjour ${x.name}, je vous contacte au sujet d’opportunités d’affaires et d’investissement au Sénégal dans le secteur ${x.sector||"des affaires"}. Je serais heureux d’échanger avec vous sur une éventuelle collaboration.`;navigator.clipboard?.writeText(msg);toast("Message arabe/français copié.");}
+
+function renderProspects(){const box=document.getElementById("prospectTable");if(!state.prospects.length){box.innerHTML='<div class="empty"><strong>Aucun prospect</strong>Sauvegardez un profil confirmé ou probable depuis une recherche.</div>';return}box.innerHTML=`<table class="table"><thead><tr><th>Identité</th><th>Entreprise</th><th>Pays</th><th>Contact public</th><th>Confiance</th><th></th></tr></thead><tbody>${state.prospects.map((p,i)=>`<tr><td><b>${esc(p.name)}</b><br><span class="muted">${esc(p.role||"")}</span></td><td>${esc(p.company||"—")}</td><td>${esc(countryNames[p.country]||p.country)}</td><td>${esc(p.phone||"—")}<br>${esc(p.email||"—")}</td><td>${labelConfidence(p.confidence)}</td><td><button class="secondary" onclick="removeProspect(${i})">Supprimer</button></td></tr>`).join("")}</tbody></table>`}
+function removeProspect(i){state.prospects.splice(i,1);save();toast("Prospect supprimé.");}
+function renderReports(){document.getElementById("reportActivity").innerHTML=`<div class="statline"><span>Recherches totales</span><b>${state.searches}</b></div><div class="statline"><span>Prospects sauvegardés</span><b>${state.prospects.length}</b></div><div class="statline"><span>Historique conservé</span><b>${state.history.length}</b></div>`;const c=state.prospects.filter(x=>x.confidence==="confirmed").length,p=state.prospects.filter(x=>x.confidence==="probable").length,u=state.prospects.filter(x=>x.confidence==="unverified").length;document.getElementById("reportQuality").innerHTML=`<div class="statline"><span>Confirmés</span><b>${c}</b></div><div class="statline"><span>Probables</span><b>${p}</b></div><div class="statline"><span>Non confirmés</span><b>${u}</b></div>`}
+function labelConfidence(x){return x==="confirmed"?"Confirmé":x==="probable"?"Probable":"Non confirmé"}
+function initials(s){return (s||"?").split(/\s+/).slice(0,2).map(x=>x[0]).join("").toUpperCase()}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+function safeUrl(u){try{const x=new URL(u);return ["http:","https:"].includes(x.protocol)?x.href:"#"}catch{return "#"}}
+
+document.getElementById("searchBtn").onclick=search;document.getElementById("query").addEventListener("keydown",e=>{if(e.key==="Enter")search()});
+document.getElementById("saveSettings").onclick=()=>{state.settings.backendUrl=document.getElementById("backendUrl").value.trim();state.settings.searchMode=document.getElementById("searchMode").value;save();document.getElementById("backendNotice").textContent=state.settings.backendUrl?"Backend enregistré.":"Backend non configuré.";toast("Paramètres enregistrés.");};
+document.getElementById("testBackend").onclick=async()=>{const u=document.getElementById("backendUrl").value.trim();if(!u){toast("Ajoutez l’URL du backend.");return}try{const r=await fetch(u.replace(/\/$/,"")+"/health");if(!r.ok)throw 0;document.getElementById("backendStatus").textContent="Backend connecté";toast("Backend opérationnel.");}catch{document.getElementById("backendStatus").textContent="Backend erreur";toast("Impossible de joindre le backend.");}};
+document.getElementById("exportBtn").onclick=()=>{if(!state.prospects.length){toast("Aucun prospect à exporter.");return}const cols=["name","arabic","country","company","role","phone","email","website","sector","confidence"];const csv=[cols.join(","),...state.prospects.map(p=>cols.map(c=>`"${String(p[c]??"").replace(/"/g,'""')}"`).join(","))].join("\n");const a=document.createElement("a");a.href=URL.createObjectURL(new Blob(["\ufeff"+csv],{type:"text/csv;charset=utf-8"}));a.download="gulf-reverse-prospects.csv";a.click();URL.revokeObjectURL(a.href);};
+document.getElementById("backendUrl").value=state.settings.backendUrl;document.getElementById("searchMode").value=state.settings.searchMode;updateKpis();renderProspects();renderReports();
+</script>
+</body>
+</html>
