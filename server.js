@@ -1,9 +1,9 @@
+import express from "express";
+import cors from "cors";
+import rateLimit from "express-rate-limit";
 import { analysePhone } from "./phone.js";
 import { checkEmail } from "./email.js";
 import { runAgent, normUrl } from "./agent.js";
-import { analysePhone } from "./providers/phone.js";
-import { checkEmail } from "./providers/email.js";
-import { runAgent, normUrl } from "./providers/agent.js";
 
 const app = express();
 app.set("trust proxy", 1);
